@@ -18,6 +18,8 @@ type AccessLog struct {
 	ClientIP  string
 	Method    string
 	Path      string
+	// ErrorCode is the REST error code written for this response, if any.
+	ErrorCode string
 }
 
 // LogAccess writes a completed request using the logger's format and level.
@@ -41,5 +43,8 @@ func LogAccess(ctx context.Context, logger *slog.Logger, entry AccessLog) {
 		slog.String("method", entry.Method),
 		slog.String("path", entry.Path),
 	)
+	if entry.ErrorCode != "" {
+		record.AddAttrs(slog.String("error_code", entry.ErrorCode))
+	}
 	_ = logger.Handler().Handle(ctx, record)
 }

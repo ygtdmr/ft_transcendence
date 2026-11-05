@@ -1,4 +1,14 @@
 // Package httpresponse defines common HTTP response envelopes without a router dependency.
+//
+// API conventions every service follows:
+//
+//   - success: {"data": ...} via WriteData; 204 has no body (WriteNoContent);
+//   - failure: {"error": {"code", "message", "details"}} via WriteError, with an
+//     UPPER_SNAKE_CASE code and details always an object;
+//   - JSON object keys are snake_case; enum values are UPPER_SNAKE_CASE;
+//   - timestamps are ISO-8601 / RFC 3339 in UTC (use the Time type).
+//
+// Violations checks a captured response against all of these in service tests.
 package httpresponse
 
 import (
@@ -44,6 +54,9 @@ func WriteError(writer http.ResponseWriter, response *Error) {
 		// An unencodable detail is an internal failure, not a partial public response.
 		WriteError(writer, InternalError())
 		return
+	}
+	if recorder, ok := writer.(ErrorCodeRecorder); ok {
+		recorder.RecordErrorCode(public.Code)
 	}
 	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 	writer.WriteHeader(public.Status)
