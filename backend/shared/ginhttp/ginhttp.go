@@ -1,24 +1,32 @@
 // Package ginhttp holds the Gin middleware every backend service shares:
-// request correlation IDs, a response recorder that learns the REST error code,
-// and structured access logging. It replaces the copies each service carries.
+// request correlation IDs and trace context, a response recorder that learns the
+// REST error code, an optional request timeout, and structured access logging.
+// It replaces the copies each service carries.
 //
 // Order matters; register them in this order:
 //
 //	router.Use(ginhttp.Trace(), ginhttp.AccessLog(logger), metrics.Middleware(service))
+//	api := router.Group("/api/v1", ginhttp.Timeout(10*time.Second)) // not on WebSocket routes
 package ginhttp
 
 import (
+	"context"
 	"log/slog"
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/melmut-42/ft_transcendence/backend/shared/httpresponse"
 	"github.com/melmut-42/ft_transcendence/backend/shared/logging"
+	"github.com/melmut-42/ft_transcendence/backend/shared/requestcontext"
 	"github.com/melmut-42/ft_transcendence/backend/shared/requestid"
+	"github.com/melmut-42/ft_transcendence/backend/shared/tracecontext"
 )
 
 const (
 	requestIDKey = "request_id"
+	traceKey     = "ginhttp.trace"
 	recorderKey  = "ginhttp.recorder"
 )
 
@@ -33,14 +41,19 @@ type recorder struct {
 // RecordErrorCode implements httpresponse.ErrorCodeRecorder.
 func (r *recorder) RecordErrorCode(code string) { r.code = code }
 
-// Trace assigns the correlation ID (accepting one valid X-Request-ID, otherwise
-// generating one), echoes it in the response, stores it in the Gin and request
-// contexts, and installs the error-code recorder. Register it first.
+// Trace prepares the request context (see requestcontext.Begin): it assigns the
+// correlation ID (accepting one valid X-Request-ID, otherwise generating one),
+// starts this service's span under a valid traceparent or a new root trace,
+// echoes the ID in the response, stores everything in the Gin and request
+// contexts, cancels the context when the request ends, and installs the
+// error-code recorder. Register it first.
 func Trace() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id := requestid.Select(c.Request.Header)
-		c.Request = c.Request.WithContext(requestid.WithID(c.Request.Context(), id))
+		ctx, cancel, id, trace := requestcontext.Begin(c.Request, 0)
+		defer cancel()
+		c.Request = c.Request.WithContext(ctx)
 		c.Set(requestIDKey, id)
+		c.Set(traceKey, trace)
 		c.Header(requestid.Header, id)
 
 		rec := &recorder{ResponseWriter: c.Writer}
@@ -48,6 +61,41 @@ func Trace() gin.HandlerFunc {
 		c.Set(recorderKey, rec)
 		c.Next()
 	}
+}
+
+// Timeout cancels the request context after d. Handlers and everything they call
+// with c.Request.Context() (database, Transport clients, publishes) stop when it
+// passes. If the deadline passed and nothing was written, Timeout answers 503
+// SERVICE_UNAVAILABLE instead of letting Gin send an empty 200. d <= 0 disables
+// it. The duration is set by the service, never by the client. Do not apply it to
+// long-lived routes such as WebSocket upgrades.
+func Timeout(d time.Duration) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if d <= 0 {
+			c.Next()
+			return
+		}
+		ctx, cancel := context.WithTimeout(c.Request.Context(), d)
+		defer cancel()
+		c.Request = c.Request.WithContext(ctx)
+		c.Next()
+		if ctx.Err() == context.DeadlineExceeded && !c.Writer.Written() {
+			c.Abort()
+			httpresponse.WriteError(c.Writer, &httpresponse.Error{
+				Status:  http.StatusServiceUnavailable,
+				Code:    "SERVICE_UNAVAILABLE",
+				Message: "The request could not be completed in time.",
+			})
+		}
+	}
+}
+
+// TraceContext returns this request's span, or false when Trace has not run.
+func TraceContext(c *gin.Context) (tracecontext.Context, bool) {
+	if v, ok := c.Get(traceKey); ok {
+		return v.(tracecontext.Context), true
+	}
+	return tracecontext.Context{}, false
 }
 
 // RequestID returns the correlation ID for c, or "" when Trace has not run.

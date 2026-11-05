@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/melmut-42/ft_transcendence/backend/shared/requestid"
+	"github.com/melmut-42/ft_transcendence/backend/shared/tracecontext"
 )
 
 // Redacted replaces the value of a sensitive attribute.
@@ -32,7 +33,8 @@ func IsSensitiveKey(key string) bool {
 }
 
 // contextHandler wraps a handler to (1) redact sensitive attribute keys at any
-// depth and (2) add request_id from the context when the record lacks one.
+// depth and (2) add request_id, trace_id and span_id from the context when the
+// record lacks them.
 // It is applied by New, so every service logger has both behaviours and a
 // caller cannot forget them.
 type contextHandler struct {
@@ -44,17 +46,23 @@ func (h contextHandler) Enabled(ctx context.Context, level slog.Level) bool {
 }
 
 func (h contextHandler) Handle(ctx context.Context, record slog.Record) error {
-	hasRequestID := false
+	present := map[string]bool{}
 	clean := slog.NewRecord(record.Time, record.Level, record.Message, record.PC)
 	record.Attrs(func(attr slog.Attr) bool {
-		if attr.Key == "request_id" {
-			hasRequestID = true
-		}
+		present[attr.Key] = true
 		clean.AddAttrs(redactAttr(attr))
 		return true
 	})
-	if id := requestid.FromContext(ctx); id != "" && !hasRequestID {
+	if id := requestid.FromContext(ctx); id != "" && !present["request_id"] {
 		clean.AddAttrs(slog.String("request_id", id))
+	}
+	if trace, ok := tracecontext.FromContext(ctx); ok {
+		if !present["trace_id"] {
+			clean.AddAttrs(slog.String("trace_id", trace.TraceID))
+		}
+		if !present["span_id"] {
+			clean.AddAttrs(slog.String("span_id", trace.SpanID))
+		}
 	}
 	return h.next.Handle(ctx, clean)
 }
