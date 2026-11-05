@@ -130,3 +130,26 @@ func AccessLog(logger *slog.Logger) gin.HandlerFunc {
 		})
 	}
 }
+
+// Handle adapts a Gin handler that reports failure by returning an error. The
+// error is mapped to its public response (see httpresponse.Mapper): validation
+// errors and *httpresponse.Error pass through, registered errors are translated,
+// and anything unexpected becomes the generic 500 and is logged by Go type only,
+// never by text, which may hold secrets. m and logger may be nil.
+//
+// The handler must not have written a response when it returns an error. The
+// raw error is deliberately not attached with c.Error, so no Gin-level output
+// can print it.
+func Handle(fn func(*gin.Context) error, m *httpresponse.Mapper, logger *slog.Logger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		err := fn(c)
+		if err == nil {
+			return
+		}
+		response := httpresponse.ResolveAndLog(c.Request.Context(), err, m, logger)
+		c.Abort()
+		if !c.Writer.Written() {
+			httpresponse.WriteError(c.Writer, response)
+		}
+	}
+}

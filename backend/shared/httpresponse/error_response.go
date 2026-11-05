@@ -8,6 +8,11 @@
 //   - JSON object keys are snake_case; enum values are UPPER_SNAKE_CASE;
 //   - timestamps are ISO-8601 / RFC 3339 in UTC (use the Time type).
 //
+// Every response carries Cache-Control: no-store and X-Content-Type-Options:
+// nosniff, and error details never contain credential-like keys (see
+// sanitizeDetails). Mapper and Adapt turn service errors into public errors
+// without ever exposing an internal error's text.
+//
 // Violations checks a captured response against all of these in service tests.
 package httpresponse
 
@@ -44,9 +49,7 @@ func WriteError(writer http.ResponseWriter, response *Error) {
 		response = InternalError()
 	}
 	public := *response
-	if public.Details == nil {
-		public.Details = map[string]any{}
-	}
+	public.Details = sanitizeDetails(public.Details)
 	body, err := json.Marshal(struct {
 		Error *Error `json:"error"`
 	}{Error: &public})
@@ -58,6 +61,7 @@ func WriteError(writer http.ResponseWriter, response *Error) {
 	if recorder, ok := writer.(ErrorCodeRecorder); ok {
 		recorder.RecordErrorCode(public.Code)
 	}
+	setAPIHeaders(writer.Header())
 	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 	writer.WriteHeader(public.Status)
 	_, _ = writer.Write(append(body, '\n'))

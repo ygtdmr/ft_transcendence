@@ -17,6 +17,11 @@ go test -coverpkg=./httpresponse,./logging,./pagination,./postgres ./tests/...
 Real PostgreSQL connectivity requires `POSTGRES_TEST_DATABASE_URL`. That test is
 skipped when the variable is unset.
 
+The response tests (`tests/integration/response_mapping_test.go`) need no external
+services; they check the contract's cookie attributes, the 204 logout, error
+mapping, and that an internal error's text reaches neither the response nor the
+logs.
+
 The validation tests (`tests/integration/validate_test.go`) need no external
 services; they drive a real Gin server and compare against the literal Bruno
 example for an invalid path ID.

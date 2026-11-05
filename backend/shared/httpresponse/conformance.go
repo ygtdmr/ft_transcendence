@@ -9,6 +9,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/melmut-42/ft_transcendence/backend/shared/sensitive"
 )
 
 var (
@@ -75,6 +77,9 @@ func checkErrorEnvelope(doc map[string]any) []string {
 			out = append(out, fmt.Sprintf("error has unexpected key %q", key))
 		}
 	}
+	if details, ok := inner["details"].(map[string]any); ok {
+		out = append(out, sensitiveKeys("error.details", details)...)
+	}
 	return out
 }
 
@@ -102,4 +107,25 @@ func walk(path string, value any, out *[]string) {
 			}
 		}
 	}
+}
+
+// sensitiveKeys reports credential-like keys under details at any depth.
+func sensitiveKeys(path string, value any) []string {
+	var out []string
+	switch v := value.(type) {
+	case map[string]any:
+		for key, member := range v {
+			child := path + "." + key
+			if sensitive.IsKey(key) {
+				out = append(out, fmt.Sprintf("%s: error details must not contain a sensitive key", child))
+				continue
+			}
+			out = append(out, sensitiveKeys(child, member)...)
+		}
+	case []any:
+		for i, member := range v {
+			out = append(out, sensitiveKeys(fmt.Sprintf("%s[%d]", path, i), member)...)
+		}
+	}
+	return out
 }
