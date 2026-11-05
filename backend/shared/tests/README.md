@@ -17,6 +17,10 @@ go test -coverpkg=./httpresponse,./logging,./pagination,./postgres ./tests/...
 Real PostgreSQL connectivity requires `POSTGRES_TEST_DATABASE_URL`. That test is
 skipped when the variable is unset.
 
+The validation tests (`tests/integration/validate_test.go`) need no external
+services; they drive a real Gin server and compare against the literal Bruno
+example for an invalid path ID.
+
 The request-context tests (`tests/integration/request_context_test.go`) need no
 external services except `TestRequestTimeoutStopsARealDatabaseQuery`, which needs
 `POSTGRES_TEST_DATABASE_URL`.
