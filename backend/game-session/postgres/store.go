@@ -66,3 +66,16 @@ const (
 )
 
 var _ service.RoomStore = (*Store)(nil)
+
+func (s *Store) ResetForTests() error {
+	for _, statement := range []string{
+		"TRUNCATE rooms RESTART IDENTITY CASCADE",
+		"TRUNCATE outbox_events",
+		"TRUNCATE command_ledger",
+	} {
+		if err := s.db.Exec(statement).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	game "game-session/game"
+	"game-session/game"
 )
 
 var graceNow = time.Date(2026, 11, 5, 12, 0, 0, 0, time.UTC)
@@ -110,4 +110,21 @@ func TestGraceErrors(t *testing.T) {
 	r.Status = StatusClosed
 	_, err = r.MarkDisconnected(RoomInput{Members: members}, 2, graceNow)
 	mustErr(t, "disconnect in closed room", err, ErrRoomNotFound)
+}
+
+func TestDisconnectedLeaveRequiresExpiredGrace(t *testing.T) {
+	r, members := newGraceRoom(StatusWaiting)
+
+	_, err := r.Leave(RoomInput{Members: members}, 2, DepartureDisconnected, graceNow)
+	mustErr(t, "leave without grace", err, ErrGraceNotExpired)
+
+	gone, err := r.MarkDisconnected(RoomInput{Members: members}, 2, graceNow)
+	mustOK(t, "disconnect", err)
+	members = replaceMember(members, gone)
+
+	_, err = r.Leave(RoomInput{Members: members}, 2, DepartureDisconnected, graceNow.Add(10*time.Second))
+	mustErr(t, "leave before grace ends", err, ErrGraceNotExpired)
+
+	_, err = r.Leave(RoomInput{Members: members}, 2, DepartureDisconnected, graceNow.Add(lobbyGraceTimeout))
+	mustOK(t, "leave after grace ends", err)
 }

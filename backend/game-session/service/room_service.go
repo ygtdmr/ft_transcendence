@@ -190,3 +190,19 @@ func (s *RoomService) Leave(roomID int64, userID int64, reason room.DepartureRea
 	}
 	return result, nil
 }
+
+func (s *RoomService) CloseIfEmpty(roomID int64, now time.Time) (bool, error) {
+	closed := false
+	err := s.store.Transaction(func(tx RoomStore) error {
+		r, members, err := tx.RoomByID(roomID)
+		if err != nil {
+			return err
+		}
+		closed = r.CloseIfEmpty(room.RoomInput{Members: members}, now)
+		return tx.SaveRoom(r)
+	})
+	if err != nil {
+		return false, err
+	}
+	return closed, nil
+}

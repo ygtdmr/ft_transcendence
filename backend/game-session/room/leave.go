@@ -1,7 +1,7 @@
 package room
 
 import (
-	game "game-session/game"
+	"game-session/game"
 	"time"
 )
 
@@ -62,6 +62,11 @@ func (r *Room) Leave(input RoomInput, userID int64, reason DepartureReason, now 
 	departed := findMember(input.Members, userID)
 	if departed == nil {
 		return LeaveResult{}, ErrNotRoomMember
+	}
+	if reason == DepartureDisconnected {
+		if departed.GraceEndsAt == nil || now.Before(*departed.GraceEndsAt) {
+			return LeaveResult{}, ErrGraceNotExpired
+		}
 	}
 	return r.removeMember(input, *departed, reason, now)
 }
@@ -185,4 +190,20 @@ func (r *Room) removeMember(input RoomInput, departed RoomMember, reason Departu
 	}
 
 	return result, nil
+}
+
+func (r *Room) CloseIfEmpty(input RoomInput, now time.Time) bool {
+	if r.Status == StatusClosed {
+		return false
+	}
+	if len(input.Members) > 0 {
+		r.EmptySince = nil
+		r.CloseAt = nil
+		return false
+	}
+	if r.CloseAt == nil || now.Before(*r.CloseAt) {
+		return false
+	}
+	r.Status = StatusClosed
+	return true
 }
