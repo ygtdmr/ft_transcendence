@@ -31,7 +31,7 @@ func (s *AuthService) DeliverPendingRevocations(ctx context.Context) error {
 		if err := ctx.Err(); err != nil {
 			return errors.Join(append(failures, err)...)
 		}
-		if err := s.notifySessionRevoked(ctx, event.UserID, event.SessionID); err != nil {
+		if err := s.notifySessionRevoked(ctx, event.UserID, event.SessionID, event.Cause); err != nil {
 			failures = append(failures, err)
 		}
 	}

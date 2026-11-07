@@ -104,11 +104,11 @@ func (s *AuthService) Logout(ctx context.Context, identity Identity) error {
 	if err != nil {
 		return err
 	}
-	return s.notifySessionRevoked(ctx, identity.User.ID, identity.SessionID)
+	return s.notifySessionRevoked(ctx, identity.User.ID, identity.SessionID, RevocationSessionRevoked)
 }
 
 // notifySessionRevoked closes sockets only after authoritative revocation commits.
-func (s *AuthService) notifySessionRevoked(ctx context.Context, userID int64, sessionID string) error {
+func (s *AuthService) notifySessionRevoked(ctx context.Context, userID int64, sessionID, cause string) error {
 	if s.lifecycle == nil {
 		return nil
 	}
@@ -117,7 +117,7 @@ func (s *AuthService) notifySessionRevoked(ctx context.Context, userID int64, se
 	}
 	notifyCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
 	defer cancel()
-	err := s.lifecycle.SessionRevoked(notifyCtx, userID, sessionID)
+	err := s.lifecycle.SessionRevoked(notifyCtx, userID, sessionID, cause)
 	if err == nil {
 		err = s.revocations.MarkSessionRevocationDelivered(notifyCtx, sessionID)
 	}

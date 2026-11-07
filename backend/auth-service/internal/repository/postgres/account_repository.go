@@ -80,8 +80,25 @@ func (t *authTx) CreateUser(ctx context.Context, user model.User) (model.User, e
 	return user, nil
 }
 
+// CreateSession inserts a session only for an ACTIVE account. The account row
+// is share-locked until commit, so a concurrent deletion Begin either waits and
+// then revokes this session, or commits first and this insert is refused.
+//
+// Errors:
+//
+//   - service.ErrAccountUnavailable: the account is missing or not ACTIVE.
+//   - Database errors.
 func (t *authTx) CreateSession(ctx context.Context, session model.Session) error {
-	_, err := t.tx.Exec(ctx, `
+	var active bool
+	err := t.tx.QueryRow(ctx, `
+		SELECT status = 'ACTIVE' FROM users WHERE id = $1 FOR SHARE`, session.UserID).Scan(&active)
+	if errors.Is(err, pgx.ErrNoRows) || (err == nil && !active) {
+		return service.ErrAccountUnavailable
+	}
+	if err != nil {
+		return err
+	}
+	_, err = t.tx.Exec(ctx, `
 		INSERT INTO sessions (id, user_id, created_at) VALUES ($1, $2, $3)`,
 		session.ID, session.UserID, session.CreatedAt)
 

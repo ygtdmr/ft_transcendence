@@ -49,7 +49,12 @@ func (s *AuthService) Login(ctx context.Context, input LoginInput) (AuthResult, 
 		// Accounts being deleted never receive a new session.
 		return AuthResult{}, ErrInvalidCredentials
 	}
-	return s.createLoginSession(ctx, user)
+	result, err := s.createLoginSession(ctx, user)
+	if errors.Is(err, ErrAccountUnavailable) {
+		// Deletion began after the account was read; no session is issued.
+		return AuthResult{}, ErrInvalidCredentials
+	}
+	return result, err
 }
 
 func validateLogin(input LoginInput) error {

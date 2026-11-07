@@ -80,16 +80,19 @@ type Membership struct {
 
 // SessionLifecycle bridges Game membership and Game/Chat departure and socket closure.
 // EndSession must be idempotent: a database commit may fail after the external call.
+// SessionRevoked receives the revocation cause (RevocationSessionRevoked or
+// RevocationAccountDeleted) so Gateways can tell account deletion apart.
 type SessionLifecycle interface {
 	CurrentMembership(context.Context, int64) (Membership, error)
 	EndSession(context.Context, int64, string) error
-	SessionRevoked(context.Context, int64, string) error
+	SessionRevoked(ctx context.Context, userID int64, sessionID, cause string) error
 }
 
 // SessionRevocation remains pending until Gateways acknowledge socket closure.
 type SessionRevocation struct {
 	SessionID     string
 	UserID        int64
+	Cause         string
 	RevokedAt     time.Time
 	NextAttemptAt time.Time
 }
