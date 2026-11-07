@@ -28,6 +28,12 @@ type Config struct {
 	// CallerCredentials maps each private caller to its accepted service
 	// credentials, read from mounted secret files.
 	CallerCredentials map[string][]string `json:"-"`
+	// UserInternalURL is User Service's private listener. When set, new
+	// accounts are provisioned there before their first session.
+	UserInternalURL string
+	// UserServiceCredential is Auth's own credential for User Service.
+	UserServiceCredential string `json:"-"`
+	UserInternalTimeout   time.Duration
 }
 
 // Load reads and validates application settings from the process environment.
@@ -76,6 +82,9 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 	cfg.CallerCredentials = credentials
+	if err := cfg.loadUserService(); err != nil {
+		return Config{}, err
+	}
 
 	return cfg, nil
 }

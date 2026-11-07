@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/client/userclient"
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/config"
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/controller"
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/middleware/serviceauth"
@@ -46,7 +47,18 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 	logger.InfoContext(ctx, "PostgreSQL connection established")
 
 	authRepository := authpostgres.NewAuth(pool)
-	authService := service.NewAuth(authRepository, issuer)
+	var options []service.Option
+	if cfg.UserInternalURL != "" {
+		provisioner, err := userclient.New(cfg.UserInternalURL, cfg.UserServiceCredential, cfg.UserInternalTimeout)
+		if err != nil {
+			pool.Close()
+			return nil, nil, err
+		}
+		options = append(options, service.WithProfileProvisioner(provisioner))
+	} else {
+		logger.WarnContext(ctx, "USER_INTERNAL_URL is not set; accounts are created without User Service profiles")
+	}
+	authService := service.NewAuth(authRepository, issuer, options...)
 	authController := controller.NewAuth(authService)
 	cleanup := startSessionRevocations(ctx, authService, pool.Close, logger)
 

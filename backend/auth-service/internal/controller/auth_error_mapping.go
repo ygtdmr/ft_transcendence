@@ -23,6 +23,8 @@ func mapAuthError(err error) *httpresponse.Error {
 		status, code, message = http.StatusUnauthorized, "UNAUTHORIZED", "A valid active session is required."
 	case errors.Is(err, service.ErrSessionExpired):
 		status, code, message = http.StatusUnauthorized, "SESSION_EXPIRED", "The refresh token is invalid or expired. Log in again."
+	case errors.Is(err, service.ErrServiceUnavailable):
+		status, code, message = http.StatusServiceUnavailable, "SERVICE_UNAVAILABLE", "The service is temporarily unavailable. Try again later."
 	default:
 		return mapRegistrationError(err)
 	}

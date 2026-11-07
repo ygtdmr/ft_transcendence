@@ -66,9 +66,9 @@ type authTx struct {
 //   - Database errors: The insert or result scan failed, including context cancellation and deadlines.
 func (t *authTx) CreateUser(ctx context.Context, user model.User) (model.User, error) {
 	err := t.tx.QueryRow(ctx, `
-		INSERT INTO users (email, username, password_hash) VALUES ($1, $2, $3)
+		INSERT INTO users (email, username, password_hash, status) VALUES ($1, $2, $3, COALESCE(NULLIF($4, ''), 'ACTIVE'))
 		RETURNING id, email, username, password_hash, status, created_at, updated_at`,
-		user.Email, user.Username, user.PasswordHash,
+		user.Email, user.Username, user.PasswordHash, user.Status,
 	).Scan(&user.ID, &user.Email, &user.Username, &user.PasswordHash, &user.Status, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		return model.User{}, accountError(err)
