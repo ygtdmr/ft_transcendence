@@ -28,6 +28,10 @@ type Config struct {
 	// CallerCredentials maps each private caller to its accepted service
 	// credentials, read from mounted secret files.
 	CallerCredentials map[string][]string `json:"-"`
+	// Google sign-in client settings; empty when Google sign-in is disabled.
+	GoogleClientID     string
+	GoogleClientSecret string `json:"-"`
+	PublicBaseURL      string
 }
 
 // Load reads and validates application settings from the process environment.
@@ -76,6 +80,9 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 	cfg.CallerCredentials = credentials
+	if err := cfg.loadGoogleOAuth(); err != nil {
+		return Config{}, err
+	}
 
 	return cfg, nil
 }

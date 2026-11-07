@@ -47,7 +47,18 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 
 	authRepository := authpostgres.NewAuth(pool)
 	authService := service.NewAuth(authRepository, issuer)
-	authController := controller.NewAuth(authService)
+	sealer, err := security.NewOAuthStateSealer([]byte(cfg.JWTSecret))
+	if err != nil {
+		pool.Close()
+		return nil, nil, err
+	}
+	if cfg.GoogleClientID == "" {
+		logger.WarnContext(ctx, "Google sign-in is not configured; it redirects with OAUTH_PROVIDER_ERROR")
+	}
+	google := service.NewGoogleOAuth(service.GoogleOAuthConfig{
+		ClientID: cfg.GoogleClientID, RedirectURI: cfg.GoogleRedirectURI(),
+	}, authRepository, sealer)
+	authController := controller.NewAuth(authService, controller.WithGoogleOAuth(google, logger))
 	cleanup := startSessionRevocations(ctx, authService, pool.Close, logger)
 
 	if len(cfg.CallerCredentials) == 0 {
