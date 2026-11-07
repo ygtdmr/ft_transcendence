@@ -44,6 +44,7 @@ func (authController *AuthController) RegisterRoutes(routes gin.IRoutes) {
 	}
 	if authController.google != nil {
 		routes.GET("/oauth/google/authorize", authController.startGoogle)
+		routes.GET("/oauth/google/callback", authController.completeGoogle)
 	}
 }
 

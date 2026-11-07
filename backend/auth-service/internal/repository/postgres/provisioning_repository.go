@@ -77,7 +77,7 @@ func (r *AuthRepository) ActivateProvisionedAccount(ctx context.Context, userID 
 		row := tx.QueryRow(ctx, `
 			UPDATE users SET status = 'ACTIVE', updated_at = CASE WHEN status = 'ACTIVE' THEN updated_at ELSE now() END
 			WHERE id = $1 AND status IN ('PROVISIONING', 'ACTIVE')
-			RETURNING id, email, username, password_hash, status, created_at, updated_at`, userID)
+			RETURNING id, email, username, COALESCE(password_hash, ''), status, created_at, updated_at`, userID)
 		user, err = scanUser(row)
 		return err
 	})

@@ -64,7 +64,9 @@ func validateLogin(input LoginInput) error {
 }
 
 func compareLoginPassword(user model.User, password string) error {
-	if user.ID <= 0 {
+	// Unknown accounts and Google-only accounts (no password) take the same
+	// time as a wrong password and give the same answer.
+	if user.ID <= 0 || user.PasswordHash == "" {
 		_ = bcrypt.CompareHashAndPassword([]byte(missingAccountHash), []byte(password))
 		return ErrInvalidCredentials
 	}
