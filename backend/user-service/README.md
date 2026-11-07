@@ -30,6 +30,7 @@ environment only and does not load `.env` itself.
 | `APP_ENV`                   | `development` | `development`, `production` or `test`. Sets log defaults.             |
 | `LOG_FORMAT`, `LOG_LEVEL` | by `APP_ENV`  | `text` or `json`; `debug`, `info`, `warn` or `error`.           |
 | `MIGRATE_ON_START`          | `true`        | Apply embedded migrations at startup.                                       |
+| `AVATAR_BASE_URL`           | none            | Public `https://` origin for avatar URLs. Empty gives root-relative URLs. |
 | `AUTH_SERVICE_CREDENTIAL_FILE` | none, optional | File holding Auth Service's service credential (32+ characters).      |
 | `AUTH_SERVICE_PREVIOUS_CREDENTIAL_FILE` | none, optional | Previous Auth credential, accepted during a rotation.       |
 
@@ -53,6 +54,7 @@ one as previous, switch the caller, then remove the previous file.
 | `PUT /internal/v1/provisioning-operations/{operation_id}` | `auth-service`, `profile.provision` | Create the profile once per operation |
 | `GET /internal/v1/provisioning-operations/{operation_id}` | `auth-service`, `provisioning.read` | Read an operation's receipt |
 | `GET /internal/v1/provisioning-operations?user_id=` | `auth-service`, `provisioning.read` | Read the receipt of a user's operation |
+| `GET /internal/v1/profiles/{user_id}` | `auth-service`, `profile.read` | Read the current canonical profile |
 
 Provisioning takes `user_id`, `username` and `created_at` in the body. It
 answers `201` with a new receipt or `200` with the stored receipt for an
@@ -62,6 +64,18 @@ decided in this order: `409 USER_DELETED`, `409 OPERATION_CONFLICT`,
 `409 USER_ALREADY_PROVISIONED`, `409 USERNAME_TAKEN`. A database outage answers
 `503 SERVICE_UNAVAILABLE`. Requests for one user are serialized with a
 transaction-scoped advisory lock; account deletion must take the same lock.
+
+The canonical profile read returns `user_id`, `username`, `avatar_url` and the
+provisioned `created_at` from the current row, never the login email,
+credentials, presence or relationships. A user without a profile is
+`404 USER_NOT_FOUND`; a recorded deletion is `409 USER_DELETED`. A default
+avatar is `/static/avatars/default/{user_id}.svg`; presets use
+`/avatars/presets/{preset_id}.png` and uploads `/static/avatars/uploaded/{key}`.
+
+`internal/client/authclient` calls Auth's `GET /internal/v1/accounts/{user_id}`
+with this service's own credential. Auth outages, timeouts and malformed
+answers are reported as unavailable, never as a missing account; a rejected
+credential is a configuration fault.
 
 ## Run locally
 

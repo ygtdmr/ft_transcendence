@@ -22,6 +22,9 @@ type Config struct {
 	Port         string
 	InternalPort string
 	DatabaseURL  string `json:"-"`
+	// AvatarBaseURL is the public HTTPS origin prefixed to avatar paths, or
+	// empty for root-relative avatar URLs.
+	AvatarBaseURL string
 	// CallerCredentials maps each private caller to its accepted service
 	// credentials, read from mounted secret files.
 	CallerCredentials map[string][]string `json:"-"`
@@ -41,7 +44,7 @@ type Config struct {
 // Errors:
 //
 //   - Missing settings: DATABASE_URL was not supplied.
-//   - Malformed values: PORT, DATABASE_URL or MIGRATE_ON_START could not be parsed.
+//   - Malformed values: PORT, DATABASE_URL, AVATAR_BASE_URL or MIGRATE_ON_START could not be parsed.
 //   - Logging settings: APP_ENV, LOG_FORMAT or LOG_LEVEL has an unsupported value.
 //   - Invalid bounds: PORT or INTERNAL_PORT is outside the valid TCP range, or both are equal.
 //   - Credentials: a configured credential file is unreadable, too short, or
@@ -53,6 +56,7 @@ func Load() (Config, error) {
 		LogLevel:       strings.TrimSpace(os.Getenv("LOG_LEVEL")),
 		Port:           strings.TrimSpace(os.Getenv("PORT")),
 		InternalPort:   strings.TrimSpace(os.Getenv("INTERNAL_PORT")),
+		AvatarBaseURL:  strings.TrimRight(strings.TrimSpace(os.Getenv("AVATAR_BASE_URL")), "/"),
 		DatabaseURL:    strings.TrimSpace(os.Getenv("DATABASE_URL")),
 		MigrateOnStart: true,
 	}
@@ -122,6 +126,13 @@ func (cfg Config) validate() error {
 	}
 	if cfg.Port == cfg.InternalPort {
 		return errors.New("INTERNAL_PORT must differ from PORT")
+	}
+
+	if cfg.AvatarBaseURL != "" {
+		base, err := url.Parse(cfg.AvatarBaseURL)
+		if err != nil || base.Scheme != "https" || base.Host == "" || base.Path != "" || base.RawQuery != "" || base.Fragment != "" {
+			return errors.New("AVATAR_BASE_URL must be an https:// origin without a path")
+		}
 	}
 
 	if cfg.DatabaseURL == "" {

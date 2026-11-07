@@ -57,7 +57,10 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 	}
 	auth := serviceauth.New(cfg.CallerCredentials, serviceauth.DefaultMatrix())
 	profileService := service.NewProfile(userpostgres.NewProfile(pool))
-	internal := server.NewInternal(cfg.InternalPort, logger, controller.NewInternalProvisioning(profileService, auth))
+	profileReads := service.NewProfileRead(userpostgres.NewProfile(pool), service.AvatarURLs{Base: cfg.AvatarBaseURL})
+	internal := server.NewInternal(cfg.InternalPort, logger,
+		controller.NewInternalProvisioning(profileService, auth),
+		controller.NewInternalProfile(profileReads, auth))
 
 	return []*http.Server{server.New(cfg.Port, healthController, logger), internal}, pool.Close, nil
 }

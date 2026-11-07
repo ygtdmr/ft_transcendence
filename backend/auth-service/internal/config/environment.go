@@ -34,6 +34,10 @@ type Config struct {
 	// UserServiceCredential is Auth's own credential for User Service.
 	UserServiceCredential string `json:"-"`
 	UserInternalTimeout   time.Duration
+	// Google sign-in client settings; empty when Google sign-in is disabled.
+	GoogleClientID     string
+	GoogleClientSecret string `json:"-"`
+	PublicBaseURL      string
 }
 
 // Load reads and validates application settings from the process environment.
@@ -83,6 +87,9 @@ func Load() (Config, error) {
 	}
 	cfg.CallerCredentials = credentials
 	if err := cfg.loadUserService(); err != nil {
+		return Config{}, err
+	}
+	if err := cfg.loadGoogleOAuth(); err != nil {
 		return Config{}, err
 	}
 

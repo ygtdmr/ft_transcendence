@@ -21,7 +21,7 @@ const validDatabaseURL = "postgres://user:secret@localhost:5432/user?sslmode=dis
 func setEnvironment(t *testing.T, values map[string]string) {
 	t.Helper()
 	for _, name := range []string{"APP_ENV", "LOG_FORMAT", "LOG_LEVEL", "PORT", "INTERNAL_PORT", "DATABASE_URL", "MIGRATE_ON_START",
-		"AUTH_SERVICE_CREDENTIAL_FILE", "AUTH_SERVICE_PREVIOUS_CREDENTIAL_FILE"} {
+		"AUTH_SERVICE_CREDENTIAL_FILE", "AUTH_SERVICE_PREVIOUS_CREDENTIAL_FILE", "AVATAR_BASE_URL"} {
 		t.Setenv(name, values[name])
 	}
 }
@@ -135,6 +135,8 @@ func TestLoadRejectsInvalidSettings(t *testing.T) {
 		{"url without host", map[string]string{"DATABASE_URL": "postgres:///db"}, "postgres://"},
 		{"port not a number", map[string]string{"DATABASE_URL": validDatabaseURL, "PORT": "http"}, "PORT"},
 		{"port too large", map[string]string{"DATABASE_URL": validDatabaseURL, "PORT": "70000"}, "PORT"},
+		{"avatar base over http", map[string]string{"DATABASE_URL": validDatabaseURL, "AVATAR_BASE_URL": "http://example.com"}, "AVATAR_BASE_URL"},
+		{"avatar base with path", map[string]string{"DATABASE_URL": validDatabaseURL, "AVATAR_BASE_URL": "https://example.com/app"}, "AVATAR_BASE_URL"},
 		{"internal port not a number", map[string]string{"DATABASE_URL": validDatabaseURL, "INTERNAL_PORT": "x"}, "INTERNAL_PORT"},
 		{"internal port equals port", map[string]string{"DATABASE_URL": validDatabaseURL, "PORT": "9000", "INTERNAL_PORT": "9000"}, "INTERNAL_PORT"},
 		{"missing credential file", map[string]string{"DATABASE_URL": validDatabaseURL, "AUTH_SERVICE_CREDENTIAL_FILE": "/nonexistent/secret"}, "AUTH_SERVICE_CREDENTIAL_FILE"},
@@ -202,5 +204,14 @@ func TestLoadCallerCredentials(t *testing.T) {
 	}
 	if strings.Contains(err.Error(), "too-short-secret") || strings.Contains(err.Error(), short) {
 		t.Fatalf("error %q leaks the credential or its path", err)
+	}
+}
+
+// TestLoadAvatarBaseURL checks that a trailing slash is removed from AVATAR_BASE_URL.
+func TestLoadAvatarBaseURL(t *testing.T) {
+	setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL, "AVATAR_BASE_URL": "https://example.com/"})
+	cfg, err := config.Load()
+	if err != nil || cfg.AvatarBaseURL != "https://example.com" {
+		t.Fatalf("AvatarBaseURL = %q, %v", cfg.AvatarBaseURL, err)
 	}
 }

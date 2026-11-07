@@ -21,6 +21,7 @@ import (
 const (
 	ScopeProfileProvision = "profile.provision"
 	ScopeProvisioningRead = "provisioning.read"
+	ScopeProfileRead      = "profile.read"
 )
 
 // Matrix is the authorization matrix: the scopes each caller may use on this receiver.
@@ -29,7 +30,7 @@ type Matrix map[string][]string
 // DefaultMatrix returns the receiver's authorization matrix from the private contract.
 func DefaultMatrix() Matrix {
 	return Matrix{
-		"auth-service": {ScopeProfileProvision, ScopeProvisioningRead},
+		"auth-service": {ScopeProfileProvision, ScopeProvisioningRead, ScopeProfileRead},
 	}
 }
 

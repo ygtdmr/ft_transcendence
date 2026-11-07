@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -250,4 +251,40 @@ func classify(err error) error {
 	}
 
 	return err
+}
+
+var _ service.ProfileReader = (*ProfileRepository)(nil)
+
+// StoredProfile reads the current profile row and the user's deletion state together.
+//
+// Errors:
+//
+//   - *service.UserDeletedError: account deletion is recorded for userID.
+//   - service.ErrUserNotFound: no profile exists for userID.
+//   - service.ErrUnavailable or other database errors.
+func (r *ProfileRepository) StoredProfile(ctx context.Context, userID int64) (service.StoredProfile, error) {
+	var deleted bool
+	var id *int64
+	var username, kind, ref *string
+	var createdAt *time.Time
+	err := r.pool.QueryRow(ctx, `
+		SELECT EXISTS (SELECT 1 FROM deletion_operations WHERE user_id = $1),
+		       p.user_id, p.username, p.avatar_kind, p.avatar_ref, p.created_at
+		FROM (SELECT 1) AS one LEFT JOIN profiles p ON p.user_id = $1`, userID).
+		Scan(&deleted, &id, &username, &kind, &ref, &createdAt)
+	if err != nil {
+		return service.StoredProfile{}, classify(err)
+	}
+	if deleted {
+		return service.StoredProfile{}, &service.UserDeletedError{UserID: userID}
+	}
+	if id == nil {
+		return service.StoredProfile{}, service.ErrUserNotFound
+	}
+	profile := service.StoredProfile{UserID: *id, Username: *username, AvatarKind: *kind, CreatedAt: createdAt.UTC()}
+	if ref != nil {
+		profile.AvatarRef = *ref
+	}
+
+	return profile, nil
 }
