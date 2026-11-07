@@ -1,0 +1,153 @@
+info:
+  name: Complete account deletion
+  type: http
+  seq: 2
+  tags: [internal, account, deletion]
+http:
+  method: PUT
+  url: "{{authInternalUrl}}/internal/v1/account-deletions/3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53/completion"
+  headers:
+    - name: Authorization
+      value: "Bearer {{userToAuthServiceCredential}}"
+    - name: Accept
+      value: application/json
+docs: |-
+  # Complete account deletion
+
+  Auth removes the account and every Auth-owned credential for a begun deletion operation, or returns the stored receipt for a retry. Caller: `user-service` only, scope `account.deletion.complete`. The coordinator calls it only after every other participant has confirmed its cleanup; the call itself is that confirmation. See the folder documentation for lifecycle and retry rules.
+
+  ## Request parameters
+
+  | Parameter | Location | Required | Type | Allowed values | Nullable | Description | Example |
+  | --- | --- | ---: | --- | --- | ---: | --- | --- |
+  | `operation_id` | path | yes | string | UUID; normalized to lowercase | no | Deletion operation recorded by Begin | `3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53` |
+  | `Authorization` | header | yes | string | `Bearer` + User-to-Auth credential | no | Service credential | local secret |
+
+  The request has no body. Any body returns `400 VALIDATION_ERROR`.
+
+  ## Auth decisions, in order
+
+  | Condition | Result |
+  | --- | --- |
+  | No deletion operation exists for `operation_id` | `404 DELETION_NOT_FOUND` |
+  | The operation is `COMPLETED` | `200` with the stored receipt |
+  | The operation is `BEGUN` | Delete the account, password hash, refresh-token records and Google link, and mark the operation `COMPLETED`, in one transaction; `200` with the receipt |
+
+  Complete before Begin is refused, so an out-of-order call never deletes an account that was not blocked first. Concurrent identical requests complete the operation once.
+
+  ## Responses
+
+  - `200`: the operation is `COMPLETED`, by this request or an earlier one. Body: receipt.
+
+  ## Errors
+
+  | Status | Code | Condition | `details` |
+  | --- | --- | --- | --- |
+  | `400` | `VALIDATION_ERROR` | A request body is present | `{ "field": "body" }` |
+  | `401` | `SERVICE_UNAUTHENTICATED` | Missing or unknown service credential | `{}` |
+  | `403` | `SERVICE_FORBIDDEN` | Caller lacks `account.deletion.complete` | `{}` |
+  | `404` | `DELETION_NOT_FOUND` | Begin has not recorded this `operation_id` | `{ "operation_id": string }` |
+  | `422` | `VALIDATION_ERROR` | `operation_id` is not a UUID | `{ "field": "operation_id" }` |
+  | `500` | `INTERNAL_ERROR` | Unexpected failure; nothing was written | `{}` |
+  | `503` | `SERVICE_UNAVAILABLE` | Database unavailable; nothing was written | `{}` |
+
+  ## State changes and events
+
+  The first successful call commits the account removal and the `COMPLETED` state in one PostgreSQL transaction. The email and the Google account can then register again; the `user_id` is never reassigned. A retry writes nothing.
+examples:
+  - name: Success - completed
+    request: {url: "{{authInternalUrl}}/internal/v1/account-deletions/3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53/completion", method: PUT, headers: [{name: Authorization, value: "Bearer {{userToAuthServiceCredential}}", enabled: true}], params: [], body: {mode: none}}
+    response:
+      status: 200
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "data": {
+              "operation_id": "3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53",
+              "user_id": 42,
+              "state": "COMPLETED",
+              "begun_at": "2026-11-07T14:02:11.518204Z",
+              "completed_at": "2026-11-07T14:02:13.090417Z"
+            }
+          }
+  - name: Error - Deletion not begun
+    request: {url: "{{authInternalUrl}}/internal/v1/account-deletions/a7c40e19-6b2d-4f3a-8e95-1d0b7c6f2a48/completion", method: PUT, headers: [{name: Authorization, value: "Bearer {{userToAuthServiceCredential}}", enabled: true}], params: [], body: {mode: none}}
+    response:
+      status: 404
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "DELETION_NOT_FOUND",
+              "message": "No deletion operation has begun with this ID.",
+              "details": {
+                "operation_id": "a7c40e19-6b2d-4f3a-8e95-1d0b7c6f2a48"
+              }
+            }
+          }
+  - name: Error - Invalid operation_id
+    request: {url: "{{authInternalUrl}}/internal/v1/account-deletions/not-a-uuid/completion", method: PUT, headers: [{name: Authorization, value: "Bearer {{userToAuthServiceCredential}}", enabled: true}], params: [], body: {mode: none}}
+    response:
+      status: 422
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "VALIDATION_ERROR",
+              "message": "operation_id must be a UUID.",
+              "details": {
+                "field": "operation_id"
+              }
+            }
+          }
+  - name: Error - Missing service credential
+    request: {url: "{{authInternalUrl}}/internal/v1/account-deletions/3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53/completion", method: PUT, headers: [], params: [], body: {mode: none}}
+    response:
+      status: 401
+      headers: [{name: Content-Type, value: application/json}, {name: WWW-Authenticate, value: Bearer}]
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "SERVICE_UNAUTHENTICATED",
+              "message": "Service credentials are missing or invalid.",
+              "details": {}
+            }
+          }
+  - name: Error - Caller not permitted
+    request: {url: "{{authInternalUrl}}/internal/v1/account-deletions/3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53/completion", method: PUT, headers: [{name: Authorization, value: "Bearer <game-gateway-to-auth credential>", enabled: true}], params: [], body: {mode: none}}
+    response:
+      status: 403
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "SERVICE_FORBIDDEN",
+              "message": "This service is not allowed to perform this operation.",
+              "details": {}
+            }
+          }
+  - name: Error - Database unavailable
+    request: {url: "{{authInternalUrl}}/internal/v1/account-deletions/3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53/completion", method: PUT, headers: [{name: Authorization, value: "Bearer {{userToAuthServiceCredential}}", enabled: true}], params: [], body: {mode: none}}
+    response:
+      status: 503
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "SERVICE_UNAVAILABLE",
+              "message": "The service is temporarily unavailable.",
+              "details": {}
+            }
+          }

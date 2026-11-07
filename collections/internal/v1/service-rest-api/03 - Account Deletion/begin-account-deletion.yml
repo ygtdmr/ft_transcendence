@@ -1,0 +1,286 @@
+info:
+  name: Begin account deletion
+  type: http
+  seq: 1
+  tags: [internal, account, deletion]
+http:
+  method: PUT
+  url: "{{authInternalUrl}}/internal/v1/account-deletions/3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53"
+  headers:
+    - name: Authorization
+      value: "Bearer {{userToAuthServiceCredential}}"
+    - name: Content-Type
+      value: application/json
+    - name: Accept
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "user_id": 42
+      }
+docs: |-
+  # Begin account deletion
+
+  Auth blocks new authentication for the account and revokes every session and refresh-token family with cause `ACCOUNT_DELETED`, or returns the stored receipt for a retry. Caller: `user-service` only, scope `account.deletion.begin`. See the folder documentation for operation identity, lifecycle and retry rules.
+
+  ## Request parameters
+
+  | Parameter | Location | Required | Type | Allowed values | Nullable | Description | Example |
+  | --- | --- | ---: | --- | --- | ---: | --- | --- |
+  | `operation_id` | path | yes | string | UUID; normalized to lowercase | no | Coordinator's durable deletion operation | `3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53` |
+  | `Authorization` | header | yes | string | `Bearer` + User-to-Auth credential | no | Service credential | local secret |
+  | `Content-Type` | header | yes | string | `application/json` | no | Request media type | `application/json` |
+  | `user_id` | body | yes | integer | positive | no | Account to delete | `42` |
+
+  The body is exactly one JSON object with `user_id`. Unknown or missing fields, malformed JSON and additional JSON values return `400 VALIDATION_ERROR`.
+
+  ## Auth decisions, in order
+
+  | Condition | Result |
+  | --- | --- |
+  | Same `operation_id`, same `user_id` | `200` with the stored receipt (`BEGUN` or `COMPLETED`) |
+  | Same `operation_id`, different `user_id` | `409 OPERATION_CONFLICT` |
+  | Another deletion operation exists for `user_id` | `409 DELETION_CONFLICT` |
+  | No account exists for `user_id` | `404 USER_NOT_FOUND` |
+  | Otherwise (account `ACTIVE` or `PROVISIONING`) | Record the operation, set the account to `DELETING` and revoke all sessions and refresh-token families in one transaction; `201` with the new receipt |
+
+  Concurrent identical requests produce exactly one operation. A login, refresh or Google sign-in that races with Begin either finishes before Begin commits, and its session is revoked by Begin, or is refused afterwards.
+
+  ## Responses
+
+  - `201`: this request began the deletion. Body: receipt with `state: "BEGUN"`.
+  - `200`: retry of an existing operation. Body: the stored receipt, which is `COMPLETED` if Complete has already run.
+
+  ## Errors
+
+  | Status | Code | Condition | `details` |
+  | --- | --- | --- | --- |
+  | `400` | `VALIDATION_ERROR` | Malformed body or unknown/missing fields | `{ "field": "body" }` |
+  | `401` | `SERVICE_UNAUTHENTICATED` | Missing or unknown service credential | `{}` |
+  | `403` | `SERVICE_FORBIDDEN` | Caller lacks `account.deletion.begin` | `{}` |
+  | `404` | `USER_NOT_FOUND` | No account and no deletion record exist for `user_id` | `{ "user_id": integer }` |
+  | `409` | `OPERATION_CONFLICT` | `operation_id` exists for a different `user_id` | `{ "operation_id": string }` |
+  | `409` | `DELETION_CONFLICT` | Another deletion operation already exists for `user_id` | `{ "user_id": integer }` |
+  | `422` | `VALIDATION_ERROR` | Invalid `operation_id` or `user_id` value | `{ "field": string }` |
+  | `500` | `INTERNAL_ERROR` | Unexpected failure; nothing was written | `{}` |
+  | `503` | `SERVICE_UNAVAILABLE` | Database unavailable; nothing was written | `{}` |
+
+  ## State changes and events
+
+  A `201` commits the operation record, the `DELETING` status and every revocation in one PostgreSQL transaction, then produces session-revocation notifications with cause `ACCOUNT_DELETED`. Every other result writes nothing.
+examples:
+  - name: Success - began
+    request:
+      url: "{{authInternalUrl}}/internal/v1/account-deletions/3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53"
+      method: PUT
+      headers: [{name: Authorization, value: "Bearer {{userToAuthServiceCredential}}", enabled: true}, {name: Content-Type, value: application/json, enabled: true}]
+      params: []
+      body: {mode: json, json: '{"user_id":42}'}
+    response:
+      status: 201
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "data": {
+              "operation_id": "3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53",
+              "user_id": 42,
+              "state": "BEGUN",
+              "begun_at": "2026-11-07T14:02:11.518204Z",
+              "completed_at": null
+            }
+          }
+  - name: Success - retry after completion
+    request:
+      url: "{{authInternalUrl}}/internal/v1/account-deletions/3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53"
+      method: PUT
+      headers: [{name: Authorization, value: "Bearer {{userToAuthServiceCredential}}", enabled: true}, {name: Content-Type, value: application/json, enabled: true}]
+      params: []
+      body: {mode: json, json: '{"user_id":42}'}
+    response:
+      status: 200
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "data": {
+              "operation_id": "3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53",
+              "user_id": 42,
+              "state": "COMPLETED",
+              "begun_at": "2026-11-07T14:02:11.518204Z",
+              "completed_at": "2026-11-07T14:02:13.090417Z"
+            }
+          }
+  - name: Error - Operation belongs to another user
+    request:
+      url: "{{authInternalUrl}}/internal/v1/account-deletions/3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53"
+      method: PUT
+      headers: [{name: Authorization, value: "Bearer {{userToAuthServiceCredential}}", enabled: true}, {name: Content-Type, value: application/json, enabled: true}]
+      params: []
+      body: {mode: json, json: '{"user_id":43}'}
+    response:
+      status: 409
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "OPERATION_CONFLICT",
+              "message": "This deletion operation already exists for another user.",
+              "details": {
+                "operation_id": "3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53"
+              }
+            }
+          }
+  - name: Error - Deletion already exists for user
+    request:
+      url: "{{authInternalUrl}}/internal/v1/account-deletions/a7c40e19-6b2d-4f3a-8e95-1d0b7c6f2a48"
+      method: PUT
+      headers: [{name: Authorization, value: "Bearer {{userToAuthServiceCredential}}", enabled: true}, {name: Content-Type, value: application/json, enabled: true}]
+      params: []
+      body: {mode: json, json: '{"user_id":42}'}
+    response:
+      status: 409
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "DELETION_CONFLICT",
+              "message": "Another deletion operation already exists for this user.",
+              "details": {
+                "user_id": 42
+              }
+            }
+          }
+  - name: Error - User not found
+    request:
+      url: "{{authInternalUrl}}/internal/v1/account-deletions/a7c40e19-6b2d-4f3a-8e95-1d0b7c6f2a48"
+      method: PUT
+      headers: [{name: Authorization, value: "Bearer {{userToAuthServiceCredential}}", enabled: true}, {name: Content-Type, value: application/json, enabled: true}]
+      params: []
+      body: {mode: json, json: '{"user_id":9999}'}
+    response:
+      status: 404
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "USER_NOT_FOUND",
+              "message": "No account exists for this user.",
+              "details": {
+                "user_id": 9999
+              }
+            }
+          }
+  - name: Error - Unknown body field
+    request:
+      url: "{{authInternalUrl}}/internal/v1/account-deletions/3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53"
+      method: PUT
+      headers: [{name: Authorization, value: "Bearer {{userToAuthServiceCredential}}", enabled: true}, {name: Content-Type, value: application/json, enabled: true}]
+      params: []
+      body: {mode: json, json: '{"user_id":42,"email":"player.one@example.com"}'}
+    response:
+      status: 400
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "VALIDATION_ERROR",
+              "message": "Body must be one JSON object with user_id.",
+              "details": {
+                "field": "body"
+              }
+            }
+          }
+  - name: Error - Invalid operation_id
+    request:
+      url: "{{authInternalUrl}}/internal/v1/account-deletions/not-a-uuid"
+      method: PUT
+      headers: [{name: Authorization, value: "Bearer {{userToAuthServiceCredential}}", enabled: true}, {name: Content-Type, value: application/json, enabled: true}]
+      params: []
+      body: {mode: json, json: '{"user_id":42}'}
+    response:
+      status: 422
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "VALIDATION_ERROR",
+              "message": "operation_id must be a UUID.",
+              "details": {
+                "field": "operation_id"
+              }
+            }
+          }
+  - name: Error - Missing service credential
+    request:
+      url: "{{authInternalUrl}}/internal/v1/account-deletions/3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53"
+      method: PUT
+      headers: [{name: Content-Type, value: application/json, enabled: true}]
+      params: []
+      body: {mode: json, json: '{"user_id":42}'}
+    response:
+      status: 401
+      headers: [{name: Content-Type, value: application/json}, {name: WWW-Authenticate, value: Bearer}]
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "SERVICE_UNAUTHENTICATED",
+              "message": "Service credentials are missing or invalid.",
+              "details": {}
+            }
+          }
+  - name: Error - Caller not permitted
+    request:
+      url: "{{authInternalUrl}}/internal/v1/account-deletions/3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53"
+      method: PUT
+      headers: [{name: Authorization, value: "Bearer <game-gateway-to-auth credential>", enabled: true}, {name: Content-Type, value: application/json, enabled: true}]
+      params: []
+      body: {mode: json, json: '{"user_id":42}'}
+    response:
+      status: 403
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "SERVICE_FORBIDDEN",
+              "message": "This service is not allowed to perform this operation.",
+              "details": {}
+            }
+          }
+  - name: Error - Database unavailable
+    request:
+      url: "{{authInternalUrl}}/internal/v1/account-deletions/3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53"
+      method: PUT
+      headers: [{name: Authorization, value: "Bearer {{userToAuthServiceCredential}}", enabled: true}, {name: Content-Type, value: application/json, enabled: true}]
+      params: []
+      body: {mode: json, json: '{"user_id":42}'}
+    response:
+      status: 503
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "SERVICE_UNAVAILABLE",
+              "message": "The service is temporarily unavailable.",
+              "details": {}
+            }
+          }
