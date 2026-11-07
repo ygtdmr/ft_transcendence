@@ -83,6 +83,9 @@ docs: |-
   | `409` | `EMAIL_TAKEN` | case-insensitive email already exists | none |
   | `409` | `USERNAME_TAKEN` | case-insensitive username already exists | none |
   | `429` | `RATE_LIMITED` | registration limit exceeded | none |
+  | `503` | `SERVICE_UNAVAILABLE` | profile provisioning could not be confirmed, for example because User Service is unreachable | the account is kept pending without a session; no cookie is set |
+
+  After `503 SERVICE_UNAVAILABLE`, the client may repeat the same registration (same email, username and password) or log in with the same email and password. Either one resumes the original provisioning operation and succeeds once the profile is confirmed; a repeated registration with a different username or password answers `409 EMAIL_TAKEN`. If User Service reports the username as taken or invalid, the pending account is removed and the registration answers `409 USERNAME_TAKEN` or `422 INVALID_USERNAME`.
 
   ## Notes/invariants
 
@@ -237,5 +240,32 @@ examples:
               "details": {
                 "field": "username"
               }
+            }
+          }
+  - name: Error - Profile provisioning unavailable
+    request:
+      url: "{{baseUrl}}/api/{{apiVersion}}/auth/register"
+      method: POST
+      headers: [{name: Content-Type, value: application/json, enabled: true}]
+      params: []
+      body:
+        mode: json
+        json: |-
+          {
+            "email": "player.one@example.com",
+            "username": "player_one",
+            "password": "Correct-Horse-1"
+          }
+    response:
+      status: 503
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "SERVICE_UNAVAILABLE",
+              "message": "The service is temporarily unavailable. Try again later.",
+              "details": {}
             }
           }

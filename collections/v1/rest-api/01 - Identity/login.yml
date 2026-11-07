@@ -75,6 +75,9 @@ docs: |-
   | `400` | `VALIDATION_ERROR` | malformed JSON or unexpected structure | none |
   | `401` | `INVALID_CREDENTIALS` | email not found, or password does not match | none |
   | `429` | `RATE_LIMITED` | login attempt limit exceeded | none |
+  | `503` | `SERVICE_UNAVAILABLE` | the account's profile provisioning is still pending and could not be confirmed now | none; the account stays pending and no cookie is set |
+
+  An account whose registration ended with `503 SERVICE_UNAVAILABLE` is still pending. A login with the correct password resumes its original provisioning operation and issues the session once the profile is confirmed. An account whose deletion has begun answers `401 INVALID_CREDENTIALS`.
 
   ## Notes/invariants
 
@@ -161,6 +164,32 @@ examples:
             "error": {
               "code": "INVALID_CREDENTIALS",
               "message": "Email or password is incorrect.",
+              "details": {}
+            }
+          }
+  - name: Error - Profile provisioning unavailable
+    request:
+      url: "{{baseUrl}}/api/{{apiVersion}}/auth/login"
+      method: POST
+      headers: [{name: Content-Type, value: application/json, enabled: true}]
+      params: []
+      body:
+        mode: json
+        json: |-
+          {
+            "email": "player.one@example.com",
+            "password": "Correct-Horse-1"
+          }
+    response:
+      status: 503
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "SERVICE_UNAVAILABLE",
+              "message": "The service is temporarily unavailable. Try again later.",
               "details": {}
             }
           }
