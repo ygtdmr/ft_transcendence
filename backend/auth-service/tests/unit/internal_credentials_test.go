@@ -88,3 +88,56 @@ func TestInternalListenerConfig(t *testing.T) {
 		})
 	}
 }
+
+// TestUserServiceConfig checks the outbound User Service provisioning settings.
+//
+// Expected output:
+//
+//   - Production without the settings fails; development without them is allowed.
+//   - Valid settings load the URL, credential and default 5s timeout.
+//   - An outbound credential equal to an inbound one is rejected.
+func TestUserServiceConfig(t *testing.T) {
+	base := map[string]string{
+		"APP_ENV": "development", "PORT": "", "INTERNAL_PORT": "", "DATABASE_URL": "postgres://test@localhost/test",
+		"JWT_SECRET": testutil.TestSigningKey, "ACCESS_TOKEN_TTL": "", "REFRESH_TOKEN_TTL": "",
+		"LOG_FORMAT": "", "LOG_LEVEL": "", "USER_INTERNAL_URL": "", "USER_SERVICE_OUTBOUND_CREDENTIAL_FILE": "",
+		"USER_INTERNAL_TIMEOUT": "",
+	}
+	for _, caller := range []string{"WEB_BFF", "GAME_GATEWAY", "CHAT_GATEWAY", "USER_SERVICE"} {
+		base[caller+"_CREDENTIAL_FILE"], base[caller+"_PREVIOUS_CREDENTIAL_FILE"] = "", ""
+	}
+	set := func(values map[string]string) {
+		for key, value := range base {
+			t.Setenv(key, value)
+		}
+		for key, value := range values {
+			t.Setenv(key, value)
+		}
+	}
+
+	set(nil)
+	if cfg, err := config.Load(); err != nil || cfg.UserInternalURL != "" {
+		t.Fatalf("development without User Service = %q, %v", cfg.UserInternalURL, err)
+	}
+	set(map[string]string{"APP_ENV": "production"})
+	if _, err := config.Load(); err == nil {
+		t.Fatal("production without User Service settings accepted")
+	}
+
+	outbound := strings.Repeat("o", 40)
+	set(map[string]string{"USER_INTERNAL_URL": "http://user-service:8090/", "USER_SERVICE_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, outbound)})
+	cfg, err := config.Load()
+	if err != nil || cfg.UserInternalURL != "http://user-service:8090" || cfg.UserServiceCredential != outbound ||
+		cfg.UserInternalTimeout.String() != "5s" {
+		t.Fatalf("User Service settings = %q %v, %v", cfg.UserInternalURL, cfg.UserInternalTimeout, err)
+	}
+
+	set(map[string]string{
+		"USER_INTERNAL_URL":                     "http://user-service:8090",
+		"USER_SERVICE_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, outbound),
+		"USER_SERVICE_CREDENTIAL_FILE":          writeSecret(t, outbound),
+	})
+	if _, err := config.Load(); err == nil || strings.Contains(err.Error(), outbound) {
+		t.Fatalf("reused credential error = %v", err)
+	}
+}

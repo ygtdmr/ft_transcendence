@@ -1,6 +1,7 @@
 package unit_test
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -43,6 +44,7 @@ func TestAuthConfig(t *testing.T) {
 		"GAME_GATEWAY_CREDENTIAL_FILE": "", "GAME_GATEWAY_PREVIOUS_CREDENTIAL_FILE": "",
 		"CHAT_GATEWAY_CREDENTIAL_FILE": "", "CHAT_GATEWAY_PREVIOUS_CREDENTIAL_FILE": "",
 		"USER_SERVICE_CREDENTIAL_FILE": "", "USER_SERVICE_PREVIOUS_CREDENTIAL_FILE": "",
+		"USER_INTERNAL_URL": "", "USER_SERVICE_OUTBOUND_CREDENTIAL_FILE": "", "USER_INTERNAL_TIMEOUT": "",
 	}
 
 	for key, value := range defaults {
@@ -58,6 +60,8 @@ func TestAuthConfig(t *testing.T) {
 		{"REFRESH_TOKEN_TTL", "30days"}, {"REFRESH_TOKEN_TTL", "5m"},
 		{"INTERNAL_PORT", "x"}, {"INTERNAL_PORT", "8080"},
 		{"USER_SERVICE_CREDENTIAL_FILE", "/nonexistent/credential"},
+		{"USER_INTERNAL_URL", "http://user-service:8090"}, {"USER_SERVICE_OUTBOUND_CREDENTIAL_FILE", "/nonexistent/credential"},
+		{"USER_INTERNAL_TIMEOUT", "-1s"},
 	} {
 		t.Run(tt.key+"="+tt.value, func(t *testing.T) {
 			t.Setenv(tt.key, tt.value)
@@ -76,6 +80,11 @@ func checkLoggingEnvironments(t *testing.T) {
 	} {
 		t.Run(tt.env, func(t *testing.T) {
 			t.Setenv("APP_ENV", tt.env)
+			if tt.env == "production" {
+				// Production requires User Service provisioning settings.
+				t.Setenv("USER_INTERNAL_URL", "http://user-service:8090")
+				t.Setenv("USER_SERVICE_OUTBOUND_CREDENTIAL_FILE", writeSecret(t, strings.Repeat("o", 40)))
+			}
 			cfg, err := config.Load()
 			if err != nil || cfg.LogFormat != tt.format || cfg.LogLevel != tt.level {
 				t.Fatalf("environment defaults: %+v, %v", cfg, err)

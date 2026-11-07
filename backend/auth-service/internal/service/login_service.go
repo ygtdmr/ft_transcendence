@@ -33,6 +33,22 @@ func (s *AuthService) Login(ctx context.Context, input LoginInput) (AuthResult, 
 	if err := compareLoginPassword(user, input.Password); err != nil {
 		return AuthResult{}, err
 	}
+	switch user.Status {
+	case model.AccountActive:
+	case model.AccountProvisioning:
+		// A registration interrupted by an outage continues its stored operation.
+		user, err = s.resumeProvisioning(ctx, user)
+		if errors.Is(err, ErrUsernameTaken) || errors.Is(err, ErrInvalidUsername) {
+			// The provisional account was discarded; it no longer exists.
+			return AuthResult{}, ErrInvalidCredentials
+		}
+		if err != nil {
+			return AuthResult{}, err
+		}
+	default:
+		// Accounts being deleted never receive a new session.
+		return AuthResult{}, ErrInvalidCredentials
+	}
 	return s.createLoginSession(ctx, user)
 }
 

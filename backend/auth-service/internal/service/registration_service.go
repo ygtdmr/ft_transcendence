@@ -46,6 +46,7 @@ type AuthService struct {
 	verifier    AccessVerifier
 	lifecycle   SessionLifecycle
 	revocations RevocationRepository
+	provisioner ProfileProvisioner
 }
 
 // NewAuth returns an auth service using the supplied transaction and token providers.
@@ -97,6 +98,10 @@ func (s *AuthService) Register(ctx context.Context, input RegisterInput) (AuthRe
 		return AuthResult{}, fmt.Errorf("hash password: %w", err)
 	}
 
+	if s.provisioningEnabled() {
+		return s.registerWithProvisioning(ctx, input, string(hash))
+	}
+
 	var result AuthResult
 	err = s.repository.WithTransaction(ctx, func(tx AuthTx) error {
 		var err error
@@ -111,7 +116,6 @@ func (s *AuthService) Register(ctx context.Context, input RegisterInput) (AuthRe
 	return result, nil
 }
 
-// registerAccount creates all registration records in the caller's transaction.
 func (s *AuthService) registerAccount(ctx context.Context, tx AuthTx, account model.User) (AuthResult, error) {
 	user, err := tx.CreateUser(ctx, account)
 	if err != nil {

@@ -160,3 +160,8 @@ func newUUID() (string, error) {
 
 	return fmt.Sprintf("%x-%x-%x-%x-%x", id[:4], id[4:6], id[6:8], id[8:10], id[10:]), nil
 }
+
+// NewUUID returns a random version 4 UUID in lowercase text form.
+func NewUUID() (string, error) {
+	return newUUID()
+}
