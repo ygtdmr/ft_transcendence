@@ -36,3 +36,25 @@ func TestPenaltyUnknownRole(t *testing.T) {
 		t.Fatalf("err = %v, want ErrInvalidRole", err)
 	}
 }
+
+func TestPenaltyConfigFromEnv(t *testing.T) {
+	env := map[string]string{
+		EnvPenaltyBase:                "5",
+		EnvPenaltySpymasterMultiplier: "3",
+		EnvPenaltyOperativeMultiplier: "2",
+	}
+	cfg, err := PenaltyConfigFromEnv(func(k string) string { return env[k] })
+	if err != nil || cfg.Base != 5 || cfg.SpymasterMultiplier != 3 || cfg.OperativeMultiplier != 2 {
+		t.Fatalf("cfg = %+v, err = %v", cfg, err)
+	}
+
+	delete(env, EnvPenaltyBase)
+	if _, err := PenaltyConfigFromEnv(func(k string) string { return env[k] }); !errors.Is(err, ErrPenaltyNotConfigured) {
+		t.Fatalf("err = %v, want ErrPenaltyNotConfigured", err)
+	}
+
+	env[EnvPenaltyBase] = "abc"
+	if _, err := PenaltyConfigFromEnv(func(k string) string { return env[k] }); err == nil {
+		t.Fatal("expected parse error")
+	}
+}
