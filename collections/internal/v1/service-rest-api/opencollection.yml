@@ -61,9 +61,10 @@ docs:
     | `user-service` | `channel-service`, `game-session` | `friend.verdict` | Active-friend verdict | `GET /internal/v1/friendship-verdicts?actor_user_id=&target_user_id=` |
     | `auth-service` | `game-gateway`, `chat-gateway`, `web-bff`, protected services | `session.validate` | Validate session | `GET /internal/v1/sessions/current` |
     | `auth-service` | `user-service` | `account.metadata.read` | Read account metadata | `GET /internal/v1/accounts/{user_id}` |
-    | `auth-service` | `user-service` | `account.deletion.begin`, `account.deletion.complete` | Begin/complete account deletion | not yet specified |
+    | `auth-service` | `user-service` | `account.deletion.begin` | Begin account deletion | `PUT /internal/v1/account-deletions/{operation_id}` |
+    | `auth-service` | `user-service` | `account.deletion.complete` | Complete account deletion | `PUT /internal/v1/account-deletions/{operation_id}/completion` |
 
-    Operations without a route keep the semantics in `workspace.yml`, Auth and User Service Boundary. Account deletion routes are defined together with the account-deletion coordinator and its participants' cleanup contracts. The exact callers of `profile.read`, `session.validate` and the other services' private operations (Game Session membership and lifecycle, Channel Service verdicts, gateway socket registries, Stats, Board Generator and deletion cleanup) are defined with their owning services before those callers are implemented.
+    Operations without a route keep the semantics in `workspace.yml`, Auth and User Service Boundary. The cleanup contracts of the other account-deletion participants are defined with their owning services. The exact callers of `profile.read`, `session.validate` and the other services' private operations (Game Session membership and lifecycle, Channel Service verdicts, gateway socket registries, Stats, Board Generator and deletion cleanup) are defined with their owning services before those callers are implemented.
 
     ## Response envelopes and common errors
 

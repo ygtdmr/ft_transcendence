@@ -1,0 +1,57 @@
+info:
+  name: 03 - Account Deletion
+  type: folder
+  seq: 3
+docs: |-
+  # Account deletion
+
+  Auth Service owns these operations. Only User Service's account-deletion coordinator may call them (scopes `account.deletion.begin` and `account.deletion.complete`). They are Auth's part of `DELETE /api/v1/users/me`; see `workspace.yml`, Account Deletion.
+
+  ## Operation identity
+
+  A deletion operation is identified by `operation_id`, a UUID chosen by User Service's coordinator. Auth normalizes it to lowercase. One operation belongs to exactly one `user_id`, and one `user_id` has at most one deletion operation.
+
+  ## Coordinator responsibilities
+
+  1. Before the first call, User Service durably stores `operation_id` and `user_id` in its own coordination record.
+  2. Every retry, including after a coordinator restart, sends the same `operation_id`. The coordinator never generates a new `operation_id` for a user whose deletion it has already begun.
+  3. The coordinator calls Begin before any other participant's cleanup, and calls Complete only after every other participant has confirmed its cleanup.
+  4. The coordinator does not need the initiating session. Both operations are authorized by the service credential alone.
+
+  ## Lifecycle
+
+  | Step | Auth state change |
+  | --- | --- |
+  | Begin | Records the operation, sets the account to `DELETING` and revokes every session and refresh-token family with cause `ACCOUNT_DELETED`, in one PostgreSQL transaction |
+  | Complete | Deletes the account, its password hash, refresh-token records and Google link, and marks the operation `COMPLETED`, in one PostgreSQL transaction |
+
+  Between Begin and Complete, Auth issues no new credentials for the account: password login answers `401 INVALID_CREDENTIALS`, refresh answers `401 SESSION_EXPIRED`, Google sign-in redirects with an error, session validation answers `401 UNAUTHORIZED`, and pending profile provisioning is never resumed. Account metadata still returns the account with `status: "DELETING"`.
+
+  After Complete, Auth holds no email, username, password, refresh record or Google subject for the user, so the email and the Google account can register again. Account metadata returns `404 USER_NOT_FOUND`. Auth keeps only the deletion record (`operation_id`, `user_id`, state and timestamps) so that retries stay idempotent and the `user_id` is never assigned to a new account. Its retention period is not specified yet.
+
+  Revocation at Begin produces session-revocation notifications with cause `ACCOUNT_DELETED`, so gateways close the user's sockets with `4401`. Their delivery is specified with the gateway socket registries.
+
+  ## Receipt
+
+  Begin and Complete return the same receipt shape. It describes the stored operation, never the current account.
+
+  | Field | Type | Required | Nullable | Allowed values | Description |
+  | --- | --- | ---: | ---: | --- | --- |
+  | `data.operation_id` | string | yes | no | lowercase UUID | Deletion operation of record |
+  | `data.user_id` | integer | yes | no | positive | Account being deleted |
+  | `data.state` | string enum | yes | no | `BEGUN`, `COMPLETED` | Auth's progress for this operation |
+  | `data.begun_at` | string | yes | no | ISO 8601 UTC | When Begin committed |
+  | `data.completed_at` | string | yes | yes | ISO 8601 UTC | When Complete committed; `null` while `BEGUN` |
+
+  ## Retry rules for the coordinator
+
+  | Result | Retry the same request? | Coordinator action |
+  | --- | --- | --- |
+  | Begin `201` or `200` | no | Auth has blocked the account; continue with participant cleanup |
+  | Complete `200` with `state: "COMPLETED"` | no | Auth cleanup is done |
+  | Network error, timeout, `500 INTERNAL_ERROR`, `503 SERVICE_UNAVAILABLE` | yes | Outcome unknown; retry the identical request |
+  | Begin `404 USER_NOT_FOUND` | no | No Auth account exists and none was ever deleted for this `user_id`; stop and investigate |
+  | Begin `409 OPERATION_CONFLICT`, Begin `409 DELETION_CONFLICT`, Complete `404 DELETION_NOT_FOUND` | no | Coordinator defect; stop and investigate |
+  | `400`/`422 VALIDATION_ERROR`, `401 SERVICE_UNAUTHENTICATED`, `403 SERVICE_FORBIDDEN` | no | Caller or configuration fault; fail closed |
+
+  No retry interval or attempt limit is specified yet.
