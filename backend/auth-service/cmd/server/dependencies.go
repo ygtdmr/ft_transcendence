@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/client/googleclient"
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/client/userclient"
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/config"
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/controller"
@@ -70,6 +71,16 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 	google := service.NewGoogleOAuth(service.GoogleOAuthConfig{
 		ClientID: cfg.GoogleClientID, RedirectURI: cfg.GoogleRedirectURI(),
 	}, authRepository, sealer)
+	if cfg.GoogleClientID != "" {
+		identities, err := googleclient.New(googleclient.Config{
+			ClientID: cfg.GoogleClientID, ClientSecret: cfg.GoogleClientSecret, RedirectURI: cfg.GoogleRedirectURI(),
+		})
+		if err != nil {
+			pool.Close()
+			return nil, nil, err
+		}
+		google.EnableCallback(identities, authService)
+	}
 	authController := controller.NewAuth(authService, controller.WithGoogleOAuth(google, logger))
 	cleanup := startSessionRevocations(ctx, authService, pool.Close, logger)
 

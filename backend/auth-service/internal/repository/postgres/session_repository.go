@@ -18,7 +18,7 @@ var (
 // FindUserByEmail matches the unique case-insensitive email index.
 func (r *AuthRepository) FindUserByEmail(ctx context.Context, email string) (model.User, error) {
 	row := r.pool.QueryRow(ctx, `
-		SELECT id, email, username, password_hash, status, created_at, updated_at
+		SELECT id, email, username, COALESCE(password_hash, ''), status, created_at, updated_at
 		FROM users WHERE lower(email) = lower($1)`, email)
 	return scanUser(row)
 }
@@ -32,7 +32,7 @@ func (r *AuthRepository) FindUserByEmail(ctx context.Context, email string) (mod
 //   - Other database errors.
 func (r *AuthRepository) FindAccount(ctx context.Context, id int64) (model.User, error) {
 	row := r.pool.QueryRow(ctx, `
-		SELECT id, email, username, password_hash, status, created_at, updated_at
+		SELECT id, email, username, COALESCE(password_hash, ''), status, created_at, updated_at
 		FROM users WHERE id = $1`, id)
 	return scanUser(row)
 }
@@ -53,7 +53,7 @@ func (r *AuthRepository) FindSessionUser(ctx context.Context, id string) (model.
 	var user model.User
 	var session model.Session
 	err := r.pool.QueryRow(ctx, `
-		SELECT u.id, u.email, u.username, u.password_hash, u.status, u.created_at, u.updated_at,
+		SELECT u.id, u.email, u.username, COALESCE(u.password_hash, ''), u.status, u.created_at, u.updated_at,
 		       s.id::text, s.user_id, s.created_at, s.revoked_at
 		FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id = $1`, id).Scan(
 		&user.ID, &user.Email, &user.Username, &user.PasswordHash, &user.Status, &user.CreatedAt,

@@ -44,10 +44,12 @@ type GoogleOAuthConfig struct {
 
 // GoogleOAuth starts Google sign-in with a single-use state and PKCE.
 type GoogleOAuth struct {
-	config GoogleOAuthConfig
-	states OAuthStateStore
-	sealer *security.OAuthStateSealer
-	now    func() time.Time
+	config   GoogleOAuthConfig
+	states   OAuthStateStore
+	sealer   *security.OAuthStateSealer
+	now      func() time.Time
+	provider GoogleIdentityProvider
+	auth     *AuthService
 }
 
 // NewGoogleOAuth returns the Google sign-in starter.
