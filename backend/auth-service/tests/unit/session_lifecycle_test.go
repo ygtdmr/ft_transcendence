@@ -41,7 +41,7 @@ func (s *lifecycleSpy) EndSession(_ context.Context, _ int64, id string) error {
 	return nil
 }
 
-func (s *lifecycleSpy) SessionRevoked(ctx context.Context, _ int64, id string) error {
+func (s *lifecycleSpy) SessionRevoked(ctx context.Context, _ int64, id, _ string) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}

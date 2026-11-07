@@ -21,6 +21,10 @@ import (
 const (
 	ScopeSessionValidate     = "session.validate"
 	ScopeAccountMetadataRead = "account.metadata.read"
+	// ScopeAccountDeletionBegin and ScopeAccountDeletionComplete belong to
+	// User Service's account-deletion coordinator.
+	ScopeAccountDeletionBegin    = "account.deletion.begin"
+	ScopeAccountDeletionComplete = "account.deletion.complete"
 )
 
 // Matrix is the authorization matrix: the scopes each caller may use on this receiver.
@@ -32,7 +36,7 @@ func DefaultMatrix() Matrix {
 		"web-bff":      {ScopeSessionValidate},
 		"game-gateway": {ScopeSessionValidate},
 		"chat-gateway": {ScopeSessionValidate},
-		"user-service": {ScopeAccountMetadataRead},
+		"user-service": {ScopeAccountMetadataRead, ScopeAccountDeletionBegin, ScopeAccountDeletionComplete},
 	}
 }
 

@@ -23,7 +23,10 @@ func (t *memoryTx) enqueueSessionRevocation(session model.Session) error {
 		}
 	}
 	t.Revocations = append(t.Revocations, service.SessionRevocation{
-		SessionID: session.ID, UserID: session.UserID, RevokedAt: *session.RevokedAt,
+		SessionID:     session.ID,
+		UserID:        session.UserID,
+		Cause:         service.RevocationSessionRevoked,
+		RevokedAt:     *session.RevokedAt,
 		NextAttemptAt: time.Now().UTC(),
 	})
 	return nil

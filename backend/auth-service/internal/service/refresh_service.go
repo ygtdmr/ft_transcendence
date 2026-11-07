@@ -46,7 +46,7 @@ func (s *AuthService) Refresh(ctx context.Context, raw string) (security.Credent
 // Missing revocation storage is a configuration fault and is returned unchanged.
 func (s *AuthService) finishRefresh(ctx context.Context, result refreshOutcome) (security.Credentials, error) {
 	if result.revoked != nil {
-		err := s.notifySessionRevoked(ctx, result.revoked.UserID, result.revoked.ID)
+		err := s.notifySessionRevoked(ctx, result.revoked.UserID, result.revoked.ID, RevocationSessionRevoked)
 		if errors.Is(err, ErrSessionUnavailable) {
 			return security.Credentials{}, err
 		}

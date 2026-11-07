@@ -24,7 +24,7 @@ func (r *AuthRepository) PendingSessionRevocations(ctx context.Context, limit in
 		return nil, errors.New("revocation batch limit must be between 1 and 1000")
 	}
 	rows, err := r.pool.Query(ctx, `
-		SELECT session_id::text, user_id, revoked_at, next_attempt_at FROM session_revocations
+		SELECT session_id::text, user_id, cause, revoked_at, next_attempt_at FROM session_revocations
 		WHERE delivered_at IS NULL AND next_attempt_at <= now()
 		ORDER BY next_attempt_at, revoked_at, session_id LIMIT $1`, limit)
 	if err != nil {
@@ -34,7 +34,7 @@ func (r *AuthRepository) PendingSessionRevocations(ctx context.Context, limit in
 	var pending []service.SessionRevocation
 	for rows.Next() {
 		var event service.SessionRevocation
-		if err := rows.Scan(&event.SessionID, &event.UserID, &event.RevokedAt, &event.NextAttemptAt); err != nil {
+		if err := rows.Scan(&event.SessionID, &event.UserID, &event.Cause, &event.RevokedAt, &event.NextAttemptAt); err != nil {
 			return nil, err
 		}
 		event.RevokedAt = event.RevokedAt.UTC()
