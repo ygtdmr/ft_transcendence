@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -19,6 +20,8 @@ type RegistrationService interface {
 type AuthController struct {
 	service  RegistrationService
 	sessions SessionService
+	google   GoogleStarter
+	logger   *slog.Logger
 }
 
 // NewAuth returns a controller backed by an auth service.
@@ -38,6 +41,9 @@ func (authController *AuthController) RegisterRoutes(routes gin.IRoutes) {
 		router.Wrap(authController.Register, mapAuthError))
 	if authController.sessions != nil {
 		authController.registerSessionRoutes(routes)
+	}
+	if authController.google != nil {
+		routes.GET("/oauth/google/authorize", authController.startGoogle)
 	}
 }
 
