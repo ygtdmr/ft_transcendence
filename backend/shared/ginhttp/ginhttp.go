@@ -153,3 +153,24 @@ func Handle(fn func(*gin.Context) error, m *httpresponse.Mapper, logger *slog.Lo
 		}
 	}
 }
+
+// Wrap adapts a net/http middleware (serviceauth.Require, identity.Authenticate,
+// identity.Authorize, ratelimit.Middleware) to Gin. If the middleware answers the
+// request itself (a 401, 403, 429...) the Gin chain is aborted; if it lets the
+// request through, the possibly updated request (carrying the identity or caller
+// in its context) is what the rest of the chain sees. Errors are written through
+// c.Writer, so ErrorCode and the metrics still see them.
+func Wrap(mw func(http.Handler) http.Handler) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		passed := false
+		next := http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+			passed = true
+			c.Request = r
+			c.Next()
+		})
+		mw(next).ServeHTTP(c.Writer, c.Request)
+		if !passed {
+			c.Abort()
+		}
+	}
+}
