@@ -22,6 +22,15 @@ services: they check that a foreign WebSocket origin is refused before the cooki
 validator is ever asked, that cross-site state-changing requests are refused
 before authentication, and that no CORS header is ever sent.
 
+The private-client and session-chain tests (`tests/integration/private_client_test.go`,
+`session_chain_test.go`) need no external services: they run a real receiver (the
+shared `serviceauth` in front of contract-shaped handlers) and check every
+outcome class, credential and cookie handling, and the browser to gateway to Auth
+chain. The transaction tests (`tests/integration/postgres_tx_test.go`) and the adoption
+proof (`adoption_proof_test.go`: state, idempotency ledger and outbox committing
+or rolling back together) need `POSTGRES_TEST_DATABASE_URL`; the outage test also
+needs `POSTGRES_TEST_CONTAINER`.
+
 The access-control tests (`tests/integration/access_control_test.go`) need no
 external services; they drive real Gin servers through the shared guards and
 check that rejected requests never reach a handler and that no credential
