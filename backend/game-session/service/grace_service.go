@@ -3,7 +3,7 @@ package service
 import (
 	"time"
 
-	room "game-session/room"
+	"game-session/room"
 )
 
 func (s *RoomService) MarkDisconnected(roomID int64, userID int64, now time.Time) (room.RoomMember, error) {

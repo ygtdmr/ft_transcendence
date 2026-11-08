@@ -6,7 +6,8 @@ import (
 	"strings"
 	"time"
 
-	room "game-session/room"
+	"game-session/game"
+	"game-session/room"
 )
 
 func newRoomCode() (string, error) {
@@ -76,6 +77,13 @@ func (s *RoomService) Create(userID int64, maxPlayers *int, now time.Time) (room
 	if err != nil {
 		return room.RoomSnapshot{}, err
 	}
+	profiles, err := s.profiles.ProfilesByUserIDs([]int64{userID})
+	if err != nil {
+		return room.RoomSnapshot{}, err
+	}
+	if _, ok := profiles[userID]; !ok {
+		return room.RoomSnapshot{}, room.ErrMemberProfileNotFound
+	}
 
 	r := &room.Room{
 		Status:     room.StatusWaiting,
@@ -87,24 +95,42 @@ func (s *RoomService) Create(userID int64, maxPlayers *int, now time.Time) (room
 	if err != nil {
 		return room.RoomSnapshot{}, err
 	}
+	host.Username = profiles[userID].Username
 	if err := s.saveRoomWithUniqueCode(r, host); err != nil {
 		return room.RoomSnapshot{}, err
 	}
 
 	host.RoomID = r.RoomID
-	return s.snapshot(r, []room.RoomMember{host}, room.RoomInput{}, userID, now)
+	return r.SnapshotForRoom(room.RoomInput{
+		Members:  []room.RoomMember{host},
+		Profiles: profiles,
+	}, userID)
 }
 
 type RoomSummary struct {
-	RoomID      int64
-	RoomCode    string
-	Status      room.Status
-	PlayerCount int
-	MaxPlayers  int
+	RoomID      int64       `json:"room_id"`
+	RoomCode    string      `json:"room_code"`
+	Status      room.Status `json:"status"`
+	PlayerCount int         `json:"player_count"`
+	MaxPlayers  int         `json:"max_players"`
+	Joinable    bool        `json:"joinable"`
 }
 
 func (s *RoomService) FindRoomByCode(code string) (RoomSummary, error) {
-	r, members, err := s.store.RoomByCode(strings.ToUpper(code))
+	var (
+		r           *room.Room
+		members     []room.RoomMember
+		currentGame *game.Game
+	)
+	err := s.store.ReadTransaction(func(tx RoomStore) error {
+		var err error
+		r, members, err = tx.RoomByCode(strings.ToUpper(code))
+		if err != nil {
+			return err
+		}
+		currentGame, err = tx.LoadCurrentGame(r.RoomID)
+		return err
+	})
 	if err != nil {
 		return RoomSummary{}, err
 	}
@@ -114,81 +140,8 @@ func (s *RoomService) FindRoomByCode(code string) (RoomSummary, error) {
 		Status:      r.Status,
 		PlayerCount: len(members),
 		MaxPlayers:  r.MaxPlayers,
+		Joinable:    r.IsJoinable(room.RoomInput{Members: members, CurrentGame: currentGame}),
 	}, nil
-}
-
-func (s *RoomService) Join(roomID int64, userID int64, now time.Time) (room.RoomSnapshot, error) {
-	var snapshot room.RoomSnapshot
-	err := s.store.Transaction(func(tx RoomStore) error {
-		r, members, currentGame, err := loadRoom(tx, roomID)
-		if err != nil {
-			return err
-		}
-		_, hasActiveRoom, err := tx.ActiveRoomOf(userID)
-		if err != nil {
-			return err
-		}
-		if hasActiveRoom {
-			return room.ErrAlreadyInRoom
-		}
-
-		member, err := r.Join(room.RoomInput{Members: members, CurrentGame: currentGame}, userID, now)
-		if err != nil {
-			return err
-		}
-		if err := tx.SaveJoin(r, member); err != nil {
-			return err
-		}
-
-		members = append(members, member)
-		snapshot, err = s.snapshot(r, members, room.RoomInput{CurrentGame: currentGame}, userID, now)
-		return err
-	})
-	if err != nil {
-		return room.RoomSnapshot{}, err
-	}
-	return snapshot, nil
-}
-
-func (s *RoomService) Snapshot(roomID int64, userID int64, now time.Time) (room.RoomSnapshot, error) {
-	r, members, currentGame, err := loadRoom(s.store, roomID)
-	if err != nil {
-		return room.RoomSnapshot{}, err
-	}
-	lastGame, err := s.store.LoadLastGameResult(roomID)
-	if err != nil {
-		return room.RoomSnapshot{}, err
-	}
-	return s.snapshot(r, members, room.RoomInput{CurrentGame: currentGame, LastGame: lastGame}, userID, now)
-}
-
-func (s *RoomService) Leave(roomID int64, userID int64, reason room.DepartureReason, now time.Time) (room.LeaveResult, error) {
-	var result room.LeaveResult
-	err := s.store.Transaction(func(tx RoomStore) error {
-		r, members, currentGame, err := loadRoom(tx, roomID)
-		if err != nil {
-			return err
-		}
-		profiles, err := s.loadDepartedProfile(r, members, userID)
-		if err != nil {
-			return err
-		}
-
-		result, err = r.Leave(room.RoomInput{Members: members, CurrentGame: currentGame, Profiles: profiles}, userID, reason, now)
-		if err != nil {
-			return err
-		}
-
-		gameToSave := currentGame
-		if !result.GamePaused {
-			gameToSave = nil
-		}
-		return tx.SaveLeave(r, userID, gameToSave, result.Penalty)
-	})
-	if err != nil {
-		return room.LeaveResult{}, err
-	}
-	return result, nil
 }
 
 func (s *RoomService) CloseIfEmpty(roomID int64, now time.Time) (bool, error) {
@@ -205,4 +158,93 @@ func (s *RoomService) CloseIfEmpty(roomID int64, now time.Time) (bool, error) {
 		return false, err
 	}
 	return closed, nil
+}
+
+func (s *RoomService) Join(roomID int64, userID int64, now time.Time) (room.RoomSnapshot, error) {
+	var snapshot room.RoomSnapshot
+	profiles, err := s.profiles.ProfilesByUserIDs([]int64{userID})
+	if err != nil {
+		return room.RoomSnapshot{}, err
+	}
+
+	profile, ok := profiles[userID]
+	if !ok {
+		return room.RoomSnapshot{}, room.ErrMemberProfileNotFound
+	}
+	err = s.store.Transaction(func(tx RoomStore) error {
+		r, members, currentGame, err := loadRoom(tx, roomID)
+		if err != nil {
+			return err
+		}
+		_, hasActiveRoom, err := tx.ActiveRoomOf(userID)
+		if err != nil {
+			return err
+		}
+		if hasActiveRoom {
+			return room.ErrAlreadyInRoom
+		}
+
+		member, err := r.Join(room.RoomInput{Members: members, CurrentGame: currentGame}, userID, now)
+		if err != nil {
+			return err
+		}
+		member.Username = profile.Username
+		if err := tx.SaveJoin(r, member); err != nil {
+			return err
+		}
+
+		members = append(members, member)
+		snapshot, err = s.snapshot(r, members, room.RoomInput{CurrentGame: currentGame}, userID, now)
+		return err
+	})
+	if err != nil {
+		return room.RoomSnapshot{}, err
+	}
+	return snapshot, nil
+}
+
+func (s *RoomService) Snapshot(roomID int64, userID int64, now time.Time) (room.RoomSnapshot, error) {
+	var (
+		r           *room.Room
+		members     []room.RoomMember
+		currentGame *game.Game
+		lastGame    *room.LastGameView
+	)
+	err := s.store.ReadTransaction(func(tx RoomStore) error {
+		var err error
+		r, members, currentGame, err = loadRoom(tx, roomID)
+		if err != nil {
+			return err
+		}
+		lastGame, err = tx.LoadLastGameResult(roomID)
+		return err
+	})
+	if err != nil {
+		return room.RoomSnapshot{}, err
+	}
+	return s.snapshot(r, members, room.RoomInput{CurrentGame: currentGame, LastGame: lastGame}, userID, now)
+}
+
+func (s *RoomService) Leave(roomID int64, userID int64, reason room.DepartureReason, now time.Time) (room.LeaveResult, error) {
+	var result room.LeaveResult
+	err := s.store.Transaction(func(tx RoomStore) error {
+		r, members, currentGame, err := loadRoom(tx, roomID)
+		if err != nil {
+			return err
+		}
+		result, err = r.Leave(room.RoomInput{Members: members, CurrentGame: currentGame}, userID, reason, now)
+		if err != nil {
+			return err
+		}
+
+		gameToSave := currentGame
+		if !result.GamePaused {
+			gameToSave = nil
+		}
+		return tx.SaveLeave(r, userID, gameToSave, result.Penalty)
+	})
+	if err != nil {
+		return room.LeaveResult{}, err
+	}
+	return result, nil
 }

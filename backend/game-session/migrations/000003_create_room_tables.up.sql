@@ -29,9 +29,23 @@ CREATE UNIQUE INDEX idx_rooms_active_room_code
     ON rooms (room_code)
     WHERE status <> 'CLOSED';
 
+-- partial index: the deadline worker polls these every tick, keep it off a full scan
+CREATE INDEX idx_rooms_countdown_due
+    ON rooms (countdown_ends_at)
+    WHERE countdown_ends_at IS NOT NULL;
+
+CREATE INDEX idx_rooms_post_game_due
+    ON rooms (post_game_ends_at)
+    WHERE post_game_ends_at IS NOT NULL;
+
+CREATE INDEX idx_rooms_close_due
+    ON rooms (close_at)
+    WHERE close_at IS NOT NULL;
+
 CREATE TABLE room_members (
     room_id BIGINT NOT NULL REFERENCES rooms (room_id) ON DELETE CASCADE,
     user_id BIGINT NOT NULL PRIMARY KEY,
+    username TEXT NOT NULL,
     state VARCHAR(16) NOT NULL DEFAULT 'IN_LOBBY',
     team VARCHAR(4),
     role VARCHAR(16),
@@ -55,5 +69,10 @@ CREATE INDEX idx_room_members_join_order
 CREATE UNIQUE INDEX idx_room_members_spymaster
     ON room_members (room_id, team)
     WHERE role = 'SPYMASTER';
+
+-- partial index: the deadline worker polls these every tick, keep it off a full scan
+CREATE INDEX idx_room_members_grace_due
+    ON room_members (grace_ends_at)
+    WHERE grace_ends_at IS NOT NULL;
 
 COMMIT;

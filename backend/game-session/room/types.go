@@ -1,7 +1,7 @@
 package room
 
 import (
-	game "game-session/game"
+	"game-session/game"
 	"time"
 )
 
@@ -25,6 +25,7 @@ type Room struct {
 type RoomMember struct {
 	RoomID      int64 `gorm:"autoIncrement:false"`
 	UserID      int64 `gorm:"primaryKey;autoIncrement:false"`
+	Username    string
 	State       State `gorm:"default:IN_LOBBY"`
 	Team        *game.Team
 	Role        *game.Role

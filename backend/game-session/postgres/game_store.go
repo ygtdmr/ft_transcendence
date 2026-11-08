@@ -1,13 +1,7 @@
 package postgres
 
 import (
-	"context"
-	"database/sql/driver"
-	"encoding/json"
 	"errors"
-	"fmt"
-	"strings"
-	"time"
 
 	"game-session/game"
 	"game-session/room"
@@ -15,253 +9,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
-
-type roleList []game.Role
-
-func (l roleList) literal() string {
-	parts := make([]string, len(l))
-	for i, r := range l {
-		parts[i] = string(r)
-	}
-	return "{" + strings.Join(parts, ",") + "}"
-}
-
-func (roleList) GormDataType() string { return "text[]" }
-
-func (l roleList) Value() (driver.Value, error) { return l.literal(), nil }
-
-func (l roleList) GormValue(_ context.Context, _ *gorm.DB) clause.Expr {
-	return clause.Expr{SQL: "?::text[]", Vars: []any{l.literal()}}
-}
-
-func (l *roleList) Scan(src any) error {
-	var text string
-	switch v := src.(type) {
-	case nil:
-		*l = roleList{}
-		return nil
-	case string:
-		text = v
-	case []byte:
-		text = string(v)
-	default:
-		return fmt.Errorf("roleList: unsupported type %T", src)
-	}
-	*l = roleList{}
-	text = strings.Trim(text, "{}")
-	if text == "" {
-		return nil
-	}
-	for _, part := range strings.Split(text, ",") {
-		*l = append(*l, game.Role(strings.Trim(part, `"`)))
-	}
-	return nil
-}
-
-type jsonb []byte
-
-func (j jsonb) GormValue(_ context.Context, _ *gorm.DB) clause.Expr {
-	return clause.Expr{SQL: "?::jsonb", Vars: []any{string(j)}}
-}
-
-func (j *jsonb) Scan(src any) error {
-	switch v := src.(type) {
-	case nil:
-		*j = nil
-	case string:
-		*j = jsonb(v)
-	case []byte:
-		*j = append(jsonb{}, v...)
-	default:
-		return fmt.Errorf("jsonb: unsupported type %T", src)
-	}
-	return nil
-}
-
-var _ driver.Valuer = jsonb(nil)
-
-func (j jsonb) Value() (driver.Value, error) { return string(j), nil }
-
-type gameRow struct {
-	GameID                 int64 `gorm:"primaryKey"`
-	RoomID                 int64
-	StartingTeam           game.Team
-	Phase                  game.Phase
-	CurrentTeam            game.Team
-	ClueWord               *string
-	ClueNumber             *int
-	GuessesRemaining       *int
-	TurnDeadlineAt         *time.Time
-	TurnTimerSeconds       *int
-	PhaseBeforePause       *game.Phase
-	RemainingOnPauseMs     *int64
-	StaffingTimeoutSeconds int
-	RedMissingRoles        roleList
-	BlueMissingRoles       roleList
-	RedStaffingDeadlineAt  *time.Time
-	BlueStaffingDeadlineAt *time.Time
-	Winner                 *game.Team
-	EndReason              *game.EndReason
-	StartedAt              time.Time
-	FinishedAt             *time.Time
-}
-
-func (gameRow) TableName() string { return "games" }
-
-var gameUpdateColumns = []string{
-	"phase", "current_team", "clue_word", "clue_number", "guesses_remaining", "turn_deadline_at",
-	"turn_timer_seconds", "phase_before_pause", "remaining_on_pause_ms",
-	"red_missing_roles", "blue_missing_roles", "red_staffing_deadline_at", "blue_staffing_deadline_at",
-	"winner", "end_reason", "finished_at",
-}
-
-type gameCardRow struct {
-	GameID   int64 `gorm:"primaryKey"`
-	CardID   int   `gorm:"primaryKey"`
-	Word     string
-	Color    game.CardColor
-	Revealed bool
-}
-
-func (gameCardRow) TableName() string { return "game_cards" }
-
-type gameHistoryRow struct {
-	GameID       int64 `gorm:"primaryKey"`
-	Seq          int   `gorm:"primaryKey"`
-	Type         game.HistoryEntryType
-	At           time.Time
-	Team         *game.Team
-	UserID       *int64
-	Username     *string
-	ClueWord     *string
-	ClueNumber   *int
-	CardID       *int
-	Word         *string
-	Color        *game.CardColor
-	PreviousTeam *game.Team
-	Reason       *string
-}
-
-func (gameHistoryRow) TableName() string { return "game_history" }
-
-type gamePlayerRow struct {
-	GameID int64 `gorm:"primaryKey"`
-	UserID int64 `gorm:"primaryKey"`
-	Team   game.Team
-	Role   game.Role
-}
-
-func (gamePlayerRow) TableName() string { return "game_players" }
-
-type outboxRow struct {
-	EventID       string `gorm:"primaryKey;default:gen_random_uuid()"`
-	RoomID        int64
-	EventType     string
-	OutboxContent jsonb
-	CreatedAt     time.Time `gorm:"autoCreateTime"`
-	PublishedAt   *time.Time
-	RoomVersion   int64
-}
-
-func (outboxRow) TableName() string { return "outbox_events" }
-
-func toGameRow(roomID int64, rec game.GameRecord) gameRow {
-	row := gameRow{
-		GameID:                 rec.GameID,
-		RoomID:                 roomID,
-		StartingTeam:           rec.StartingTeam,
-		Phase:                  rec.CurrentTurn.Phase,
-		CurrentTeam:            rec.CurrentTurn.Team,
-		GuessesRemaining:       rec.CurrentTurn.GuessesRemaining,
-		TurnDeadlineAt:         rec.CurrentTurn.DeadlineAt,
-		TurnTimerSeconds:       rec.Timing.TurnTimerSeconds,
-		PhaseBeforePause:       rec.Timing.PhaseBeforePause,
-		RemainingOnPauseMs:     rec.Timing.RemainingOnPauseMs,
-		StaffingTimeoutSeconds: rec.Staffing.StaffingTimeoutSeconds,
-		RedMissingRoles:        roleList(rec.Staffing.Red.MissingRoles),
-		BlueMissingRoles:       roleList(rec.Staffing.Blue.MissingRoles),
-		RedStaffingDeadlineAt:  rec.Staffing.Red.DeadlineAt,
-		BlueStaffingDeadlineAt: rec.Staffing.Blue.DeadlineAt,
-		Winner:                 rec.Result.Winner,
-		EndReason:              rec.Result.EndReason,
-		StartedAt:              rec.StartedAt,
-		FinishedAt:             rec.Result.FinishedAt,
-	}
-	if rec.CurrentTurn.Clue != nil {
-		word, number := rec.CurrentTurn.Clue.Word, rec.CurrentTurn.Clue.Number
-		row.ClueWord, row.ClueNumber = &word, &number
-	}
-	return row
-}
-
-func toCardRows(gameID int64, cards []game.CardRecord) []gameCardRow {
-	rows := make([]gameCardRow, len(cards))
-	for i, c := range cards {
-		rows[i] = gameCardRow{GameID: gameID, CardID: c.CardID, Word: c.Word, Color: c.Color, Revealed: c.Revealed}
-	}
-	return rows
-}
-
-func toHistoryRows(gameID int64, history []game.HistoryEntry) []gameHistoryRow {
-	rows := make([]gameHistoryRow, len(history))
-	for i, h := range history {
-		row := gameHistoryRow{
-			GameID: gameID, Seq: h.Seq, Type: h.Type, At: h.At, Team: h.Team,
-			UserID: h.UserID, Username: h.Username, CardID: h.CardID, Word: h.Word,
-			Color: h.Color, PreviousTeam: h.PreviousTeam, Reason: h.Reason,
-		}
-		if h.Clue != nil {
-			word, number := h.Clue.Word, h.Clue.Number
-			row.ClueWord, row.ClueNumber = &word, &number
-		}
-		rows[i] = row
-	}
-	return rows
-}
-
-func fromGameRows(row gameRow, cards []gameCardRow, history []gameHistoryRow) game.GameRecord {
-	rec := game.GameRecord{
-		GameID:       row.GameID,
-		StartingTeam: row.StartingTeam,
-		CurrentTurn: game.CurrentTurn{
-			Team:             row.CurrentTeam,
-			Phase:            row.Phase,
-			GuessesRemaining: row.GuessesRemaining,
-			DeadlineAt:       row.TurnDeadlineAt,
-		},
-		Timing: game.TimingRecord{
-			TurnTimerSeconds:   row.TurnTimerSeconds,
-			PhaseBeforePause:   row.PhaseBeforePause,
-			RemainingOnPauseMs: row.RemainingOnPauseMs,
-		},
-		Staffing: game.StaffingRecord{
-			StaffingTimeoutSeconds: row.StaffingTimeoutSeconds,
-			Red:                    game.TeamStaffing{MissingRoles: []game.Role(row.RedMissingRoles), DeadlineAt: row.RedStaffingDeadlineAt},
-			Blue:                   game.TeamStaffing{MissingRoles: []game.Role(row.BlueMissingRoles), DeadlineAt: row.BlueStaffingDeadlineAt},
-		},
-		Result:    game.ResultRecord{Winner: row.Winner, EndReason: row.EndReason, FinishedAt: row.FinishedAt},
-		StartedAt: row.StartedAt,
-		Cards:     make([]game.CardRecord, len(cards)),
-		History:   make([]game.HistoryEntry, len(history)),
-	}
-	if row.ClueWord != nil && row.ClueNumber != nil {
-		rec.CurrentTurn.Clue = &game.Clue{Word: *row.ClueWord, Number: *row.ClueNumber}
-	}
-	for i, c := range cards {
-		rec.Cards[i] = game.CardRecord{CardID: c.CardID, Word: c.Word, Color: c.Color, Revealed: c.Revealed}
-	}
-	for i, h := range history {
-		entry := game.HistoryEntry{
-			Seq: h.Seq, Type: h.Type, At: h.At, Team: h.Team, UserID: h.UserID, Username: h.Username,
-			CardID: h.CardID, Word: h.Word, Color: h.Color, PreviousTeam: h.PreviousTeam, Reason: h.Reason,
-		}
-		if h.ClueWord != nil && h.ClueNumber != nil {
-			entry.Clue = &game.Clue{Word: *h.ClueWord, Number: *h.ClueNumber}
-		}
-		rec.History[i] = entry
-	}
-	return rec
-}
 
 // SELECT * FROM games WHERE room_id = 1 ORDER BY game_id DESC LIMIT 1;
 // SELECT * FROM game_cards WHERE game_id = 7 ORDER BY card_id;
@@ -296,44 +43,47 @@ func (s *Store) gameDetails(gameID int64) ([]gameCardRow, []gameHistoryRow, erro
 
 // SELECT last_game_id FROM rooms WHERE room_id = 1;
 // SELECT * FROM games WHERE game_id = 7;
-// SELECT * FROM game_cards WHERE game_id = 7;
-// SELECT * FROM game_players WHERE game_id = 7;
-func (s *Store) LoadLastGameResult(roomID int64) (*room.LastGameView, error) {
+// SELECT * FROM game_players WHERE game_id = 7 ORDER BY user_id;
+func (s *Store) loadLastGameRows(roomID int64) (*gameRow, []gamePlayerRow, error) {
 	var lastGameID *int64
 	if err := s.db.Table("rooms").Select("last_game_id").Where("room_id = ?", roomID).Scan(&lastGameID).Error; err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if lastGameID == nil {
-		return nil, nil
+		return nil, nil, nil
 	}
 	var row gameRow
 	if err := s.db.First(&row, *lastGameID).Error; err != nil {
-		return nil, notFound(err, room.ErrGameNotFound)
+		return nil, nil, notFound(err, room.ErrGameNotFound)
 	}
 	if row.Winner == nil || row.EndReason == nil || row.FinishedAt == nil {
-		return nil, game.ErrInvalidGameState
-	}
-	var cards []gameCardRow
-	if err := s.db.Where("game_id = ?", row.GameID).Find(&cards).Error; err != nil {
-		return nil, err
+		return nil, nil, game.ErrInvalidGameState
 	}
 	var players []gamePlayerRow
 	if err := s.db.Where("game_id = ?", row.GameID).Order("user_id").Find(&players).Error; err != nil {
+		return nil, nil, err
+	}
+
+	return &row, players, nil
+}
+
+func (s *Store) LoadLastGameResult(roomID int64) (*room.LastGameView, error) {
+	row, players, err := s.loadLastGameRows(roomID)
+	if err != nil {
+		return nil, err
+	}
+	if row == nil {
+		return nil, nil
+	}
+	cards, history, err := s.gameDetails(row.GameID)
+	if err != nil {
+		return nil, err
+	}
+	g, err := game.FromRecord(fromGameRows(*row, cards, history))
+	if err != nil {
 		return nil, err
 	}
 
-	score := game.Score{}
-	for _, c := range cards {
-		if !c.Revealed {
-			continue
-		}
-		switch c.Color {
-		case game.CardColorRed:
-			score.Red++
-		case game.CardColorBlue:
-			score.Blue++
-		}
-	}
 	loser := game.TeamRed
 	if *row.Winner == game.TeamRed {
 		loser = game.TeamBlue
@@ -344,7 +94,7 @@ func (s *Store) LoadLastGameResult(roomID int64) (*room.LastGameView, error) {
 		Winner:     *row.Winner,
 		Loser:      loser,
 		EndReason:  *row.EndReason,
-		Score:      score,
+		Score:      g.Score(),
 		FinishedAt: *row.FinishedAt,
 		RoomID:     roomID,
 		StartedAt:  row.StartedAt,
@@ -420,53 +170,6 @@ func saveMembers(tx *gorm.DB, members []room.RoomMember) error {
 	return nil
 }
 
-type finalizedPlayerEvent struct {
-	UserID int64     `json:"user_id"`
-	Team   game.Team `json:"team"`
-	Role   game.Role `json:"role"`
-}
-
-type matchFinalizedEvent struct {
-	GameID     int64                  `json:"game_id"`
-	RoomID     int64                  `json:"room_id"`
-	Winner     game.Team              `json:"winner"`
-	Loser      game.Team              `json:"loser"`
-	EndReason  game.EndReason         `json:"end_reason"`
-	Score      game.Score             `json:"score"`
-	StartedAt  time.Time              `json:"started_at"`
-	FinishedAt time.Time              `json:"finished_at"`
-	Players    []finalizedPlayerEvent `json:"players"`
-}
-
-func toMatchFinalizedEvent(lastGame *room.LastGameView) matchFinalizedEvent {
-	event := matchFinalizedEvent{
-		GameID:     lastGame.GameID,
-		RoomID:     lastGame.RoomID,
-		Winner:     lastGame.Winner,
-		Loser:      lastGame.Loser,
-		EndReason:  lastGame.EndReason,
-		Score:      lastGame.Score,
-		StartedAt:  lastGame.StartedAt,
-		FinishedAt: lastGame.FinishedAt,
-		Players:    make([]finalizedPlayerEvent, len(lastGame.Players)),
-	}
-	for i, p := range lastGame.Players {
-		event.Players[i] = finalizedPlayerEvent{UserID: p.UserID, Team: p.Team, Role: p.Role}
-	}
-	return event
-}
-
-// INSERT INTO outbox_events (room_id, event_type, outbox_content, room_version) VALUES (1, 'match.finalized', '{"game_id": 7, "winner": "RED"}', 12);
-func insertOutbox(tx *gorm.DB, r *room.Room, eventType string, payload any) error {
-	content, err := json.Marshal(payload)
-	if err != nil {
-		return err
-	}
-	row := outboxRow{RoomID: r.RoomID, EventType: eventType, OutboxContent: jsonb(content), RoomVersion: int64(r.RoomVersion)}
-	return tx.Omit("event_id", "created_at").Create(&row).Error
-}
-
-// UPDATE games SET phase = 'GUESSING', current_team = 'RED', clue_word = 'hint', clue_number = 2 WHERE game_id = 7;
 func (s *Store) SaveGame(g *game.Game) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		return updateGame(tx, g)

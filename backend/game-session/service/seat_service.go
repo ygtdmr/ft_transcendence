@@ -3,8 +3,8 @@ package service
 import (
 	"time"
 
-	game "game-session/game"
-	room "game-session/room"
+	"game-session/game"
+	"game-session/room"
 )
 
 func (s *RoomService) SelectRole(roomID int64, userID int64, team game.Team, role game.Role, now time.Time) (room.SeatResult, error) {
@@ -98,11 +98,7 @@ func (s *RoomService) Kick(roomID int64, hostUserID int64, targetUserID int64, n
 		if err != nil {
 			return err
 		}
-		profiles, err := s.loadDepartedProfile(r, members, targetUserID)
-		if err != nil {
-			return err
-		}
-		result, err = r.Kick(room.RoomInput{Members: members, CurrentGame: currentGame, Profiles: profiles}, hostUserID, targetUserID, now)
+		result, err = r.Kick(room.RoomInput{Members: members, CurrentGame: currentGame}, hostUserID, targetUserID, now)
 		if err != nil {
 			return err
 		}

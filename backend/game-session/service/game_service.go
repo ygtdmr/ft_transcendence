@@ -4,8 +4,8 @@ import (
 	"errors"
 	"time"
 
-	game "game-session/game"
-	room "game-session/room"
+	"game-session/game"
+	"game-session/room"
 )
 
 func loadGame(tx RoomStore, roomID int64) (*room.Room, []room.RoomMember, *game.Game, error) {
@@ -55,9 +55,7 @@ func saveMove(tx RoomStore, r *room.Room, members []room.RoomMember, currentGame
 
 func finishMove(tx RoomStore, r *room.Room, members []room.RoomMember, currentGame *game.Game, now time.Time, moveErr error) error {
 	if errors.Is(moveErr, game.ErrTurnExpired) {
-		if err := tx.SaveGame(currentGame); err != nil {
-			return err
-		}
+		return tx.SaveGame(currentGame)
 	}
 	if moveErr != nil {
 		return moveErr
@@ -67,6 +65,7 @@ func finishMove(tx RoomStore, r *room.Room, members []room.RoomMember, currentGa
 
 func (s *RoomService) GiveClue(roomID int64, userID int64, clue game.Clue, now time.Time) (game.CurrentTurn, error) {
 	var turn game.CurrentTurn
+	var moveErr error
 	err := s.store.Transaction(func(tx RoomStore) error {
 		r, members, currentGame, err := loadGame(tx, roomID)
 		if err != nil {
@@ -76,17 +75,21 @@ func (s *RoomService) GiveClue(roomID int64, userID int64, clue game.Clue, now t
 		if err != nil {
 			return err
 		}
-		turn, err = currentGame.GiveClue(player, &clue, now)
-		return finishMove(tx, r, members, currentGame, now, err)
+		turn, moveErr = currentGame.GiveClue(player, &clue, now)
+		return finishMove(tx, r, members, currentGame, now, moveErr)
 	})
 	if err != nil {
 		return game.CurrentTurn{}, err
+	}
+	if moveErr != nil {
+		return game.CurrentTurn{}, moveErr
 	}
 	return turn, nil
 }
 
 func (s *RoomService) GuessCard(roomID int64, userID int64, cardID int, now time.Time) (game.GuessResult, error) {
 	var result game.GuessResult
+	var moveErr error
 	err := s.store.Transaction(func(tx RoomStore) error {
 		r, members, currentGame, err := loadGame(tx, roomID)
 		if err != nil {
@@ -96,17 +99,21 @@ func (s *RoomService) GuessCard(roomID int64, userID int64, cardID int, now time
 		if err != nil {
 			return err
 		}
-		result, err = currentGame.GuessCard(player, cardID, now)
-		return finishMove(tx, r, members, currentGame, now, err)
+		result, moveErr = currentGame.GuessCard(player, cardID, now)
+		return finishMove(tx, r, members, currentGame, now, moveErr)
 	})
 	if err != nil {
 		return game.GuessResult{}, err
+	}
+	if moveErr != nil {
+		return game.GuessResult{}, moveErr
 	}
 	return result, nil
 }
 
 func (s *RoomService) PassTurn(roomID int64, userID int64, now time.Time) (game.PassResult, error) {
 	var result game.PassResult
+	var moveErr error
 	err := s.store.Transaction(func(tx RoomStore) error {
 		r, members, currentGame, err := loadGame(tx, roomID)
 		if err != nil {
@@ -116,11 +123,14 @@ func (s *RoomService) PassTurn(roomID int64, userID int64, now time.Time) (game.
 		if err != nil {
 			return err
 		}
-		result, err = currentGame.PassTurn(player, now)
-		return finishMove(tx, r, members, currentGame, now, err)
+		result, moveErr = currentGame.PassTurn(player, now)
+		return finishMove(tx, r, members, currentGame, now, moveErr)
 	})
 	if err != nil {
 		return game.PassResult{}, err
+	}
+	if moveErr != nil {
+		return game.PassResult{}, moveErr
 	}
 	return result, nil
 }

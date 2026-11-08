@@ -3,7 +3,7 @@ package game
 import (
 	cryptorand "crypto/rand"
 	"fmt"
-	rand "math/rand/v2"
+	"math/rand/v2"
 	"time"
 )
 

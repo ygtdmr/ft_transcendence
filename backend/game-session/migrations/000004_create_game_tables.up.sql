@@ -41,6 +41,15 @@ CREATE TABLE games (
 
 CREATE INDEX idx_games_room ON games (room_id);
 
+-- Partial indexes speed up the worker's deadline checks for unfinished games.
+CREATE INDEX idx_games_turn_due
+    ON games (turn_deadline_at)
+    WHERE turn_deadline_at IS NOT NULL AND finished_at IS NULL;
+
+CREATE INDEX idx_games_staffing_due
+    ON games (red_staffing_deadline_at, blue_staffing_deadline_at)
+    WHERE phase = 'PAUSED_FOR_PLAYERS' AND finished_at IS NULL;
+
 CREATE TABLE game_cards (
     game_id BIGINT NOT NULL REFERENCES games (game_id) ON DELETE CASCADE,
     card_id INTEGER NOT NULL,

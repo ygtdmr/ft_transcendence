@@ -3,14 +3,15 @@ package service
 import (
 	"errors"
 
-	game "game-session/game"
-	room "game-session/room"
+	"game-session/game"
+	"game-session/room"
 )
 
 var ErrRoomCodeTaken = errors.New("room code already in use")
 
 type RoomStore interface {
 	Transaction(fn func(tx RoomStore) error) error
+	ReadTransaction(fn func(tx RoomStore) error) error
 
 	RoomByCode(code string) (*room.Room, []room.RoomMember, error)
 	RoomByID(roomID int64) (*room.Room, []room.RoomMember, error)
@@ -54,22 +55,6 @@ func loadRoom(tx RoomStore, roomID int64) (*room.Room, []room.RoomMember, *game.
 		return nil, nil, nil, err
 	}
 	return r, members, currentGame, nil
-}
-
-func (s *RoomService) loadDepartedProfile(r *room.Room, members []room.RoomMember, userID int64) (map[int64]room.Profile, error) {
-	if r.Status != room.StatusInGame {
-		return nil, nil
-	}
-	for _, member := range members {
-		if member.UserID != userID {
-			continue
-		}
-		if member.Team == nil || member.Role == nil {
-			return nil, nil
-		}
-		return s.profiles.ProfilesByUserIDs([]int64{userID})
-	}
-	return nil, nil
 }
 
 func (s *RoomService) loadMemberProfiles(members []room.RoomMember) (map[int64]room.Profile, error) {

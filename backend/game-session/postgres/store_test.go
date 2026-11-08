@@ -26,15 +26,8 @@ func openTestStore(t *testing.T) *Store {
 
 func resetTables(t *testing.T, s *Store) {
 	t.Helper()
-	tables := []string{
-		"TRUNCATE rooms RESTART IDENTITY CASCADE",
-		"TRUNCATE outbox_events",
-		"TRUNCATE command_ledger",
-	}
-	for _, statement := range tables {
-		if err := s.db.Exec(statement).Error; err != nil {
-			t.Fatalf("%s: %v", statement, err)
-		}
+	if err := s.ResetForTests(); err != nil {
+		t.Fatalf("reset tables: %v", err)
 	}
 }
 

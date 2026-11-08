@@ -32,11 +32,11 @@ func (g *Game) validateWaitingForClue() error {
 }
 
 func (g *Game) validateGuessing() error {
-	if *g.currentTurn.GuessesRemaining <= 0 {
-		return fmt.Errorf("%w: no guesses remaining", ErrNoGuessesRemaining)
-	}
 	if g.currentTurn.Clue == nil || g.currentTurn.GuessesRemaining == nil {
 		return fmt.Errorf("%w: clue and guesses are required while guessing", ErrInvalidGameState)
+	}
+	if *g.currentTurn.GuessesRemaining <= 0 {
+		return fmt.Errorf("%w: no guesses remaining", ErrNoGuessesRemaining)
 	}
 	if g.hasResult() {
 		return fmt.Errorf("%w: running game cannot have a result", ErrInvalidGameState)

@@ -1,7 +1,7 @@
 package room
 
 import (
-	game "game-session/game"
+	"game-session/game"
 	"time"
 )
 

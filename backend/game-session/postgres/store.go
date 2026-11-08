@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"database/sql"
 	"errors"
 
 	"game-session/service"
@@ -9,6 +10,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"gorm.io/gorm/logger"
 )
 
 type Store struct {
@@ -25,6 +27,12 @@ func (s *Store) Transaction(fn func(tx service.RoomStore) error) error {
 	})
 }
 
+func (s *Store) ReadTransaction(fn func(tx service.RoomStore) error) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		return fn(&Store{db: tx, locking: false})
+	}, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
+}
+
 func (s *Store) roomQuery() *gorm.DB {
 	if s.locking {
 		return s.db.Clauses(clause.Locking{Strength: "UPDATE"})
@@ -33,7 +41,7 @@ func (s *Store) roomQuery() *gorm.DB {
 }
 
 func Open(dsn string) (*Store, error) {
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
 	if err != nil {
 		return nil, err
 	}
@@ -65,8 +73,12 @@ const (
 	constraintOneSpymaster   = "idx_room_members_spymaster"
 )
 
-var _ service.RoomStore = (*Store)(nil)
+// SELECT 1;
+func (s *Store) Ping() error {
+	return s.db.Exec("SELECT 1").Error
+}
 
+// TRUNCATE rooms RESTART IDENTITY CASCADE; TRUNCATE outbox_events; TRUNCATE command_ledger;
 func (s *Store) ResetForTests() error {
 	for _, statement := range []string{
 		"TRUNCATE rooms RESTART IDENTITY CASCADE",
@@ -79,3 +91,5 @@ func (s *Store) ResetForTests() error {
 	}
 	return nil
 }
+
+var _ service.RoomStore = (*Store)(nil)

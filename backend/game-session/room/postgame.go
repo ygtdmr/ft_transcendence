@@ -1,7 +1,7 @@
 package room
 
 import (
-	game "game-session/game"
+	"game-session/game"
 	"time"
 )
 
@@ -113,7 +113,6 @@ func (r *Room) ReturnToLobby(input RoomInput, userID int64, now time.Time) (Retu
 
 type PostGameTimeoutResult struct {
 	RemovedUserIDs []int64
-	RoomClosed     bool
 }
 
 func (r *Room) ExpirePostGame(input RoomInput, now time.Time) (PostGameTimeoutResult, error) {
@@ -132,13 +131,12 @@ func (r *Room) ExpirePostGame(input RoomInput, now time.Time) (PostGameTimeoutRe
 	}
 
 	r.PostGameEndsAt = nil
-	if len(remaining) == 0 {
-		r.Status = StatusClosed
-		r.HostUserID = nil
-		return PostGameTimeoutResult{RemovedUserIDs: removed, RoomClosed: true}, nil
-	}
-
 	r.Status = StatusWaiting
 	r.HostUserID = r.hostAfterDeparture(remaining)
+	if len(remaining) == 0 {
+		closeAt := now.Add(emptyRoomTimeout)
+		r.EmptySince = &now
+		r.CloseAt = &closeAt
+	}
 	return PostGameTimeoutResult{RemovedUserIDs: removed}, nil
 }
