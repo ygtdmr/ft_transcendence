@@ -26,8 +26,10 @@ The private-client and session-chain tests (`tests/integration/private_client_te
 `session_chain_test.go`) need no external services: they run a real receiver (the
 shared `serviceauth` in front of contract-shaped handlers) and check every
 outcome class, credential and cookie handling, and the browser to gateway to Auth
-chain. The transaction tests (`tests/integration/postgres_tx_test.go`) need
-`POSTGRES_TEST_DATABASE_URL`, and the outage one also `POSTGRES_TEST_CONTAINER`.
+chain. The transaction tests (`tests/integration/postgres_tx_test.go`) and the adoption
+proof (`adoption_proof_test.go`: state, idempotency ledger and outbox committing
+or rolling back together) need `POSTGRES_TEST_DATABASE_URL`; the outage test also
+needs `POSTGRES_TEST_CONTAINER`.
 
 The access-control tests (`tests/integration/access_control_test.go`) need no
 external services; they drive real Gin servers through the shared guards and
