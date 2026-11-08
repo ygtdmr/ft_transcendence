@@ -17,6 +17,11 @@ go test -coverpkg=./httpresponse,./logging,./pagination,./postgres ./tests/...
 Real PostgreSQL connectivity requires `POSTGRES_TEST_DATABASE_URL`. That test is
 skipped when the variable is unset.
 
+The origin tests (`tests/integration/origin_chain_test.go`) need no external
+services: they check that a foreign WebSocket origin is refused before the cookie
+validator is ever asked, that cross-site state-changing requests are refused
+before authentication, and that no CORS header is ever sent.
+
 The access-control tests (`tests/integration/access_control_test.go`) need no
 external services; they drive real Gin servers through the shared guards and
 check that rejected requests never reach a handler and that no credential
