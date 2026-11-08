@@ -233,6 +233,29 @@ func (r *Reader) Secret(name string, minBytes int) Secret {
 	return NewSecret(v)
 }
 
+// List returns a comma-separated setting as trimmed, non-empty items, or nil
+// when it is unset. Each item is checked with validate; a problem names the
+// variable and the rule, never the offending item.
+func (r *Reader) List(name string, validate func(item string) bool, rule string) []string {
+	raw, ok := r.value(name)
+	if !ok {
+		return nil
+	}
+	var items []string
+	for _, item := range strings.Split(raw, ",") {
+		item = strings.TrimSpace(item)
+		if item == "" {
+			continue
+		}
+		if validate != nil && !validate(item) {
+			r.fail(name, rule)
+			return nil
+		}
+		items = append(items, item)
+	}
+	return items
+}
+
 // maxSecretFile caps how much of a secret file is read, so a wrong path (a log,
 // a device) cannot make startup read gigabytes.
 const maxSecretFile = 4 << 10
