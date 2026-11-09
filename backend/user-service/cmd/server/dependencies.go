@@ -9,6 +9,7 @@ import (
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/config"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/controller"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/middleware/serviceauth"
+	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/repository/avatarfiles"
 	userpostgres "github.com/melmut-42/ft_transcendence/backend/user-service/internal/repository/postgres"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/server"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/service"
@@ -64,11 +65,27 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 		controller.NewInternalProfile(profileReads, auth),
 		controller.NewInternalFriendshipVerdict(service.NewFriendshipVerdicts(userpostgres.NewFriendshipVerdicts(pool)), auth))
 
-	var public []server.RouteRegistrar
+	cleanup := pool.Close
+	var avatarStorage *avatarfiles.Store
+	var avatarReader controller.AvatarFileReader
+	if cfg.AvatarStorageDir != "" {
+		avatarStorage, err = avatarfiles.Open(cfg.AvatarStorageDir)
+		if err != nil {
+			cleanup()
+			return nil, nil, err
+		}
+		avatarReader = avatarStorage
+		cleanup = func() {
+			_ = avatarStorage.Close()
+			pool.Close()
+		}
+	}
+
+	public := []server.RouteRegistrar{controller.NewAvatarFiles(avatarReader)}
 	if cfg.AuthInternalURL != "" {
 		sessions, err := authclient.New(cfg.AuthInternalURL, cfg.AuthServiceCredential, cfg.AuthInternalTimeout)
 		if err != nil {
-			pool.Close()
+			cleanup()
 			return nil, nil, err
 		}
 		avatars := service.AvatarURLs{Base: cfg.AvatarBaseURL}
@@ -78,9 +95,18 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 		public = append(public, controller.NewFriendRequests(requests, sessions), controller.NewBlocks(blocks, sessions),
 			controller.NewFriends(friends, sessions),
 			controller.NewUserSearch(service.NewUserSearch(userpostgres.NewUserSearch(pool), avatars), sessions))
+		if avatarStorage != nil {
+			logCleanup := func(key string, err error) {
+				logger.WarnContext(ctx, "replaced avatar file could not be removed", "key", key, "error", err)
+			}
+			avatarService := service.NewAvatars(userpostgres.NewAvatars(pool), avatarStorage, avatars, logCleanup)
+			public = append(public, controller.NewAvatars(avatarService, sessions))
+		} else {
+			logger.WarnContext(ctx, "AVATAR_STORAGE_DIR is not set; avatar changes are not served")
+		}
 	} else {
 		logger.WarnContext(ctx, "AUTH_INTERNAL_URL is not set; routes that need a signed-in user are not served")
 	}
 
-	return []*http.Server{server.New(cfg.Port, healthController, logger, public...), internal}, pool.Close, nil
+	return []*http.Server{server.New(cfg.Port, healthController, logger, public...), internal}, cleanup, nil
 }

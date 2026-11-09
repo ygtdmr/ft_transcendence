@@ -31,6 +31,7 @@ environment only and does not load `.env` itself.
 | `LOG_FORMAT`, `LOG_LEVEL` | by `APP_ENV`  | `text` or `json`; `debug`, `info`, `warn` or `error`.           |
 | `MIGRATE_ON_START`          | `true`        | Apply embedded migrations at startup.                                       |
 | `AVATAR_BASE_URL`           | none            | Public `https://` origin for avatar URLs. Empty gives root-relative URLs. |
+| `AVATAR_STORAGE_DIR`        | none            | Absolute directory for uploaded avatars. Required in production; when empty, avatar changes are not served. |
 | `AUTH_SERVICE_CREDENTIAL_FILE` | none, optional | File holding Auth Service's service credential (32+ characters).      |
 | `AUTH_SERVICE_PREVIOUS_CREDENTIAL_FILE` | none, optional | Previous Auth credential, accepted during a rotation.       |
 | `CHANNEL_SERVICE_CREDENTIAL_FILE` | none, optional | File holding Channel Service's service credential (32+ characters). |
@@ -133,7 +134,8 @@ are plain numbers with no foreign key. Foreign keys exist only inside `users`.
 
 Friends are served under `/api/v1/friends`, friend requests under
 `/api/v1/friends/requests`, username search at `/api/v1/users/search`, and blocks
-under `/api/v1/users/{user_id}/block`. The `ft_session` cookie is the only browser credential: each request forwards it to Auth's private
+under `/api/v1/users/{user_id}/block`. Avatars are served under
+`/api/v1/avatars/presets` and `/api/v1/users/me/avatar`. The `ft_session` cookie is the only browser credential: each request forwards it to Auth's private
 session validation. A refused session is `401 UNAUTHORIZED`; an Auth outage is
 `503 SERVICE_UNAVAILABLE`. Set `AUTH_INTERNAL_URL` and
 `AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE` to enable these routes; both are required
@@ -152,6 +154,21 @@ Username search matches a case-insensitive substring and treats the query as pla
 text. It omits the caller and users being deleted. Each result shows the caller's
 relationship to that user; a block placed by the other user reads as `NONE`. The
 search has no substring index, so it scans `profiles`.
+
+## Avatars
+
+An upload is identified by its bytes only: JPEG, PNG or WebP, at most 2 MiB, 32 to
+4096 pixels per side and 16 megapixels. The service stores a new 256x256 PNG
+cropped to the center square, so metadata and hidden data are dropped. Client
+filenames and types are never used.
+
+Each upload gets a random key, and the file is written before the profile changes.
+The replaced file is removed after the commit. A crash between those steps leaves
+an unused file behind; nothing removes it yet.
+
+`GET /static/avatars/uploaded/{key}` and `GET /static/avatars/default/{user_id}.svg`
+serve the images without a session. Preset images are served by the frontend at
+`/avatars/presets/{preset_id}.png`.
 
 ## Integration events
 
@@ -178,6 +195,10 @@ to a user socket.
 
 Removing a friend records `friend.removed` with the same payload, in the same
 transaction that deletes the friendship.
+
+An avatar change records `user.profile.updated` with `user_id`, `username`,
+`avatar_url` and `recipient_user_ids`: the user, their active friends and the other
+side of their pending requests.
 
 `service.OutboxRelay` publishes recorded events at least once:
 
@@ -229,6 +250,7 @@ internal/router        error-returning handler adapter
 internal/server        Gin engine and middleware chain
 internal/service       rules, no HTTP or SQL
 internal/repository    PostgreSQL access, migrations runner
+internal/repository/avatarfiles   avatar image files
 migrations             embedded SQL
 tests/unit             no database needed
 tests/integration      real PostgreSQL
