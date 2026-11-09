@@ -115,7 +115,32 @@ are plain numbers with no foreign key. Foreign keys exist only inside `users`.
 | `blocks`                                           | Directional: blocker to blocked. Blocking suspends the friendship and cancels pending requests.      |
 | `reports`                                          | Moderation reports. `users.file_report()` enforces one report per reporter and target per window.  |
 | `provisioning_operations`, `deletion_operations` | Idempotent, resumable workflow records keyed by `operation_id`.                                    |
-| `outbox`                                           | Transactional outbox. Unpublished rows have `published_at IS NULL`.                                |
+| `outbox`                                           | Transactional outbox with a stable `event_id` per event. Unpublished rows have `published_at IS NULL`. |
+
+## Integration events
+
+A change that other services must learn about records its event with
+`postgres.AppendEvent` inside the change's own transaction, so the change and
+the event commit or roll back together. Event types come from the catalog in
+`internal/service/outbox.go` (`user.profile.updated`, `friend.request.received`,
+`friend.request.resolved`); other types are refused.
+
+`service.OutboxRelay` publishes recorded events at least once:
+
+- Each event has a stable `event_id`. A redelivered event carries the same
+  `event_id`, so consumers deduplicate by it.
+- A row is marked published only after the publisher reports a broker confirm,
+  in the same transaction that claimed it. A crash after the confirm sends the
+  event again; it is never lost.
+- Events of one aggregate (for example one profile) publish in `id` order. A
+  failed event records `attempts`, a short code in `last_error` and a later
+  `next_attempt_at` (1s doubling to 5 minutes), and holds back later events of
+  its aggregate only.
+- Several relays may run at once; `FOR UPDATE SKIP LOCKED` keeps them apart.
+
+The published envelope is `{ "event_id", "event_type", "occurred_at", "payload" }`.
+The RabbitMQ publisher and its exchange and routing are not implemented yet, so
+the relay is not started by the server.
 
 Accepting a request: in one transaction, set the request to `accepted`, then
 insert the friendship. The database refuses a new pending request while an
