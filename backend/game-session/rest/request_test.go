@@ -5,7 +5,13 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/gin-gonic/gin"
 )
+
+func init() {
+	gin.SetMode(gin.TestMode)
+}
 
 func TestCreateRoomBodySize(t *testing.T) {
 	const limit = 64 * 1024
@@ -21,9 +27,10 @@ func TestCreateRoomBodySize(t *testing.T) {
 		{"over limit", "{}" + strings.Repeat(" ", limit-2) + "x", false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			r := httptest.NewRequest(http.MethodPost, "/api/v2/rooms", strings.NewReader(tc.body))
 			w := httptest.NewRecorder()
-			_, ok := readCreateRoomRequest(w, r)
+			c, _ := gin.CreateTestContext(w)
+			c.Request = httptest.NewRequest(http.MethodPost, "/api/v2/rooms", strings.NewReader(tc.body))
+			_, ok := readCreateRoomRequest(c)
 			if ok != tc.accepted {
 				t.Fatalf("accepted = %v, want %v", ok, tc.accepted)
 			}
@@ -46,9 +53,10 @@ func TestCreateRoomJSONErrors(t *testing.T) {
 		{`[]`, http.StatusUnprocessableEntity},
 	} {
 		t.Run(tc.body, func(t *testing.T) {
-			r := httptest.NewRequest(http.MethodPost, "/api/v2/rooms", strings.NewReader(tc.body))
 			w := httptest.NewRecorder()
-			_, ok := readCreateRoomRequest(w, r)
+			c, _ := gin.CreateTestContext(w)
+			c.Request = httptest.NewRequest(http.MethodPost, "/api/v2/rooms", strings.NewReader(tc.body))
+			_, ok := readCreateRoomRequest(c)
 			if ok || w.Code != tc.status || !strings.Contains(w.Body.String(), `"code":"VALIDATION_ERROR"`) {
 				t.Fatalf("accepted=%v status=%d body=%s", ok, w.Code, w.Body.String())
 			}

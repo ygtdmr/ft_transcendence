@@ -1,13 +1,13 @@
 package rest
 
 import (
-	"encoding/json"
 	"errors"
-	"log/slog"
 	"net/http"
 
 	"game-session/room"
 	"game-session/service"
+
+	"github.com/gin-gonic/gin"
 )
 
 type apiError struct {
@@ -24,42 +24,38 @@ type dataEnvelope struct {
 	Data any `json:"data"`
 }
 
-func writeJSON(w http.ResponseWriter, status int, body any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	if err := json.NewEncoder(w).Encode(body); err != nil {
-		slog.Error("could not write JSON response", "err", err)
-	}
+func writeJSON(c *gin.Context, status int, body any) {
+	c.JSON(status, body)
 }
 
-func writeData(w http.ResponseWriter, status int, data any) {
-	writeJSON(w, status, dataEnvelope{Data: data})
+func writeData(c *gin.Context, status int, data any) {
+	writeJSON(c, status, dataEnvelope{Data: data})
 }
 
-func writeError(w http.ResponseWriter, status int, code string, message string, details map[string]any) {
+func writeError(c *gin.Context, status int, code string, message string, details map[string]any) {
 	if details == nil {
 		details = map[string]any{}
 	}
-	writeJSON(w, status, errorEnvelope{Error: apiError{Code: code, Message: message, Details: details}})
+	writeJSON(c, status, errorEnvelope{Error: apiError{Code: code, Message: message, Details: details}})
 }
 
-func writeDomainError(w http.ResponseWriter, err error) {
+func writeDomainError(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, room.ErrRoomNotFound):
-		writeError(w, http.StatusNotFound, "ROOM_NOT_FOUND", "No active room matches this id.", nil)
+		writeError(c, http.StatusNotFound, "ROOM_NOT_FOUND", "No active room matches this id.", nil)
 	case errors.Is(err, room.ErrNotRoomMember):
-		writeError(w, http.StatusForbidden, "NOT_ROOM_MEMBER", "The user is not a member of this room.", nil)
+		writeError(c, http.StatusForbidden, "NOT_ROOM_MEMBER", "The user is not a member of this room.", nil)
 	case errors.Is(err, room.ErrAlreadyInRoom):
-		writeError(w, http.StatusConflict, "ALREADY_IN_ROOM", "The user already belongs to an active room.", nil)
+		writeError(c, http.StatusConflict, "ALREADY_IN_ROOM", "The user already belongs to an active room.", nil)
 	case errors.Is(err, room.ErrRoomFull):
-		writeError(w, http.StatusConflict, "ROOM_FULL", "The room has no free seat.", nil)
+		writeError(c, http.StatusConflict, "ROOM_FULL", "The room has no free seat.", nil)
 	case errors.Is(err, room.ErrRoomNotJoinable):
-		writeError(w, http.StatusConflict, "ROOM_NOT_JOINABLE", "The room does not accept joins in its current state.", nil)
+		writeError(c, http.StatusConflict, "ROOM_NOT_JOINABLE", "The room does not accept joins in its current state.", nil)
 	case errors.Is(err, room.ErrInvalidPayload), errors.Is(err, room.ErrValidationError):
-		writeError(w, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "The request payload is invalid.", nil)
+		writeError(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "The request payload is invalid.", nil)
 	case errors.Is(err, service.ErrRoomCodeTaken):
-		writeError(w, http.StatusServiceUnavailable, "ROOM_CODE_UNAVAILABLE", "Could not allocate a room code, retry.", nil)
+		writeError(c, http.StatusServiceUnavailable, "ROOM_CODE_UNAVAILABLE", "Could not allocate a room code, retry.", nil)
 	default:
-		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Unexpected server error.", nil)
+		writeError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Unexpected server error.", nil)
 	}
 }
