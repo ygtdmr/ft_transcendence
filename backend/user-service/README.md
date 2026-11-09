@@ -131,8 +131,9 @@ are plain numbers with no foreign key. Foreign keys exist only inside `users`.
 
 ## Public routes and sessions
 
-Friend requests are served under `/api/v1/friends/requests`, and blocks under
-`/api/v1/users/{user_id}/block`. The `ft_session` cookie is the only browser credential: each request forwards it to Auth's private
+Friends are served under `/api/v1/friends`, friend requests under
+`/api/v1/friends/requests`, and blocks under `/api/v1/users/{user_id}/block`. The
+`ft_session` cookie is the only browser credential: each request forwards it to Auth's private
 session validation. A refused session is `401 UNAUTHORIZED`; an Auth outage is
 `503 SERVICE_UNAVAILABLE`. Set `AUTH_INTERNAL_URL` and
 `AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE` to enable these routes; both are required
@@ -165,9 +166,13 @@ Block changes record these payloads:
 | `friend.restored`         | `users`: both users, ordered by `user_id`               | Chat Gateway                |
 | `relationship.blocked`    | `blocker_id`, `blocked_id`                              | Channel Service only        |
 
-`relationship.blocked` is recorded only when a block suspends a friendship. It
-names which user placed the block so Channel Service can choose each user's
-access reason. It must never be delivered to a user socket.
+`relationship.blocked` is recorded only when a block suspends a friendship, before
+that friendship's `friend.removed`. It names which user placed the block so
+Channel Service can choose each user's access reason. It must never be delivered
+to a user socket.
+
+Removing a friend records `friend.removed` with the same payload, in the same
+transaction that deletes the friendship.
 
 `service.OutboxRelay` publishes recorded events at least once:
 
