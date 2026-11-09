@@ -251,23 +251,20 @@ func TestGoogleCallbackFailuresPostgres(t *testing.T) {
 //
 // Expected output:
 //
-//   - A taken username in Auth or at User Service moves to the next suffix.
+//   - A username taken at User Service moves to the next suffix.
 //   - A User outage redirects with OAUTH_PROVIDER_ERROR and leaves the account
 //     PROVISIONING; the next sign-in resumes the same operation.
 //   - A DELETING account never receives a session.
 func TestGoogleCallbackUsernamesAndLifecyclePostgres(t *testing.T) {
 	f := newCallbackFixture(t)
-	if _, err := f.auth.Register(context.Background(), service.RegisterInput{Email: "other@example.com", Username: "Ada_Lovelace", Password: "Correct-Horse-1"}); err != nil {
-		t.Fatal(err)
-	}
 	f.user.answer(stubAnswer{http.StatusConflict, "USERNAME_TAKEN"})
 	f.google.identities["code-1"] = ada
 	location, cookies := f.signIn(t, "code-1")
 	wantSession(t, location, cookies)
 	var username string
 	_ = f.pool.QueryRow(context.Background(), `SELECT u.username FROM users u JOIN oauth_links l ON l.user_id = u.id`).Scan(&username)
-	if username != "Ada_Lovelace_3" {
-		t.Fatalf("username = %q, want Ada_Lovelace_3 (Auth took _1, User took _2)", username)
+	if username != "Ada_Lovelace_2" {
+		t.Fatalf("username = %q, want Ada_Lovelace_2 (User took _1)", username)
 	}
 
 	grace := service.GoogleIdentity{Subject: "sub-grace", Email: "grace@example.com", EmailVerified: true, Name: "Grace Hopper"}

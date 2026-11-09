@@ -49,6 +49,14 @@ func (s *AuthService) Login(ctx context.Context, input LoginInput) (AuthResult, 
 		// Accounts being deleted never receive a new session.
 		return AuthResult{}, ErrInvalidCredentials
 	}
+	// The name is read first so a failed read leaves no session behind.
+	user, err = s.withCanonicalUsername(ctx, user)
+	if errors.Is(err, ErrProfileDeleted) {
+		return AuthResult{}, ErrInvalidCredentials
+	}
+	if err != nil {
+		return AuthResult{}, err
+	}
 	result, err := s.createLoginSession(ctx, user)
 	if errors.Is(err, ErrAccountUnavailable) {
 		// Deletion began after the account was read; no session is issued.

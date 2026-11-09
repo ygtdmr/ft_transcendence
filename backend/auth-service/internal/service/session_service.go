@@ -40,12 +40,19 @@ func (s *AuthService) CurrentSession(ctx context.Context, identity Identity) (Se
 	if err := s.checkIdentity(ctx, identity); err != nil {
 		return SessionResult{}, err
 	}
+	user, err := s.withCanonicalUsername(ctx, identity.User)
+	if errors.Is(err, ErrProfileDeleted) {
+		return SessionResult{}, ErrUnauthorized
+	}
+	if err != nil {
+		return SessionResult{}, err
+	}
 	membership, err := s.currentMembership(ctx, identity.User.ID)
 	if err != nil {
 		return SessionResult{}, err
 	}
 	return SessionResult{
-		User:         SessionUser{ID: identity.User.ID, Username: identity.User.Username},
+		User:         SessionUser{ID: user.ID, Username: user.Username},
 		ActiveRoomID: membership.RoomID, ActiveRoomAPIVersion: membership.APIVersion,
 		SessionExpiresAt: identity.ExpiresAt,
 	}, nil

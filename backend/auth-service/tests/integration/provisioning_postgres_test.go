@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -31,6 +32,7 @@ type userStub struct {
 	operations []string
 	receipts   map[int64]string
 	lookup     string
+	profiles   map[int64]string
 	server     *httptest.Server
 }
 
@@ -53,6 +55,10 @@ func (s *userStub) serve(w http.ResponseWriter, r *http.Request) {
 	defer s.mu.Unlock()
 	if r.Header.Get("Authorization") != "Bearer "+provisioningCredential {
 		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	if id, ok := strings.CutPrefix(r.URL.Path, "/internal/v1/profiles/"); ok {
+		s.serveProfile(w, id)
 		return
 	}
 	if r.Method == http.MethodGet {
@@ -83,6 +89,25 @@ func (s *userStub) serve(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{
 		"operation_id": operation, "user_id": body.UserID, "outcome": "PROVISIONED", "completed_at": "2026-11-05T09:30:00.000000Z",
 	}})
+}
+
+func (s *userStub) serveProfile(w http.ResponseWriter, id string) {
+	userID, _ := strconv.ParseInt(id, 10, 64)
+	username, ok := s.profiles[userID]
+	if !ok {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		return
+	}
+	_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"user_id": userID, "username": username}})
+}
+
+func (s *userStub) setProfile(userID int64, username string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.profiles == nil {
+		s.profiles = map[int64]string{}
+	}
+	s.profiles[userID] = username
 }
 
 func (s *userStub) answer(answers ...stubAnswer) {

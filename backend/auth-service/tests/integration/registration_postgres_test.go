@@ -48,7 +48,7 @@ import (
 //
 //   - Rollback cases leave zero rows; successful HTTP registration returns 201 and one row per
 //     table.
-//   - Duplicate identities return 409 EMAIL_TAKEN or USERNAME_TAKEN without adding rows.
+//   - A duplicate email returns 409 EMAIL_TAKEN without adding rows.
 //   - Concurrent requests produce one success and one ErrEmailTaken, ending with two rows per
 //     table.
 func TestRegisterPostgres(t *testing.T) {
@@ -108,7 +108,7 @@ func applyRegistrationMigration(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	for _, name := range []string{"000001_create_auth_tables.up.sql", "000002_session_revocations.up.sql", "000003_account_status.up.sql",
 		"000004_provisioning_operations.up.sql", "000005_oauth_states.up.sql", "000006_google_links.up.sql",
-		"000007_account_deletions.up.sql"} {
+		"000007_account_deletions.up.sql", "000008_drop_auth_username_uniqueness.up.sql"} {
 		migration, err := os.ReadFile(filepath.Join("..", "..", "migrations", name))
 		if err != nil {
 			t.Fatal(err)
@@ -176,15 +176,10 @@ func checkPostgresRegistration(t *testing.T, pool *pgxpool.Pool, handler http.Ha
 
 func checkPostgresConflicts(t *testing.T, pool *pgxpool.Pool, handler http.Handler) {
 	t.Helper()
-	for _, field := range []string{"email", "username"} {
+	{
 		input := testutil.ValidInput()
 		code := "EMAIL_TAKEN"
-		if field == "email" {
-			input.Email, input.Username = strings.ToUpper(input.Email), "other_player"
-		} else {
-			input.Email, input.Username = "other@example.com", strings.ToUpper(input.Username)
-			code = "USERNAME_TAKEN"
-		}
+		input.Email, input.Username = strings.ToUpper(input.Email), "other_player"
 		response := requestRegister(handler, inputJSON(t, input), "application/json")
 		if response.Code != 409 || !strings.Contains(response.Body.String(), code) {
 			t.Fatalf("constraint mapping: %d %s", response.Code, response.Body)

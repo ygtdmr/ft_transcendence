@@ -121,8 +121,8 @@ func (s *AuthService) finishGoogleSignIn(ctx context.Context, user model.User) (
 // createGoogleAccount creates a password-less account linked to identity and
 // returns it once it is ACTIVE.
 //
-// It tries generated usernames in order. A username taken in Auth, or reported
-// taken by User Service (which discards the provisional account), moves on to
+// It tries generated usernames in order. A username reported
+// taken by User Service (which discards the provisional account) moves on to
 // the next candidate.
 func (s *AuthService) createGoogleAccount(ctx context.Context, identity GoogleIdentity) (model.User, error) {
 	store, provisioning := s.repository.(ProvisioningRepository)
@@ -162,9 +162,6 @@ func (s *AuthService) createGoogleAccount(ctx context.Context, identity GoogleId
 			}
 			return provisioningTx.CreateProvisioningOperation(ctx, operation)
 		})
-		if errors.Is(err, ErrUsernameTaken) {
-			continue
-		}
 		if err != nil {
 			return model.User{}, err
 		}

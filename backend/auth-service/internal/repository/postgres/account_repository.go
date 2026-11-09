@@ -62,7 +62,6 @@ type authTx struct {
 // Errors:
 //
 //   - service.ErrEmailTaken: The unique email constraint was violated.
-//   - service.ErrUsernameTaken: The unique username constraint was violated.
 //   - Database errors: The insert or result scan failed, including context cancellation and deadlines.
 func (t *authTx) CreateUser(ctx context.Context, user model.User) (model.User, error) {
 	err := t.tx.QueryRow(ctx, `
@@ -116,14 +115,8 @@ func (t *authTx) CreateRefreshToken(ctx context.Context, token model.RefreshToke
 
 func accountError(err error) error {
 	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-		switch pgErr.ConstraintName {
-		case "users_email_unique":
-			return service.ErrEmailTaken
-
-		case "users_username_unique":
-			return service.ErrUsernameTaken
-		}
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == "users_email_unique" {
+		return service.ErrEmailTaken
 	}
 
 	return err
