@@ -28,16 +28,31 @@ func (r *PenaltyRepository) RecordPenalty(ctx context.Context, eventID string, p
 	}
 	defer func() { _ = tx.Rollback(context.WithoutCancel(ctx)) }()
 
+	if err := lockUser(ctx, tx, penalty.UserID); err != nil {
+		return false, classify(err)
+	}
+	deleted, err := isDeleted(ctx, tx, penalty.UserID)
+	if err != nil {
+		return false, classify(err)
+	}
+	var owner *int64
+	if !deleted {
+		owner = &penalty.UserID
+	}
+
 	inserted, err := tx.Exec(ctx, `
 		INSERT INTO penalties (event_id, user_id, room_id, game_id, role, reason, points, penalized_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		ON CONFLICT (event_id) DO NOTHING`,
-		eventID, penalty.UserID, penalty.RoomID, penalty.GameID, penalty.Role, penalty.Reason, *penalty.Points, penalty.PenalizedAt)
+		eventID, owner, penalty.RoomID, penalty.GameID, penalty.Role, penalty.Reason, *penalty.Points, penalty.PenalizedAt)
 	if err != nil {
 		return false, classify(err)
 	}
 	if inserted.RowsAffected() == 0 {
 		return false, nil
+	}
+	if deleted {
+		return true, classify(tx.Commit(ctx))
 	}
 	if _, err := tx.Exec(ctx, `
 		INSERT INTO user_stats (user_id, penalty_points) VALUES ($1, $2)

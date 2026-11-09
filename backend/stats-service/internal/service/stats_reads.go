@@ -22,9 +22,10 @@ type UserStats struct {
 	PenaltyPoints int
 }
 
-// Opponent is one player of the opposing team, under the name recorded with the match.
+// Opponent is one player of the opposing team, under the name recorded with
+// the match. UserID is nil for a deleted account.
 type Opponent struct {
-	UserID   int64
+	UserID   *int64
 	Username string
 }
 

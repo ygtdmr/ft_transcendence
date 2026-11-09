@@ -6,7 +6,7 @@ Bruno collection on the `bruno` branch.
 
 This service records finalized matches through `service.MatchIngest` and leave
 penalties through `service.PenaltyIngest`. Nothing calls them at runtime yet: the
-RabbitMQ consumer and account cleanup are not implemented.
+RabbitMQ consumer is not implemented.
 
 ## Endpoints
 
@@ -16,6 +16,7 @@ RabbitMQ consumer and account cleanup are not implemented.
 | `GET /readyz`   | Readiness. 200 while PostgreSQL answers, otherwise 503 `DEPENDENCY_UNAVAILABLE`.  |
 | `GET /api/v1/users/me/matches` | The signed-in user's match history, newest first.             |
 | `GET /internal/v1/user-stats/{user_id}` | Private listener only. Counters for User Service (`stats.read`). |
+| `PUT /internal/v1/account-cleanups/{operation_id}` | Private listener only. Removes a deleted user's identity (`account.cleanup`). |
 
 Level is `floor(wins / 4) + 1`. A user with no records has zero counters and level 1.
 
@@ -69,6 +70,13 @@ environment only and does not load `.env` itself.
 `player.penalized` record. The event id decides duplicates, and `points` comes from
 the event, so this service never computes a penalty. A penalty changes only
 `penalty_points`.
+
+## Account cleanup
+
+One transaction clears the user's counters and penalty points, and anonymizes
+retained matches as `user_id: null`, `username: "deleted_user"`. `stats.deleted_users`
+keeps the user id and operation id so a replay answers the same receipt and a late
+event cannot recreate the identity.
 
 ## Tests
 

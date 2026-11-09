@@ -44,7 +44,8 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 	if len(cfg.CallerCredentials) == 0 {
 		logger.WarnContext(ctx, "no service credentials configured; private routes accept no caller")
 	}
-	internal := server.NewInternal(cfg.InternalPort, logger, controller.NewInternalStats(reads, auth))
+	internal := server.NewInternal(cfg.InternalPort, logger, controller.NewInternalStats(reads, auth),
+		controller.NewInternalCleanup(service.NewAccountCleanup(statspostgres.NewAccountCleanup(pool)), auth))
 
 	var public []server.RouteRegistrar
 	if cfg.AuthInternalURL != "" {

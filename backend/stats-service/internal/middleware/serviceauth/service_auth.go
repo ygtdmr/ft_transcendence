@@ -19,7 +19,8 @@ import (
 
 // Operation scopes served by this receiver.
 const (
-	ScopeStatsRead = "stats.read"
+	ScopeStatsRead      = "stats.read"
+	ScopeAccountCleanup = "account.cleanup"
 )
 
 // Matrix is the authorization matrix: the scopes each caller may use on this receiver.
@@ -28,7 +29,7 @@ type Matrix map[string][]string
 // DefaultMatrix returns the receiver's authorization matrix from the private contract.
 func DefaultMatrix() Matrix {
 	return Matrix{
-		"user-service": {ScopeStatsRead},
+		"user-service": {ScopeStatsRead, ScopeAccountCleanup},
 	}
 }
 
