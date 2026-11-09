@@ -151,7 +151,7 @@ func TestRegisterHTTPErrors(t *testing.T) {
 //
 // Expected output:
 //
-//   - HTTP 409 EMAIL_TAKEN or USERNAME_TAKEN with no credential cookies.
+//   - HTTP 409 EMAIL_TAKEN with no credential cookies.
 //   - Exactly the original user/session/refresh-token trio remains.
 func TestRegisterConflicts(t *testing.T) {
 	repo := &testutil.MemoryRepository{}
@@ -160,15 +160,10 @@ func TestRegisterConflicts(t *testing.T) {
 		t.Fatalf("initial registration failed: %s", response.Body)
 	}
 
-	for _, field := range []string{"email", "username"} {
+	{
 		input := testutil.ValidInput()
 		code := "EMAIL_TAKEN"
-		if field == "email" {
-			input.Email, input.Username = strings.ToUpper(input.Email), "other_player"
-		} else {
-			input.Email, input.Username = "other@example.com", strings.ToUpper(input.Username)
-			code = "USERNAME_TAKEN"
-		}
+		input.Email, input.Username = strings.ToUpper(input.Email), "other_player"
 
 		response := requestRegister(handler, inputJSON(t, input), "application/json")
 		if response.Code != 409 || !strings.Contains(response.Body.String(), code) || len(response.Result().Cookies()) != 0 {

@@ -55,9 +55,9 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 			pool.Close()
 			return nil, nil, err
 		}
-		options = append(options, service.WithProfileProvisioner(provisioner))
+		options = append(options, service.WithProfileProvisioner(provisioner), service.WithProfileReader(provisioner))
 	} else {
-		logger.WarnContext(ctx, "USER_INTERNAL_URL is not set; accounts are created without User Service profiles")
+		logger.WarnContext(ctx, "USER_INTERNAL_URL is not set; accounts are created without User Service profiles or username uniqueness")
 	}
 	authService := service.NewAuth(authRepository, issuer, options...)
 	sealer, err := security.NewOAuthStateSealer([]byte(cfg.JWTSecret))

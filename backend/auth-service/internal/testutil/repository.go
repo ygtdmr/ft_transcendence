@@ -78,13 +78,13 @@ type memoryTx struct {
 //
 // Flow:
 //
-//  1. Apply an injected user-stage failure, then check email and username case-insensitively.
+//  1. Apply an injected user-stage failure, then check email case-insensitively.
 //  2. For a new identity, assign a sequential ID and UTC creation time, then append it.
 //
 // Expected output:
 //
 //   - Success returns the stored user and nil.
-//   - Failure returns a zero User and an injected error, ErrEmailTaken or ErrUsernameTaken.
+//   - Failure returns a zero User and an injected error or ErrEmailTaken.
 func (t *memoryTx) CreateUser(_ context.Context, user model.User) (model.User, error) {
 	if t.FailAt == "user" {
 		return model.User{}, errors.New("private database error")
@@ -95,9 +95,6 @@ func (t *memoryTx) CreateUser(_ context.Context, user model.User) (model.User, e
 			return model.User{}, service.ErrEmailTaken
 		}
 
-		if strings.EqualFold(current.Username, user.Username) {
-			return model.User{}, service.ErrUsernameTaken
-		}
 	}
 
 	user.ID, user.CreatedAt = int64(len(t.Users)+1), time.Now().UTC()

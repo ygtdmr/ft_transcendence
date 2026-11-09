@@ -84,13 +84,29 @@ func (c *Client) ReceiptByUser(ctx context.Context, userID int64) (service.Provi
 }
 
 func (c *Client) do(ctx context.Context, method, path string, body []byte) (service.ProvisionReceipt, error) {
+	status, raw, err := c.send(ctx, method, path, body)
+	if err != nil {
+		return service.ProvisionReceipt{}, fmt.Errorf("%w: %w", service.ErrProvisionUnavailable, err)
+	}
+	if status == http.StatusOK || status == http.StatusCreated {
+		return decodeReceipt(raw)
+	}
+	if status >= http.StatusInternalServerError {
+		return service.ProvisionReceipt{}, fmt.Errorf("%w: status %d", service.ErrProvisionUnavailable, status)
+	}
+
+	return service.ProvisionReceipt{}, mapError(status, errorCode(raw))
+}
+
+// send performs one request. An error means no complete answer was received.
+func (c *Client) send(ctx context.Context, method, path string, body []byte) (int, []byte, error) {
 	var reader io.Reader
 	if body != nil {
 		reader = strings.NewReader(string(body))
 	}
 	request, err := http.NewRequestWithContext(ctx, method, c.baseURL+path, reader)
 	if err != nil {
-		return service.ProvisionReceipt{}, err
+		return 0, nil, err
 	}
 	request.Header.Set("Authorization", "Bearer "+c.credential)
 	request.Header.Set("Accept", "application/json")
@@ -100,22 +116,15 @@ func (c *Client) do(ctx context.Context, method, path string, body []byte) (serv
 
 	response, err := c.http.Do(request)
 	if err != nil {
-		return service.ProvisionReceipt{}, fmt.Errorf("%w: %w", service.ErrProvisionUnavailable, err)
+		return 0, nil, err
 	}
 	defer response.Body.Close()
 	raw, err := io.ReadAll(io.LimitReader(response.Body, maxResponseBody))
 	if err != nil {
-		return service.ProvisionReceipt{}, fmt.Errorf("%w: read response: %w", service.ErrProvisionUnavailable, err)
+		return 0, nil, fmt.Errorf("read response: %w", err)
 	}
 
-	if response.StatusCode == http.StatusOK || response.StatusCode == http.StatusCreated {
-		return decodeReceipt(raw)
-	}
-	if response.StatusCode >= 500 {
-		return service.ProvisionReceipt{}, fmt.Errorf("%w: status %d", service.ErrProvisionUnavailable, response.StatusCode)
-	}
-
-	return service.ProvisionReceipt{}, mapError(response.StatusCode, errorCode(raw))
+	return response.StatusCode, raw, nil
 }
 
 func mapError(status int, code string) error {

@@ -47,6 +47,7 @@ type AuthService struct {
 	lifecycle   SessionLifecycle
 	revocations RevocationRepository
 	provisioner ProfileProvisioner
+	profiles    ProfileReader
 }
 
 // NewAuth returns an auth service using the supplied transaction and token providers.
