@@ -32,7 +32,7 @@ func Require(validator Validator) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		raw, err := c.Cookie("ft_session")
 		if err != nil || raw == "" {
-			router.WriteError(c, unauthorized())
+			router.WriteError(c, Unauthorized())
 			return
 		}
 		userID, err := validator.ValidateSession(c.Request.Context(), raw)
@@ -41,7 +41,7 @@ func Require(validator Validator) gin.HandlerFunc {
 			c.Set(userKey, userID)
 			c.Next()
 		case errors.Is(err, authclient.ErrSessionInvalid):
-			router.WriteError(c, unauthorized())
+			router.WriteError(c, Unauthorized())
 		case errors.Is(err, authclient.ErrUnavailable):
 			router.WriteError(c, &httpresponse.Error{Status: http.StatusServiceUnavailable,
 				Code: "SERVICE_UNAVAILABLE", Message: "The service is temporarily unavailable."})
@@ -57,7 +57,8 @@ func UserID(c *gin.Context) int64 {
 	return c.GetInt64(userKey)
 }
 
-func unauthorized() *httpresponse.Error {
+// Unauthorized is the response for a caller without a usable session.
+func Unauthorized() *httpresponse.Error {
 	return &httpresponse.Error{Status: http.StatusUnauthorized, Code: "UNAUTHORIZED",
 		Message: "A valid active session is required."}
 }

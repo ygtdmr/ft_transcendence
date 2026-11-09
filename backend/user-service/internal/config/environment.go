@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -26,6 +27,9 @@ type Config struct {
 	// AvatarBaseURL is the public HTTPS origin prefixed to avatar paths, or
 	// empty for root-relative avatar URLs.
 	AvatarBaseURL string
+	// AvatarStorageDir is the absolute directory holding uploaded avatars.
+	// Required in production; when empty, avatar changes are not served.
+	AvatarStorageDir string
 	// CallerCredentials maps each private caller to its accepted service
 	// credentials, read from mounted secret files.
 	CallerCredentials map[string][]string `json:"-"`
@@ -50,7 +54,7 @@ type Config struct {
 // Errors:
 //
 //   - Missing settings: DATABASE_URL was not supplied.
-//   - Malformed values: PORT, DATABASE_URL, AVATAR_BASE_URL or MIGRATE_ON_START could not be parsed.
+//   - Malformed values: PORT, DATABASE_URL, AVATAR_BASE_URL, AVATAR_STORAGE_DIR or MIGRATE_ON_START could not be parsed.
 //   - Logging settings: APP_ENV, LOG_FORMAT or LOG_LEVEL has an unsupported value.
 //   - Invalid bounds: PORT or INTERNAL_PORT is outside the valid TCP range, or both are equal.
 //   - Credentials: a configured credential file is unreadable, too short, or
@@ -58,14 +62,15 @@ type Config struct {
 //   - Auth settings: see loadAuthService.
 func Load() (Config, error) {
 	cfg := Config{
-		Environment:    strings.TrimSpace(os.Getenv("APP_ENV")),
-		LogFormat:      strings.TrimSpace(os.Getenv("LOG_FORMAT")),
-		LogLevel:       strings.TrimSpace(os.Getenv("LOG_LEVEL")),
-		Port:           strings.TrimSpace(os.Getenv("PORT")),
-		InternalPort:   strings.TrimSpace(os.Getenv("INTERNAL_PORT")),
-		AvatarBaseURL:  strings.TrimRight(strings.TrimSpace(os.Getenv("AVATAR_BASE_URL")), "/"),
-		DatabaseURL:    strings.TrimSpace(os.Getenv("DATABASE_URL")),
-		MigrateOnStart: true,
+		Environment:      strings.TrimSpace(os.Getenv("APP_ENV")),
+		LogFormat:        strings.TrimSpace(os.Getenv("LOG_FORMAT")),
+		LogLevel:         strings.TrimSpace(os.Getenv("LOG_LEVEL")),
+		Port:             strings.TrimSpace(os.Getenv("PORT")),
+		InternalPort:     strings.TrimSpace(os.Getenv("INTERNAL_PORT")),
+		AvatarBaseURL:    strings.TrimRight(strings.TrimSpace(os.Getenv("AVATAR_BASE_URL")), "/"),
+		DatabaseURL:      strings.TrimSpace(os.Getenv("DATABASE_URL")),
+		MigrateOnStart:   true,
+		AvatarStorageDir: strings.TrimSpace(os.Getenv("AVATAR_STORAGE_DIR")),
 	}
 
 	if err := cfg.configureLogging(); err != nil {
@@ -143,6 +148,13 @@ func (cfg Config) validate() error {
 		if err != nil || base.Scheme != "https" || base.Host == "" || base.Path != "" || base.RawQuery != "" || base.Fragment != "" {
 			return errors.New("AVATAR_BASE_URL must be an https:// origin without a path")
 		}
+	}
+
+	if cfg.AvatarStorageDir == "" && cfg.Environment == "production" {
+		return errors.New("AVATAR_STORAGE_DIR is required in production")
+	}
+	if cfg.AvatarStorageDir != "" && !filepath.IsAbs(cfg.AvatarStorageDir) {
+		return errors.New("AVATAR_STORAGE_DIR must be an absolute path")
 	}
 
 	if cfg.DatabaseURL == "" {

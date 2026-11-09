@@ -22,7 +22,7 @@ const validDatabaseURL = "postgres://user:secret@localhost:5432/user?sslmode=dis
 func setEnvironment(t *testing.T, values map[string]string) {
 	t.Helper()
 	for _, name := range []string{"APP_ENV", "LOG_FORMAT", "LOG_LEVEL", "PORT", "INTERNAL_PORT", "DATABASE_URL", "MIGRATE_ON_START",
-		"AUTH_SERVICE_CREDENTIAL_FILE", "AUTH_SERVICE_PREVIOUS_CREDENTIAL_FILE", "AVATAR_BASE_URL",
+		"AUTH_SERVICE_CREDENTIAL_FILE", "AUTH_SERVICE_PREVIOUS_CREDENTIAL_FILE", "AVATAR_BASE_URL", "AVATAR_STORAGE_DIR",
 		"CHANNEL_SERVICE_CREDENTIAL_FILE", "CHANNEL_SERVICE_PREVIOUS_CREDENTIAL_FILE",
 		"GAME_SESSION_CREDENTIAL_FILE", "GAME_SESSION_PREVIOUS_CREDENTIAL_FILE",
 		"AUTH_INTERNAL_URL", "AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE", "AUTH_INTERNAL_TIMEOUT"} {
@@ -75,6 +75,7 @@ func TestLoadEnvironmentDefaults(t *testing.T) {
 			setEnvironment(t, map[string]string{
 				"APP_ENV": tt.environment, "DATABASE_URL": validDatabaseURL, "AUTH_INTERNAL_URL": "http://auth-service:8090",
 				"AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, strings.Repeat("o", 40)),
+				"AVATAR_STORAGE_DIR":                    "/var/lib/user-service/avatars",
 			})
 
 			cfg, err := config.Load()
@@ -149,7 +150,7 @@ func TestLoadRejectsInvalidSettings(t *testing.T) {
 		{"missing credential file", map[string]string{"DATABASE_URL": validDatabaseURL, "AUTH_SERVICE_CREDENTIAL_FILE": "/nonexistent/secret"}, "AUTH_SERVICE_CREDENTIAL_FILE"},
 		{"auth url without credential", map[string]string{"DATABASE_URL": validDatabaseURL, "AUTH_INTERNAL_URL": "http://auth:8090"}, "set together"},
 		{"auth credential without url", map[string]string{"DATABASE_URL": validDatabaseURL, "AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE": "/nonexistent/secret"}, "set together"},
-		{"auth required in production", map[string]string{"DATABASE_URL": validDatabaseURL, "APP_ENV": "production"}, "AUTH_INTERNAL_URL"},
+		{"auth required in production", map[string]string{"DATABASE_URL": validDatabaseURL, "APP_ENV": "production", "AVATAR_STORAGE_DIR": "/data/avatars"}, "AUTH_INTERNAL_URL"},
 		{"auth timeout invalid", map[string]string{"DATABASE_URL": validDatabaseURL, "AUTH_INTERNAL_TIMEOUT": "soon"}, "AUTH_INTERNAL_TIMEOUT"},
 		{"unknown environment", map[string]string{"DATABASE_URL": validDatabaseURL, "APP_ENV": "staging"}, "APP_ENV"},
 		{"unknown log format", map[string]string{"DATABASE_URL": validDatabaseURL, "LOG_FORMAT": "xml"}, "LOG_FORMAT"},
@@ -214,6 +215,29 @@ func writeSecret(t *testing.T, value string) string {
 	}
 
 	return path
+}
+
+// TestLoadAvatarStorage checks the avatar directory setting.
+//
+// Expected output: a relative path is refused, an absolute path is kept, and
+// production refuses a missing setting.
+func TestLoadAvatarStorage(t *testing.T) {
+	setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL, "AVATAR_STORAGE_DIR": "relative/dir"})
+	if _, err := config.Load(); err == nil || !strings.Contains(err.Error(), "AVATAR_STORAGE_DIR") {
+		t.Fatalf("relative directory: err = %v", err)
+	}
+
+	setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL, "AVATAR_STORAGE_DIR": "/data/avatars"})
+	cfg, err := config.Load()
+	if err != nil || cfg.AvatarStorageDir != "/data/avatars" {
+		t.Fatalf("absolute directory: %q, %v", cfg.AvatarStorageDir, err)
+	}
+
+	setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL, "APP_ENV": "production",
+		"AUTH_INTERNAL_URL": "http://auth:8090", "AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, strings.Repeat("o", 40))})
+	if _, err := config.Load(); err == nil || !strings.Contains(err.Error(), "AVATAR_STORAGE_DIR") {
+		t.Fatalf("production without directory: err = %v", err)
+	}
 }
 
 // TestLoadVerdictCallerCredentials checks the friendship verdict callers.

@@ -28,8 +28,11 @@ services:
       MIGRATE_ON_START: "true"
       INTERNAL_PORT: "8090"
       AUTH_SERVICE_CREDENTIAL_FILE: /run/secrets/auth_to_user_credential
+      AVATAR_STORAGE_DIR: /var/lib/user-service/avatars
     secrets:
       - auth_to_user_credential
+    volumes:
+      - user-service-avatars:/var/lib/user-service/avatars
     ports:
       - "127.0.0.1:8081:8080"
       # Local testing only; in deployment the private port stays on the private network.
@@ -45,3 +48,4 @@ secrets:
 
 volumes:
   user-postgres-data:
+  user-service-avatars:
