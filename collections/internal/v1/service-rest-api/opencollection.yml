@@ -59,7 +59,7 @@ docs:
     | `user-service` | `auth-service` | `provisioning.read` | Read provisioning receipt | `GET /internal/v1/provisioning-operations/{operation_id}`, `GET /internal/v1/provisioning-operations?user_id=` |
     | `user-service` | `auth-service`, `game-session` | `profile.read` | Read canonical profile | `GET /internal/v1/profiles/{user_id}` |
     | `user-service` | `channel-service`, `game-session` | `friend.verdict` | Active-friend verdict | `GET /internal/v1/friendship-verdicts?actor_user_id=&target_user_id=` |
-    | `auth-service` | `game-gateway`, `chat-gateway`, `web-bff` | `session.validate` | Validate session | `GET /internal/v1/sessions/current` |
+    | `auth-service` | `game-gateway`, `chat-gateway`, `web-bff`, `user-service`, `stats-service` | `session.validate` | Validate session | `GET /internal/v1/sessions/current` |
     | `auth-service` | `user-service` | `account.metadata.read` | Read account metadata | `GET /internal/v1/accounts/{user_id}` |
     | `auth-service` | `user-service` | `account.deletion.begin` | Begin account deletion | `PUT /internal/v1/account-deletions/{operation_id}` |
     | `auth-service` | `user-service` | `account.deletion.complete` | Complete account deletion | `PUT /internal/v1/account-deletions/{operation_id}/completion` |
@@ -90,7 +90,7 @@ docs:
 
     ## Environment
 
-    Select `local`. Set `userInternalUrl` and `authInternalUrl` to the User and Auth private listeners, and each `<caller>To<Receiver>ServiceCredential` variable to the local credential for that pair. Keep real credential values only in local, uncommitted environment configuration.
+    Select `local`. Set `userInternalUrl`, `authInternalUrl` and `statsInternalUrl` to the User and Auth private listeners, and each `<caller>To<Receiver>ServiceCredential` variable to the local credential for that pair. Keep real credential values only in local, uncommitted environment configuration.
   type: text/markdown
 bundled: false
 extensions: {}

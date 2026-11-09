@@ -1,0 +1,59 @@
+info:
+  name: Get user stats
+  type: http
+  seq: 1
+  tags: [internal, stats]
+http:
+  method: GET
+  url: "{{statsInternalUrl}}/internal/v1/user-stats/42"
+  headers:
+    - name: Authorization
+      value: "Bearer {{userToStatsServiceCredential}}"
+    - name: Accept
+      value: application/json
+docs: |-
+  # Get user stats
+
+  Returns one user's counters. Scope `stats.read`. The caller is User Service, which composes them into profile responses. `penalty_points` is owner-only: User Service returns it only on the own profile.
+
+  A user with no recorded match or penalty has zero counters and level 1.
+
+  ## Response fields
+
+  | Field | Type | Required | Nullable | Allowed values | Description |
+  | --- | --- | ---: | ---: | --- | --- |
+  | `data.user_id` | integer | yes | no | positive | User ID |
+  | `data.level` | integer | yes | no | `>= 1` | `floor(wins / 4) + 1` |
+  | `data.wins` | integer | yes | no | `>= 0` | Finished matches won |
+  | `data.losses` | integer | yes | no | `>= 0` | Finished matches lost |
+  | `data.matches_played` | integer | yes | no | `wins + losses` | Total settled matches |
+  | `data.penalty_points` | integer | yes | no | `>= 0` | Accumulated leave penalties |
+
+  ## Errors
+
+  | Status | Code | Condition | `details` |
+  | --- | --- | --- | --- |
+  | `401` | `SERVICE_UNAUTHENTICATED` | Missing or unknown service credential | `{}` |
+  | `403` | `SERVICE_FORBIDDEN` | Caller lacks `stats.read` | `{}` |
+  | `422` | `VALIDATION_ERROR` | `user_id` is not a positive integer | `{ "field": "user_id" }` |
+  | `500` | `INTERNAL_ERROR` | Unexpected failure | `{}` |
+  | `503` | `SERVICE_UNAVAILABLE` | Database unavailable | `{}` |
+examples:
+  - name: Success
+    request: {url: "{{statsInternalUrl}}/internal/v1/user-stats/42", method: GET, headers: [], params: [], body: {mode: none}}
+    response:
+      status: 200
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "data": {
+              "user_id": 42,
+              "level": 4,
+              "wins": 12,
+              "losses": 8,
+              "matches_played": 20,
+              "penalty_points": 0
+            }
+          }
