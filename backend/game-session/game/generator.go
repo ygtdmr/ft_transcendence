@@ -1,6 +1,8 @@
 package game
 
 import (
+	_ "embed"
+	"encoding/json"
 	"fmt"
 	"math/rand/v2"
 )
@@ -12,6 +14,17 @@ type Word struct {
 
 type WordPack struct {
 	Words []Word `json:"words"`
+}
+
+//go:embed wordpack.json
+var defaultWordPackJSON []byte
+
+func DefaultWordPack() (WordPack, error) {
+	var pack WordPack
+	if err := json.Unmarshal(defaultWordPackJSON, &pack); err != nil {
+		return WordPack{}, err
+	}
+	return pack, nil
 }
 
 func validateWordPool(pool []Word, language string) error {
@@ -120,6 +133,5 @@ func generateCards(wordPool []Word, language string, r *rand.Rand) ([]card, Team
 			revealed: false,
 		}
 	}
-
 	return cards, startingTeam, nil
 }

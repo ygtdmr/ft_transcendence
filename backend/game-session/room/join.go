@@ -1,22 +1,22 @@
 package room
 
 import (
-	game "game-session/game"
 	"time"
 )
 
-func (r *Room) canJoin(currentGame *game.Game) error {
+func (r *Room) canJoin(input RoomInput) error {
 	switch r.Status {
 	case StatusWaiting:
-		return nil
-	case StatusInGame:
-		if currentGame == nil {
-			return ErrGameNotFound
-		}
-		if !currentGame.IsPaused() {
+		if hasPostGamePending(input.Members) {
 			return ErrRoomNotJoinable
 		}
-		return nil
+	case StatusInGame:
+		if input.CurrentGame == nil {
+			return ErrGameNotFound
+		}
+		if !input.CurrentGame.IsPaused() {
+			return ErrRoomNotJoinable
+		}
 	case StatusCountDown, StatusPostGame:
 		return ErrRoomNotJoinable
 	case StatusClosed:
@@ -24,17 +24,18 @@ func (r *Room) canJoin(currentGame *game.Game) error {
 	default:
 		return ErrInvalidRoomState
 	}
+	if len(input.Members) >= r.MaxPlayers {
+		return ErrRoomFull
+	}
+	return nil
 }
 
 func (r *Room) Join(input RoomInput, userID int64, now time.Time) (RoomMember, error) {
-	if err := r.canJoin(input.CurrentGame); err != nil {
+	if err := r.canJoin(input); err != nil {
 		return RoomMember{}, err
 	}
 	if findMember(input.Members, userID) != nil {
 		return RoomMember{}, ErrAlreadyInRoom
-	}
-	if len(input.Members) >= r.MaxPlayers {
-		return RoomMember{}, ErrRoomFull
 	}
 
 	state := StateInLobby
@@ -57,4 +58,8 @@ func (r *Room) Join(input RoomInput, userID int64, now time.Time) (RoomMember, e
 		Ready:    false,
 		JoinedAt: now,
 	}, nil
+}
+
+func (r *Room) IsJoinable(input RoomInput) bool {
+	return r.canJoin(input) == nil
 }

@@ -1,7 +1,7 @@
 package room
 
 import (
-	game "game-session/game"
+	"game-session/game"
 	"time"
 )
 
@@ -63,6 +63,11 @@ func (r *Room) Leave(input RoomInput, userID int64, reason DepartureReason, now 
 	if departed == nil {
 		return LeaveResult{}, ErrNotRoomMember
 	}
+	if reason == DepartureDisconnected {
+		if departed.GraceEndsAt == nil || now.Before(*departed.GraceEndsAt) {
+			return LeaveResult{}, ErrGraceNotExpired
+		}
+	}
 	return r.removeMember(input, *departed, reason, now)
 }
 
@@ -110,20 +115,6 @@ func (r *Room) finishPostGameIfNoPending(remaining []RoomMember, departed RoomMe
 	return true
 }
 
-func departedPlayer(member RoomMember, profiles map[int64]Profile) (game.Player, error) {
-	profile, ok := profiles[member.UserID]
-	if !ok {
-		return game.Player{}, ErrMemberProfileNotFound
-	}
-
-	return game.Player{
-		UserID:   member.UserID,
-		Username: profile.Username,
-		Team:     *member.Team,
-		Role:     *member.Role,
-	}, nil
-}
-
 func (r *Room) departurePenalty(player game.Player, gameID int64, reason DepartureReason) *Penalty {
 	if reason != DepartureExited && reason != DepartureSessionEnded {
 		return nil
@@ -150,10 +141,7 @@ func (r *Room) handleGameDeparture(input RoomInput, remaining []RoomMember, depa
 	if input.CurrentGame == nil {
 		return LeaveResult{}, ErrGameNotFound
 	}
-	player, err := departedPlayer(departed, input.Profiles)
-	if err != nil {
-		return LeaveResult{}, err
-	}
+	player := game.Player{UserID: departed.UserID, Username: departed.Username, Team: *departed.Team, Role: *departed.Role}
 	if err := sendTeamStatusToGame(input.CurrentGame, remaining, &player, now); err != nil {
 		return LeaveResult{}, err
 	}
@@ -185,4 +173,20 @@ func (r *Room) removeMember(input RoomInput, departed RoomMember, reason Departu
 	}
 
 	return result, nil
+}
+
+func (r *Room) CloseIfEmpty(input RoomInput, now time.Time) bool {
+	if r.Status == StatusClosed {
+		return false
+	}
+	if len(input.Members) > 0 {
+		r.EmptySince = nil
+		r.CloseAt = nil
+		return false
+	}
+	if r.CloseAt == nil || now.Before(*r.CloseAt) {
+		return false
+	}
+	r.Status = StatusClosed
+	return true
 }

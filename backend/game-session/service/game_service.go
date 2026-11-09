@@ -4,12 +4,12 @@ import (
 	"errors"
 	"time"
 
-	game "game-session/game"
-	room "game-session/room"
+	"game-session/game"
+	"game-session/room"
 )
 
-func (s *RoomService) loadGame(roomID int64) (*room.Room, []room.RoomMember, *game.Game, error) {
-	r, members, currentGame, err := s.loadRoom(roomID)
+func loadGame(tx RoomStore, roomID int64) (*room.Room, []room.RoomMember, *game.Game, error) {
+	r, members, currentGame, err := loadRoom(tx, roomID)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -45,106 +45,137 @@ func (s *RoomService) loadPlayer(members []room.RoomMember, userID int64) (*game
 	return nil, room.ErrNotRoomMember
 }
 
-func (s *RoomService) saveMove(r *room.Room, members []room.RoomMember, currentGame *game.Game, now time.Time) error {
+func saveMove(tx RoomStore, r *room.Room, members []room.RoomMember, currentGame *game.Game, now time.Time) error {
 	if currentGame.Status() != game.GameStatusInProgress {
-		_, err := s.endGame(r, members, currentGame, now)
+		_, err := endGame(tx, r, members, currentGame, now)
 		return err
 	}
-	return s.store.SaveGame(currentGame)
+	return tx.SaveGame(currentGame)
 }
 
-func (s *RoomService) finishMove(r *room.Room, members []room.RoomMember, currentGame *game.Game, now time.Time, moveErr error) error {
+func finishMove(tx RoomStore, r *room.Room, members []room.RoomMember, currentGame *game.Game, now time.Time, moveErr error) error {
 	if errors.Is(moveErr, game.ErrTurnExpired) {
-		if err := s.store.SaveGame(currentGame); err != nil {
-			return err
-		}
+		return tx.SaveGame(currentGame)
 	}
 	if moveErr != nil {
 		return moveErr
 	}
-	return s.saveMove(r, members, currentGame, now)
+	return saveMove(tx, r, members, currentGame, now)
 }
 
 func (s *RoomService) GiveClue(roomID int64, userID int64, clue game.Clue, now time.Time) (game.CurrentTurn, error) {
-	r, members, currentGame, err := s.loadGame(roomID)
+	var turn game.CurrentTurn
+	var moveErr error
+	err := s.store.Transaction(func(tx RoomStore) error {
+		r, members, currentGame, err := loadGame(tx, roomID)
+		if err != nil {
+			return err
+		}
+		player, err := s.loadPlayer(members, userID)
+		if err != nil {
+			return err
+		}
+		turn, moveErr = currentGame.GiveClue(player, &clue, now)
+		return finishMove(tx, r, members, currentGame, now, moveErr)
+	})
 	if err != nil {
 		return game.CurrentTurn{}, err
 	}
-	player, err := s.loadPlayer(members, userID)
-	if err != nil {
-		return game.CurrentTurn{}, err
-	}
-	turn, err := currentGame.GiveClue(player, &clue, now)
-	if err := s.finishMove(r, members, currentGame, now, err); err != nil {
-		return game.CurrentTurn{}, err
+	if moveErr != nil {
+		return game.CurrentTurn{}, moveErr
 	}
 	return turn, nil
 }
 
 func (s *RoomService) GuessCard(roomID int64, userID int64, cardID int, now time.Time) (game.GuessResult, error) {
-	r, members, currentGame, err := s.loadGame(roomID)
+	var result game.GuessResult
+	var moveErr error
+	err := s.store.Transaction(func(tx RoomStore) error {
+		r, members, currentGame, err := loadGame(tx, roomID)
+		if err != nil {
+			return err
+		}
+		player, err := s.loadPlayer(members, userID)
+		if err != nil {
+			return err
+		}
+		result, moveErr = currentGame.GuessCard(player, cardID, now)
+		return finishMove(tx, r, members, currentGame, now, moveErr)
+	})
 	if err != nil {
 		return game.GuessResult{}, err
 	}
-	player, err := s.loadPlayer(members, userID)
-	if err != nil {
-		return game.GuessResult{}, err
-	}
-	result, err := currentGame.GuessCard(player, cardID, now)
-	if err := s.finishMove(r, members, currentGame, now, err); err != nil {
-		return game.GuessResult{}, err
+	if moveErr != nil {
+		return game.GuessResult{}, moveErr
 	}
 	return result, nil
 }
 
 func (s *RoomService) PassTurn(roomID int64, userID int64, now time.Time) (game.PassResult, error) {
-	r, members, currentGame, err := s.loadGame(roomID)
+	var result game.PassResult
+	var moveErr error
+	err := s.store.Transaction(func(tx RoomStore) error {
+		r, members, currentGame, err := loadGame(tx, roomID)
+		if err != nil {
+			return err
+		}
+		player, err := s.loadPlayer(members, userID)
+		if err != nil {
+			return err
+		}
+		result, moveErr = currentGame.PassTurn(player, now)
+		return finishMove(tx, r, members, currentGame, now, moveErr)
+	})
 	if err != nil {
 		return game.PassResult{}, err
 	}
-	player, err := s.loadPlayer(members, userID)
-	if err != nil {
-		return game.PassResult{}, err
-	}
-	result, err := currentGame.PassTurn(player, now)
-	if err := s.finishMove(r, members, currentGame, now, err); err != nil {
-		return game.PassResult{}, err
+	if moveErr != nil {
+		return game.PassResult{}, moveErr
 	}
 	return result, nil
 }
 
 func (s *RoomService) PassTurnIfExpired(roomID int64, now time.Time) (*game.PassResult, error) {
-	_, _, currentGame, err := s.loadGame(roomID)
+	var result *game.PassResult
+	err := s.store.Transaction(func(tx RoomStore) error {
+		_, _, currentGame, err := loadGame(tx, roomID)
+		if err != nil {
+			return err
+		}
+		result, err = currentGame.PassTurnIfExpired(now)
+		if err != nil {
+			return err
+		}
+		if result == nil {
+			return nil
+		}
+		return tx.SaveGame(currentGame)
+	})
 	if err != nil {
-		return nil, err
-	}
-	result, err := currentGame.PassTurnIfExpired(now)
-	if err != nil {
-		return nil, err
-	}
-	if result == nil {
-		return nil, nil
-	}
-	if err := s.store.SaveGame(currentGame); err != nil {
 		return nil, err
 	}
 	return result, nil
 }
 
 func (s *RoomService) CancelIfStaffingExpired(roomID int64, now time.Time) (bool, error) {
-	r, members, currentGame, err := s.loadGame(roomID)
+	cancelled := false
+	err := s.store.Transaction(func(tx RoomStore) error {
+		r, members, currentGame, err := loadGame(tx, roomID)
+		if err != nil {
+			return err
+		}
+		cancelled, err = currentGame.CancelIfStaffingExpired(now)
+		if err != nil {
+			return err
+		}
+		if !cancelled {
+			return nil
+		}
+		_, err = endGame(tx, r, members, currentGame, now)
+		return err
+	})
 	if err != nil {
 		return false, err
 	}
-	cancelled, err := currentGame.CancelIfStaffingExpired(now)
-	if err != nil {
-		return false, err
-	}
-	if !cancelled {
-		return false, nil
-	}
-	if _, err := s.endGame(r, members, currentGame, now); err != nil {
-		return false, err
-	}
-	return true, nil
+	return cancelled, nil
 }

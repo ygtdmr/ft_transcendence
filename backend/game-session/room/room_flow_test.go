@@ -3,7 +3,7 @@ package room
 import (
 	"encoding/json"
 	"errors"
-	game "game-session/game"
+	"game-session/game"
 	"os"
 	"testing"
 	"time"
@@ -156,16 +156,12 @@ func TestRoomFlow(t *testing.T) {
 	_, err = r.SelectRole(RoomInput{Members: members, CurrentGame: g}, 2, game.TeamBlue, game.RoleOperative, startAt)
 	mustErr(t, "seat change in game", err, ErrInvalidRoomState)
 
-	// --- leave: a failed leave must not touch the room or the game
+	// Departures use the stored name and do not require a profile lookup.
 	leaveAt := startAt.Add(10 * time.Second)
-	hostBefore := *r.HostUserID
-	_, err = r.Leave(RoomInput{Members: members, CurrentGame: g}, 1, DepartureExited, leaveAt)
-	mustErr(t, "leave without profiles", err, ErrMemberProfileNotFound)
-	if *r.HostUserID != hostBefore || g.IsPaused() {
-		t.Fatalf("failed leave must not change the room or the game")
+	for i := range members {
+		members[i].Username = profiles[members[i].UserID].Username
 	}
-
-	lr, err := r.Leave(RoomInput{Members: members, CurrentGame: g, Profiles: profiles}, 1, DepartureExited, leaveAt)
+	lr, err := r.Leave(RoomInput{Members: members, CurrentGame: g}, 1, DepartureExited, leaveAt)
 	mustOK(t, "leave spymaster", err)
 	members = withoutMember(members, 1)
 	if !lr.GamePaused || !g.IsPaused() {
@@ -264,7 +260,7 @@ func TestRoomFlow(t *testing.T) {
 
 	tr, err := r.ExpirePostGame(RoomInput{Members: members}, leaveAt.Add(postGameTimeout))
 	mustOK(t, "expire post game", err)
-	if len(tr.RemovedUserIDs) != 2 || tr.RoomClosed || r.Status != StatusWaiting || r.PostGameEndsAt != nil {
+	if len(tr.RemovedUserIDs) != 2 || r.Status != StatusWaiting || r.PostGameEndsAt != nil {
 		t.Fatalf("timeout should remove 3 and 5: %+v status=%s", tr, r.Status)
 	}
 	for _, id := range tr.RemovedUserIDs {

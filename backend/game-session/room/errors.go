@@ -31,4 +31,5 @@ var (
 	ErrMemberProfileNotFound = errors.New("room member profile not found")
 	ErrGameNotFound          = errors.New("room's game not found")
 	ErrUnknownMemberState    = errors.New("unknown room member state")
+	ErrGraceNotExpired       = errors.New("room member grace not expired")
 )

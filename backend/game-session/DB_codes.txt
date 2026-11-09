@@ -1,0 +1,65 @@
+POSTGRESQL KURULUM:
+
+sudo apt install -y postgresql
+
+PostgreSQL sunucusunu Ubuntu'ya (WSL) kurar. Arayüzü yoktur, arka planda çalışır.
+
+Süper Kulanıcı Tanımlama:
+
+sudo -u postgres psql -c "CREATE USER gamesession WITH PASSWORD 'gamesession';"
+sudo -u postgres psql -c "CREATE DATABASE gamesession OWNER gamesession;"
+
+---------
+
+MIGRATE KURULUM
+
+go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+
+migrate aracını kurar: SQL migration dosyalarını sırayla PostgreSQL'e gönderen postacı.
+
+-tags 'postgres' = PostgreSQL sürücüsünü de içine koy.
+
+echo 'export PATH=$HOME/go/bin:$PATH' >> ~/.bashrc
+go install ile kurulan araçlar ~/go/bin'e gidiyor, terminal oraya bakmıyordu o yüzden bu satırı yazdık.
+
+
+----------------------------
+
+sudo service postgresql start
+
+postgresql bağlantısını açıyoruz. WSL kendi başlatmıyor o yüzden her seferinde başlatmamız lazım
+-----------------------------------
+
+export GS_DB="postgres://gamesession:gamesession@localhost:5432/gamesession?sslmode=disable"
+
+Önce yukarıdaki komutla bir ortam değişkeni tanımlıyoruz GS_DB  adında; her seferinde aynı uzun satırı yazmamak için
+
+postgres://   gamesession : gamesession @ localhost : 5432 / gamesession ? sslmode=disable
+   ↑              ↑             ↑            ↑         ↑         ↑              ↑
+ protokol     kullanıcı       şifre       sunucu     port   veritabanı     ayar
+----------------------------------------------
+
+
+#97 Issue TESTLERİ;
+
+1. 2 defa Up down ile down dosyları eksiksiz siliyor mu testi
+
+migrate -path game-session/migrations -database "$GS_DB" down -all
+
+Bütün *.down.sql dosyalarını tersten çalıştırır (tabloları siler). -all = hepsini.
+-----------
+migrate -path game-session/migrations -database "$GS_DB" up
+
+Henüz çalışmamış *.up.sql dosyalarını sırayla çalıştırır (tabloları kurar).
+
+
+migrate -path game-session/migrations -database "$GS_DB" version
+Şu an hangi migration numarası (şu an elimizde 3 ve 4 var en son 4 çalıştığı için 4 gösteriyor DBeaver da)
+
+
+2. kısıt testi- Aynı kişi ikinci defa eklenemez 
+
+INSERT INTO rooms (room_code) VALUES ('AAAAAA');
+INSERT INTO rooms (room_code) VALUES ('BBBBBB');
+INSERT INTO room_members (room_id, user_id) VALUES (1, 42);
+INSERT INTO room_members (room_id, user_id) VALUES (2, 42);   -- HATA vermeli: room_members_pkey
