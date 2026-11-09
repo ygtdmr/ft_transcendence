@@ -30,7 +30,8 @@ func blockHandler(t *testing.T, pool *pgxpool.Pool) http.Handler {
 	health := controller.NewHealth(service.NewHealth(userpostgres.NewHealth(pool)))
 	return server.New("0", health, logger,
 		controller.NewFriendRequests(requests, fakeSessions{}),
-		controller.NewBlocks(blocks, fakeSessions{})).Handler
+		controller.NewBlocks(blocks, fakeSessions{}),
+		controller.NewFriends(service.NewFriends(userpostgres.NewFriends(pool), avatars, service.NoPresence{}), fakeSessions{})).Handler
 }
 
 func blockPath(target int64) string { return fmt.Sprintf("/api/v1/users/%d/block", target) }
@@ -160,6 +161,10 @@ func TestBlockSuspendsAndRestoresPostgres(t *testing.T) {
 	afterBlock := count(t, pool, `SELECT count(*) FROM outbox`)
 	if afterBlock != before+2 {
 		t.Fatalf("outbox rows = %d, want %d", afterBlock, before+2)
+	}
+	if got := count(t, pool, `SELECT count(*) FROM outbox a JOIN outbox b ON a.aggregate_id = b.aggregate_id
+		WHERE a.event_type = 'relationship.blocked' AND b.event_type = 'friend.removed' AND a.id < b.id`); got != 1 {
+		t.Fatal("relationship.blocked must come before friend.removed")
 	}
 
 	if again := mustBlock(t, handler, 8, 5); again != blockedAt {

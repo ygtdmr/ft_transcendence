@@ -40,7 +40,7 @@ func (h *BlocksController) RegisterRoutes(routes gin.IRoutes) {
 }
 
 func (h *BlocksController) block(c *gin.Context) error {
-	targetID, err := blockTarget(c)
+	targetID, err := pathUserID(c)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func (h *BlocksController) block(c *gin.Context) error {
 }
 
 func (h *BlocksController) unblock(c *gin.Context) error {
-	targetID, err := blockTarget(c)
+	targetID, err := pathUserID(c)
 	if err != nil {
 		return err
 	}
@@ -73,7 +73,7 @@ func (h *BlocksController) unblock(c *gin.Context) error {
 	return nil
 }
 
-func blockTarget(c *gin.Context) (int64, error) {
+func pathUserID(c *gin.Context) (int64, error) {
 	targetID, err := strconv.ParseInt(c.Param("user_id"), 10, 64)
 	if err != nil || targetID <= 0 {
 		return 0, &service.ValidationError{Field: "user_id", Reason: "must be a positive integer"}
