@@ -208,20 +208,17 @@ func (s *Store) SaveGameEnd(r *room.Room, members []room.RoomMember, g *game.Gam
 		if err := saveMembers(tx, members); err != nil {
 			return err
 		}
-		if g != nil {
-			if err := updateGame(tx, g); err != nil {
-				return err
-			}
+
+		if err := updateGame(tx, g); err != nil {
+			return err
 		}
+
 		if r.Status == room.StatusClosed {
 			if err := tx.Where("room_id = ?", r.RoomID).Delete(&room.RoomMember{}).Error; err != nil {
 				return err
 			}
 		}
 		if lastGame == nil {
-			if g == nil {
-				return nil
-			}
 			return insertOutbox(tx, r, "game.cancelled", map[string]any{"room_id": r.RoomID, "game_id": g.GameID()})
 		}
 		if err := tx.Table("rooms").Where("room_id = ?", r.RoomID).Update("last_game_id", lastGame.GameID).Error; err != nil {
