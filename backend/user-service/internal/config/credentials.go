@@ -14,7 +14,9 @@ const minCredentialLength = 32
 // current and previous credential files. Two entries allow a rotation: install
 // the new credential, switch the caller, then remove the previous one.
 var callerCredentialFiles = map[string][2]string{
-	"auth-service": {"AUTH_SERVICE_CREDENTIAL_FILE", "AUTH_SERVICE_PREVIOUS_CREDENTIAL_FILE"},
+	"auth-service":    {"AUTH_SERVICE_CREDENTIAL_FILE", "AUTH_SERVICE_PREVIOUS_CREDENTIAL_FILE"},
+	"channel-service": {"CHANNEL_SERVICE_CREDENTIAL_FILE", "CHANNEL_SERVICE_PREVIOUS_CREDENTIAL_FILE"},
+	"game-session":    {"GAME_SESSION_CREDENTIAL_FILE", "GAME_SESSION_PREVIOUS_CREDENTIAL_FILE"},
 }
 
 // loadCallerCredentials reads each caller's credential files.

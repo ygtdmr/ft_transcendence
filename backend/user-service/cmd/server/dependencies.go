@@ -61,7 +61,8 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 	profileReads := service.NewProfileRead(userpostgres.NewProfile(pool), service.AvatarURLs{Base: cfg.AvatarBaseURL})
 	internal := server.NewInternal(cfg.InternalPort, logger,
 		controller.NewInternalProvisioning(profileService, auth),
-		controller.NewInternalProfile(profileReads, auth))
+		controller.NewInternalProfile(profileReads, auth),
+		controller.NewInternalFriendshipVerdict(service.NewFriendshipVerdicts(userpostgres.NewFriendshipVerdicts(pool)), auth))
 
 	var public []server.RouteRegistrar
 	if cfg.AuthInternalURL != "" {

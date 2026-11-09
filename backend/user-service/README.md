@@ -33,6 +33,10 @@ environment only and does not load `.env` itself.
 | `AVATAR_BASE_URL`           | none            | Public `https://` origin for avatar URLs. Empty gives root-relative URLs. |
 | `AUTH_SERVICE_CREDENTIAL_FILE` | none, optional | File holding Auth Service's service credential (32+ characters).      |
 | `AUTH_SERVICE_PREVIOUS_CREDENTIAL_FILE` | none, optional | Previous Auth credential, accepted during a rotation.       |
+| `CHANNEL_SERVICE_CREDENTIAL_FILE` | none, optional | File holding Channel Service's service credential (32+ characters). |
+| `CHANNEL_SERVICE_PREVIOUS_CREDENTIAL_FILE` | none, optional | Previous Channel Service credential, accepted during a rotation. |
+| `GAME_SESSION_CREDENTIAL_FILE` | none, optional | File holding Game Session's service credential (32+ characters). |
+| `GAME_SESSION_PREVIOUS_CREDENTIAL_FILE` | none, optional | Previous Game Session credential, accepted during a rotation. |
 
 ## Internal API
 
@@ -55,6 +59,7 @@ one as previous, switch the caller, then remove the previous file.
 | `GET /internal/v1/provisioning-operations/{operation_id}` | `auth-service`, `provisioning.read` | Read an operation's receipt |
 | `GET /internal/v1/provisioning-operations?user_id=` | `auth-service`, `provisioning.read` | Read the receipt of a user's operation |
 | `GET /internal/v1/profiles/{user_id}` | `auth-service`, `profile.read` | Read the current canonical profile |
+| `GET /internal/v1/friendship-verdicts?actor_user_id=&target_user_id=` | `channel-service`, `game-session`, `friend.verdict` | Read the active-friend verdict |
 
 Provisioning takes `user_id`, `username` and `created_at` in the body. It
 answers `201` with a new receipt or `200` with the stored receipt for an
@@ -71,6 +76,13 @@ credentials, presence or relationships. A user without a profile is
 `404 USER_NOT_FOUND`; a recorded deletion is `409 USER_DELETED`. A default
 avatar is `/static/avatars/default/{user_id}.svg`; presets use
 `/avatars/presets/{preset_id}.png` and uploads `/static/avatars/uploaded/{key}`.
+
+The active-friend verdict is `{ "data": { "active_friendship": bool } }`, read
+from current records on every call. It is `true` only when the friendship is
+active, neither user blocks the other and neither is being deleted. `false` also
+covers an unknown user and never says which condition failed, so it cannot reveal
+a block or its direction. A delayed event never replaces this answer. A database
+outage is `503 SERVICE_UNAVAILABLE`; callers must never treat a failure as `false`.
 
 `internal/client/authclient` calls Auth's `GET /internal/v1/accounts/{user_id}`
 with this service's own credential. Auth outages, timeouts and malformed
