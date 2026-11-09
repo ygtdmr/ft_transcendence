@@ -1,0 +1,65 @@
+info:
+  name: Read presence
+  type: http
+  seq: 2
+  tags: [internal, presence]
+http:
+  method: GET
+  url: "{{userInternalUrl}}/internal/v1/presence?user_id=42&user_id=43"
+  headers:
+    - name: Authorization
+      value: "Bearer {{webBffToUserServiceCredential}}"
+    - name: Accept
+      value: application/json
+docs: |-
+  # Read presence
+
+  Returns current presence for a set of users. Scope `presence.read`. The caller is Web BFF, which authorizes the end user against the room before calling this route. Presence grants no membership or gameplay right.
+
+  ## Request parameters
+
+  | Parameter | Location | Required | Type | Allowed values | Description |
+  | --- | --- | ---: | --- | --- | --- |
+  | `user_id` | query, repeatable | yes | integer | positive, `1..100` distinct values | Users to look up |
+
+  ## Response fields
+
+  | Field | Type | Required | Nullable | Allowed values | Description |
+  | --- | --- | ---: | ---: | --- | --- |
+  | `data.presence[].user_id` | integer | yes | no | positive | Requested user, ascending |
+  | `data.presence[].is_online` | boolean | yes | no | `true`, `false` | Online or Offline |
+
+  ## Errors
+
+  | Status | Code | Condition | `details` |
+  | --- | --- | --- | --- |
+  | `401` | `SERVICE_UNAUTHENTICATED` | Missing or unknown service credential | `{}` |
+  | `403` | `SERVICE_FORBIDDEN` | Caller lacks `presence.read` | `{}` |
+  | `422` | `VALIDATION_ERROR` | `user_id` is missing, not a positive integer, or has more than 100 distinct values | `{ "field": "user_id" }` |
+  | `500` | `INTERNAL_ERROR` | Unexpected failure | `{}` |
+  | `503` | `SERVICE_UNAVAILABLE` | At least one requested user is Unknown | `{}` |
+examples:
+  - name: Success - One online user
+    request: {url: "{{userInternalUrl}}/internal/v1/presence?user_id=42&user_id=43", method: GET, headers: [], params: [], body: {mode: none}}
+    response:
+      status: 200
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "data": {
+              "presence": [
+                {"user_id": 42, "is_online": true},
+                {"user_id": 43, "is_online": false}
+              ]
+            }
+          }
+  - name: 503 - Registry unavailable
+    request: {url: "{{userInternalUrl}}/internal/v1/presence?user_id=42&user_id=43", method: GET, headers: [], params: [], body: {mode: none}}
+    response:
+      status: 503
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: '{"error":{"code":"SERVICE_UNAVAILABLE","message":"Presence is unavailable.","details":{}}}'

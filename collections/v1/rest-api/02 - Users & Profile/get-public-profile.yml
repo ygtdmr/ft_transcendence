@@ -43,7 +43,7 @@ docs: |-
 
   ## State changes, events, and errors
 
-  Read-only; no event. `401 UNAUTHORIZED` covers the requester session; `404 USER_NOT_FOUND` covers a valid positive ID with no user. Session credentials, active room, team, role, and ready state are never public profile fields.
+  Read-only; no event. `401 UNAUTHORIZED` covers the requester session; `404 USER_NOT_FOUND` covers a valid positive ID with no user. `503 SERVICE_UNAVAILABLE` means presence is unknown; the response never reports it as offline. Session credentials, active room, team, role, and ready state are never public profile fields.
 examples:
   - name: Success - red_agent
     request: {url: "{{baseUrl}}/api/{{apiVersion}}/users/43", method: GET, headers: [], params: [], body: {mode: none}}

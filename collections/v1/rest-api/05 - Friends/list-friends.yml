@@ -45,7 +45,7 @@ docs: |-
 
   ## Errors
 
-  Friends are ordered case-insensitively by `username`, then `user_id`. Presence does not affect ordering. `401 UNAUTHORIZED` covers an invalid session; invalid `limit` or `offset` returns `422 VALIDATION_ERROR`. Read-only; no event.
+  Friends are ordered case-insensitively by `username`, then `user_id`. Presence does not affect ordering. `401 UNAUTHORIZED` covers an invalid session; invalid `limit` or `offset` returns `422 VALIDATION_ERROR`. `503 SERVICE_UNAVAILABLE` means presence is unknown; the response never reports it as offline. Read-only; no event.
 examples:
   - name: Success - Two friends
     request: {url: "{{baseUrl}}/api/{{apiVersion}}/friends?limit=50&offset=0", method: GET, headers: [], params: [{name: limit, value: "50", enabled: true}, {name: offset, value: "0", enabled: true}], body: {mode: none}}

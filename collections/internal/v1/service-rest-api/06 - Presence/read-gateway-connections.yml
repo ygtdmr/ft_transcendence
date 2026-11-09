@@ -1,0 +1,54 @@
+info:
+  name: Read gateway connections
+  type: http
+  seq: 1
+  tags: [internal, presence]
+http:
+  method: GET
+  url: "{{gameGatewayInternalUrl}}/internal/v1/connections?user_id=42&user_id=43"
+  headers:
+    - name: Authorization
+      value: "Bearer {{userToGameGatewayServiceCredential}}"
+    - name: Accept
+      value: application/json
+docs: |-
+  # Read gateway connections
+
+  Returns which of the requested users hold at least one open authenticated socket on this Gateway instance. Scope `connections.read`. The caller is User Service. Game Gateway and Chat Gateway expose the same route, and each answers only from its own memory.
+
+  ## Request parameters
+
+  | Parameter | Location | Required | Type | Allowed values | Description |
+  | --- | --- | ---: | --- | --- | --- |
+  | `user_id` | query, repeatable | yes | integer | positive, `1..100` distinct values | Users to look up |
+
+  ## Response fields
+
+  | Field | Type | Required | Nullable | Allowed values | Description |
+  | --- | --- | ---: | ---: | --- | --- |
+  | `data.connected_user_ids` | integer array | yes | no | subset of the requested IDs, ascending | Requested users with an open authenticated socket on this instance |
+
+  An empty array is a complete answer that this instance has no socket for those users. Any error, network failure or timeout gives User Service no evidence about the requested users.
+
+  ## Errors
+
+  | Status | Code | Condition | `details` |
+  | --- | --- | --- | --- |
+  | `401` | `SERVICE_UNAUTHENTICATED` | Missing or unknown service credential | `{}` |
+  | `403` | `SERVICE_FORBIDDEN` | Caller lacks `connections.read` | `{}` |
+  | `422` | `VALIDATION_ERROR` | `user_id` is missing, not a positive integer, or has more than 100 distinct values | `{ "field": "user_id" }` |
+  | `500` | `INTERNAL_ERROR` | Unexpected failure | `{}` |
+examples:
+  - name: Success - One connected user
+    request: {url: "{{gameGatewayInternalUrl}}/internal/v1/connections?user_id=42&user_id=43", method: GET, headers: [], params: [], body: {mode: none}}
+    response:
+      status: 200
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "data": {
+              "connected_user_ids": [42]
+            }
+          }
