@@ -39,10 +39,11 @@ type ProfileSource interface {
 type RoomService struct {
 	store    RoomStore
 	profiles ProfileSource
+	penalty  *room.PenaltyConfig
 }
 
-func NewRoomService(store RoomStore, profiles ProfileSource) *RoomService {
-	return &RoomService{store: store, profiles: profiles}
+func NewRoomService(store RoomStore, profiles ProfileSource, penalty *room.PenaltyConfig) *RoomService {
+	return &RoomService{store: store, profiles: profiles, penalty: penalty}
 }
 
 func loadRoom(tx RoomStore, roomID int64) (*room.Room, []room.RoomMember, *game.Game, error) {

@@ -35,7 +35,7 @@ func newHarness(t *testing.T) harness {
 	if err := store.ResetForTests(); err != nil {
 		t.Fatalf("reset: %v", err)
 	}
-	svc := service.NewRoomService(store, placeholderProfiles{})
+	svc := service.NewRoomService(store, placeholderProfiles{}, nil)
 	return harness{store: store, svc: svc, worker: worker.New(store, svc, slog.New(slog.NewTextHandler(os.Stderr, nil)))}
 }
 

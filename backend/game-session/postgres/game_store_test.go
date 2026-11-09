@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -232,6 +233,8 @@ func TestSaveLeaveInGameWritesPenaltyAndPause(t *testing.T) {
 	if result.Penalty == nil || !result.GamePaused {
 		t.Fatalf("seated in-game exit must penalize and pause, got %+v", result)
 	}
+	result.Penalty.Points = 20
+	result.Penalty.PenalizedAt = now
 	if err := s.SaveLeave(r, 2, g, result.Penalty); err != nil {
 		t.Fatalf("save leave: %v", err)
 	}
@@ -247,6 +250,18 @@ func TestSaveLeaveInGameWritesPenaltyAndPause(t *testing.T) {
 	s.db.Where("room_id = ? AND event_type = ?", r.RoomID, "player.penalized").Find(&events)
 	if len(events) != 1 {
 		t.Fatalf("want one player.penalized event, got %d", len(events))
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(events[0].OutboxContent, &payload); err != nil {
+		t.Fatalf("payload: %v", err)
+	}
+	for _, key := range []string{"user_id", "room_id", "game_id", "role", "reason", "points", "penalized_at"} {
+		if _, ok := payload[key]; !ok {
+			t.Fatalf("payload missing %q: %s", key, events[0].OutboxContent)
+		}
+	}
+	if payload["user_id"] != float64(2) || payload["points"] != float64(20) || payload["role"] != "OPERATIVE" {
+		t.Fatalf("unexpected payload values: %s", events[0].OutboxContent)
 	}
 }
 

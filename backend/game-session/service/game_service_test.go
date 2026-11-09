@@ -91,7 +91,7 @@ func TestExpiredCommandsCommitTurnBeforeReturningRejection(t *testing.T) {
 				if failSave {
 					store.saveErr = dbErr
 				}
-				svc := NewRoomService(store, moveTestProfiles{})
+				svc := NewRoomService(store, moveTestProfiles{}, nil)
 				err = tc.call(svc, now.Add(timer))
 				if failSave {
 					if !errors.Is(err, dbErr) {

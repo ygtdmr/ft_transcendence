@@ -1,8 +1,8 @@
 package room
 
 import (
-	"game-session/game"
 	"errors"
+	"game-session/game"
 	"testing"
 )
 

@@ -36,7 +36,10 @@ func main() {
 	}
 
 	profiles := placeholderProfiles{} // istemci hazır olana kadar
-	svc := service.NewRoomService(store, profiles)
+	if cfg.Penalty == nil {
+		log.Warn("leave penalty is not configured, penalties will not be recorded")
+	}
+	svc := service.NewRoomService(store, profiles, cfg.Penalty)
 	handler := rest.NewHandler(svc, store)
 	deadlines := worker.New(store, svc, log)
 

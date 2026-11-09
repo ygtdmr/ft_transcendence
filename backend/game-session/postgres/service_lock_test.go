@@ -22,7 +22,7 @@ func (fakeProfiles) ProfilesByUserIDs(userIDs []int64) (map[int64]room.Profile, 
 
 func TestConcurrentJoinsCannotExceedCapacity(t *testing.T) {
 	s := openTestStore(t)
-	svc := service.NewRoomService(s, fakeProfiles{})
+	svc := service.NewRoomService(s, fakeProfiles{}, nil)
 	now := time.Date(2026, 11, 6, 10, 0, 0, 0, time.UTC)
 
 	capacity := 4

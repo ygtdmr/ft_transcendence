@@ -262,7 +262,7 @@ func (s *Store) SaveSeatInGame(r *room.Room, member room.RoomMember, g *game.Gam
 // UPDATE rooms SET host_user_id = 44, countdown_ends_at = NULL WHERE room_id = 1;
 // DELETE FROM room_members WHERE room_id = 1 AND user_id = 43;
 // UPDATE games SET phase = 'PAUSED_FOR_PLAYERS', phase_before_pause = 'GUESSING', red_missing_roles = '{SPYMASTER}' WHERE game_id = 7;
-// INSERT INTO outbox_events (room_id, event_type, outbox_content, room_version) VALUES (1, 'player.penalized', '{"user_id": 43, "role": "SPYMASTER"}', 12);
+// INSERT INTO outbox_events (room_id, event_type, outbox_content, room_version) VALUES (1, 'player.penalized', '{"user_id": 43, "room_id": 1, "game_id": 7, "role": "SPYMASTER", "reason": "EXITED", "points": 30, "penalized_at": "2026-11-05T13:00:10Z"}', 12);
 func (s *Store) SaveLeave(r *room.Room, departedUserID int64, g *game.Game, penalty *room.Penalty) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Save(r).Error; err != nil {

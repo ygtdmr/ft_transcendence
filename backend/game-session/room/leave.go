@@ -18,11 +18,13 @@ const (
 )
 
 type Penalty struct {
-	UserID int64
-	RoomID int64
-	GameID int64
-	Role   game.Role
-	Reason DepartureReason
+	UserID      int64           `json:"user_id"`
+	RoomID      int64           `json:"room_id"`
+	GameID      int64           `json:"game_id"`
+	Role        game.Role       `json:"role"`
+	Reason      DepartureReason `json:"reason"`
+	Points      int64           `json:"points"`
+	PenalizedAt time.Time       `json:"penalized_at"`
 }
 
 type LeaveResult struct {
