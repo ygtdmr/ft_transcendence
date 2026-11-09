@@ -66,6 +66,20 @@ func applyMatch(ctx context.Context, tx pgx.Tx, match service.MatchFinalized) (b
 	players := slices.Clone(match.Players)
 	slices.SortFunc(players, func(a, b service.FinalizedPlayer) int { return cmp.Compare(a.UserID, b.UserID) })
 	for _, player := range players {
+		if err := lockUser(ctx, tx, player.UserID); err != nil {
+			return false, err
+		}
+		deleted, err := isDeleted(ctx, tx, player.UserID)
+		if err != nil {
+			return false, err
+		}
+		if deleted {
+			if _, err := tx.Exec(ctx, `INSERT INTO match_participants (game_id, user_id, username, team, role)
+				VALUES ($1, NULL, $2, $3, $4)`, match.GameID, deletedUsername, player.Team, player.Role); err != nil {
+				return false, err
+			}
+			continue
+		}
 		if _, err := tx.Exec(ctx, `INSERT INTO match_participants (game_id, user_id, username, team, role)
 			VALUES ($1, $2, $3, $4, $5)`, match.GameID, player.UserID, player.Username, player.Team, player.Role); err != nil {
 			return false, err

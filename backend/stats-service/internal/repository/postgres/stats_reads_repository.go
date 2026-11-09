@@ -74,7 +74,7 @@ func (r *StatsReadsRepository) MatchHistory(ctx context.Context, userID int64, l
 func scanSummary(rows pgx.Rows) (service.MatchSummary, error) {
 	var match service.MatchSummary
 	var winner string
-	var ids []int64
+	var ids []*int64
 	var names []string
 	if err := rows.Scan(&match.GameID, &match.RoomID, &match.Team, &match.Role, &winner, &match.EndReason,
 		&match.ScoreRed, &match.ScoreBlue, &match.FinishedAt, &ids, &names); err != nil {
