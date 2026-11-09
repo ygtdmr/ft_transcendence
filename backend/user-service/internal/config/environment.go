@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/melmut-42/ft_transcendence/backend/shared/logging"
 )
@@ -28,7 +29,12 @@ type Config struct {
 	// CallerCredentials maps each private caller to its accepted service
 	// credentials, read from mounted secret files.
 	CallerCredentials map[string][]string `json:"-"`
-	MigrateOnStart    bool
+	// AuthInternalURL, AuthServiceCredential and AuthInternalTimeout reach
+	// Auth's private listener to validate browser sessions.
+	AuthInternalURL       string
+	AuthServiceCredential string `json:"-"`
+	AuthInternalTimeout   time.Duration
+	MigrateOnStart        bool
 }
 
 // Load reads and validates application settings from the process environment.
@@ -49,6 +55,7 @@ type Config struct {
 //   - Invalid bounds: PORT or INTERNAL_PORT is outside the valid TCP range, or both are equal.
 //   - Credentials: a configured credential file is unreadable, too short, or
 //     holds a credential already assigned to another caller.
+//   - Auth settings: see loadAuthService.
 func Load() (Config, error) {
 	cfg := Config{
 		Environment:    strings.TrimSpace(os.Getenv("APP_ENV")),
@@ -85,6 +92,9 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 	cfg.CallerCredentials = credentials
+	if err := cfg.loadAuthService(); err != nil {
+		return Config{}, err
+	}
 
 	return cfg, nil
 }

@@ -36,7 +36,7 @@ func DefaultMatrix() Matrix {
 		"web-bff":      {ScopeSessionValidate},
 		"game-gateway": {ScopeSessionValidate},
 		"chat-gateway": {ScopeSessionValidate},
-		"user-service": {ScopeAccountMetadataRead, ScopeAccountDeletionBegin, ScopeAccountDeletionComplete},
+		"user-service": {ScopeSessionValidate, ScopeAccountMetadataRead, ScopeAccountDeletionBegin, ScopeAccountDeletionComplete},
 	}
 }
 

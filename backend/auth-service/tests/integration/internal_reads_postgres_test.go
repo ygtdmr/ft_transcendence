@@ -192,7 +192,6 @@ func TestInternalReadsAuthorizationPostgres(t *testing.T) {
 	}{
 		{"no credential", session, "", access, http.StatusUnauthorized, "SERVICE_UNAUTHENTICATED"},
 		{"unknown credential", account, strings.Repeat("x", 40), "", http.StatusUnauthorized, "SERVICE_UNAUTHENTICATED"},
-		{"user-service validating sessions", session, userCredential, access, http.StatusForbidden, "SERVICE_FORBIDDEN"},
 		{"gateway reading accounts", account, gatewayCredential, "", http.StatusForbidden, "SERVICE_FORBIDDEN"},
 		{"service credential as session", session, gatewayCredential, gatewayCredential, http.StatusUnauthorized, "UNAUTHORIZED"},
 	} {
