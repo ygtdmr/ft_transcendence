@@ -119,8 +119,8 @@ are plain numbers with no foreign key. Foreign keys exist only inside `users`.
 
 ## Public routes and sessions
 
-Friend requests are served under `/api/v1/friends/requests`. The `ft_session`
-cookie is the only browser credential: each request forwards it to Auth's private
+Friend requests are served under `/api/v1/friends/requests`, and blocks under
+`/api/v1/users/{user_id}/block`. The `ft_session` cookie is the only browser credential: each request forwards it to Auth's private
 session validation. A refused session is `401 UNAUTHORIZED`; an Auth outage is
 `503 SERVICE_UNAVAILABLE`. Set `AUTH_INTERNAL_URL` and
 `AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE` to enable these routes; both are required
@@ -128,8 +128,12 @@ in production.
 
 Live presence is not read yet, so `is_online` is always `false`.
 
-Every friend request change takes the pair lock first, then the request row, and
-records its integration event in the same transaction.
+Every friend request and block change takes the pair lock first, then the
+request row, and records its integration events in the same transaction.
+
+A block cancels the pair's pending request and suspends their friendship.
+Unblocking lifts only the caller's own block. The friendship becomes active again
+once neither user blocks the other; a cancelled request stays cancelled.
 
 ## Integration events
 
@@ -137,7 +141,21 @@ A change that other services must learn about records its event with
 `postgres.AppendEvent` inside the change's own transaction, so the change and
 the event commit or roll back together. Event types come from the catalog in
 `internal/service/outbox.go` (`user.profile.updated`, `friend.request.received`,
-`friend.request.resolved`); other types are refused.
+`friend.request.resolved`, `friend.removed`, `friend.restored`,
+`relationship.blocked`); other types are refused.
+
+Block changes record these payloads:
+
+| Event                     | Payload                                                 | Consumers                   |
+| ------------------------- | ------------------------------------------------------- | --------------------------- |
+| `friend.request.resolved` | `request_id`, `from_user_id`, `to_user_id`, `status`    | Chat Gateway                |
+| `friend.removed`          | `user_low`, `user_high`                                 | Chat Gateway                |
+| `friend.restored`         | `users`: both users, ordered by `user_id`               | Chat Gateway                |
+| `relationship.blocked`    | `blocker_id`, `blocked_id`                              | Channel Service only        |
+
+`relationship.blocked` is recorded only when a block suspends a friendship. It
+names which user placed the block so Channel Service can choose each user's
+access reason. It must never be delivered to a user socket.
 
 `service.OutboxRelay` publishes recorded events at least once:
 

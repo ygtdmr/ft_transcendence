@@ -185,8 +185,12 @@ func (s *FriendRequests) Cancel(ctx context.Context, requestID, callerID int64) 
 }
 
 func (s *FriendRequests) user(profile StoredProfile) FriendUser {
+	return friendUser(s.avatars, profile)
+}
+
+func friendUser(avatars AvatarURLs, profile StoredProfile) FriendUser {
 	return FriendUser{UserID: profile.UserID, Username: profile.Username,
-		AvatarURL: s.avatars.URL(profile.AvatarKind, profile.AvatarRef, profile.UserID)}
+		AvatarURL: avatars.URL(profile.AvatarKind, profile.AvatarRef, profile.UserID)}
 }
 
 func (s *FriendRequests) view(stored StoredFriendRequest) FriendRequest {
@@ -233,16 +237,20 @@ func (s *FriendRequests) receivedEvent(stored StoredFriendRequest) OutboxEvent {
 // resolvedEvent carries the socket fields. An accepted request also carries
 // both users, because each recipient's socket shows the other user as friend.
 func (s *FriendRequests) resolvedEvent(stored StoredFriendRequest) OutboxEvent {
-	payload := map[string]any{
-		"request_id":   stored.ID,
-		"from_user_id": stored.From.UserID,
-		"to_user_id":   stored.To.UserID,
-		"status":       requestStatus(stored.State),
-	}
+	payload := resolvedPayload(stored)
 	if stored.State == FriendRequestAccepted {
 		payload["from_user"] = s.user(stored.From)
 		payload["to_user"] = s.user(stored.To)
 	}
 
 	return friendRequestEvent(stored, EventFriendRequestResolved, payload)
+}
+
+func resolvedPayload(stored StoredFriendRequest) map[string]any {
+	return map[string]any{
+		"request_id":   stored.ID,
+		"from_user_id": stored.From.UserID,
+		"to_user_id":   stored.To.UserID,
+		"status":       requestStatus(stored.State),
+	}
 }
