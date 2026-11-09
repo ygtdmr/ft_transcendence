@@ -22,7 +22,7 @@ const validDatabaseURL = "postgres://user:secret@localhost:5432/user?sslmode=dis
 func setEnvironment(t *testing.T, values map[string]string) {
 	t.Helper()
 	for _, name := range []string{"APP_ENV", "LOG_FORMAT", "LOG_LEVEL", "PORT", "INTERNAL_PORT", "DATABASE_URL", "MIGRATE_ON_START",
-		"AUTH_SERVICE_CREDENTIAL_FILE", "AUTH_SERVICE_PREVIOUS_CREDENTIAL_FILE", "AVATAR_BASE_URL", "AVATAR_STORAGE_DIR",
+		"AUTH_SERVICE_CREDENTIAL_FILE", "AUTH_SERVICE_PREVIOUS_CREDENTIAL_FILE", "AVATAR_BASE_URL", "AVATAR_STORAGE_DIR", "REPORT_WINDOW",
 		"CHANNEL_SERVICE_CREDENTIAL_FILE", "CHANNEL_SERVICE_PREVIOUS_CREDENTIAL_FILE",
 		"GAME_SESSION_CREDENTIAL_FILE", "GAME_SESSION_PREVIOUS_CREDENTIAL_FILE",
 		"AUTH_INTERNAL_URL", "AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE", "AUTH_INTERNAL_TIMEOUT"} {
@@ -215,6 +215,31 @@ func writeSecret(t *testing.T, value string) string {
 	}
 
 	return path
+}
+
+// TestLoadReportWindow checks the report window setting.
+//
+// Expected output: 24 hours when absent, a valid duration is kept, and a
+// malformed, zero or negative value is refused.
+func TestLoadReportWindow(t *testing.T) {
+	setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL})
+	cfg, err := config.Load()
+	if err != nil || cfg.ReportWindow != 24*time.Hour {
+		t.Fatalf("default = %v, %v", cfg.ReportWindow, err)
+	}
+
+	setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL, "REPORT_WINDOW": "90m"})
+	cfg, err = config.Load()
+	if err != nil || cfg.ReportWindow != 90*time.Minute {
+		t.Fatalf("configured = %v, %v", cfg.ReportWindow, err)
+	}
+
+	for _, bad := range []string{"soon", "0s", "-1h", "24"} {
+		setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL, "REPORT_WINDOW": bad})
+		if _, err := config.Load(); err == nil || !strings.Contains(err.Error(), "REPORT_WINDOW") {
+			t.Fatalf("%q: err = %v", bad, err)
+		}
+	}
 }
 
 // TestLoadAvatarStorage checks the avatar directory setting.

@@ -38,7 +38,10 @@ type Config struct {
 	AuthInternalURL       string
 	AuthServiceCredential string `json:"-"`
 	AuthInternalTimeout   time.Duration
-	MigrateOnStart        bool
+	// ReportWindow is how long a reporter must wait before reporting the same
+	// user again.
+	ReportWindow   time.Duration
+	MigrateOnStart bool
 }
 
 // Load reads and validates application settings from the process environment.
@@ -90,6 +93,9 @@ func Load() (Config, error) {
 		cfg.MigrateOnStart = value
 	}
 	if err := cfg.validate(); err != nil {
+		return Config{}, err
+	}
+	if err := cfg.loadReportWindow(); err != nil {
 		return Config{}, err
 	}
 	credentials, err := loadCallerCredentials()

@@ -32,6 +32,7 @@ environment only and does not load `.env` itself.
 | `MIGRATE_ON_START`          | `true`        | Apply embedded migrations at startup.                                       |
 | `AVATAR_BASE_URL`           | none            | Public `https://` origin for avatar URLs. Empty gives root-relative URLs. |
 | `AVATAR_STORAGE_DIR`        | none            | Absolute directory for uploaded avatars. Required in production; when empty, avatar changes are not served. |
+| `REPORT_WINDOW`             | `24h`           | How long a reporter waits before reporting the same user again, as a Go duration. |
 | `AUTH_SERVICE_CREDENTIAL_FILE` | none, optional | File holding Auth Service's service credential (32+ characters).      |
 | `AUTH_SERVICE_PREVIOUS_CREDENTIAL_FILE` | none, optional | Previous Auth credential, accepted during a rotation.       |
 | `CHANNEL_SERVICE_CREDENTIAL_FILE` | none, optional | File holding Channel Service's service credential (32+ characters). |
@@ -154,6 +155,13 @@ Username search matches a case-insensitive substring and treats the query as pla
 text. It omits the caller and users being deleted. Each result shows the caller's
 relationship to that user; a block placed by the other user reads as `NONE`. The
 search has no substring index, so it scans `profiles`.
+
+## Reports
+
+`POST /api/v1/users/{user_id}/reports` stores a report for moderation. The reporter
+comes from the session, the reported user is not notified, and no route reads
+reports back. One reporter can report one user once per `REPORT_WINDOW`; a repeat
+is `409 ALREADY_REPORTED` with `retry_after_seconds`. No other throttling is applied.
 
 ## Avatars
 
