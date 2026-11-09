@@ -33,10 +33,11 @@ type Matrix map[string][]string
 // DefaultMatrix returns the receiver's authorization matrix from the private contract.
 func DefaultMatrix() Matrix {
 	return Matrix{
-		"web-bff":      {ScopeSessionValidate},
-		"game-gateway": {ScopeSessionValidate},
-		"chat-gateway": {ScopeSessionValidate},
-		"user-service": {ScopeSessionValidate, ScopeAccountMetadataRead, ScopeAccountDeletionBegin, ScopeAccountDeletionComplete},
+		"web-bff":       {ScopeSessionValidate},
+		"game-gateway":  {ScopeSessionValidate},
+		"chat-gateway":  {ScopeSessionValidate},
+		"stats-service": {ScopeSessionValidate},
+		"user-service":  {ScopeSessionValidate, ScopeAccountMetadataRead, ScopeAccountDeletionBegin, ScopeAccountDeletionComplete},
 	}
 }
 

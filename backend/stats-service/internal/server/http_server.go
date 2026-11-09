@@ -46,6 +46,24 @@ func New(port string, health *controller.HealthController, logger *slog.Logger, 
 	}
 }
 
+// NewInternal assembles the private listener. It serves only the given routes,
+// so attach INTERNAL_PORT only to the private service network.
+func NewInternal(port string, logger *slog.Logger, routes ...RouteRegistrar) *http.Server {
+	engine := baseEngine(logger)
+	for _, registrar := range routes {
+		registrar.RegisterRoutes(engine)
+	}
+
+	return &http.Server{
+		Addr:              ":" + port,
+		Handler:           engine,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		ReadHeaderTimeout: readHeaderTimeout,
+		IdleTimeout:       idleTimeout,
+	}
+}
+
 // newRouter wires the public routes and the common HTTP middleware.
 func newRouter(health *controller.HealthController, logger *slog.Logger, extra ...RouteRegistrar) *gin.Engine {
 	engine := baseEngine(logger)

@@ -4,9 +4,9 @@ Owns finalized match results, win and loss counters, and match history. It does
 not store passwords, sessions, profiles or live game state. The API contract is the
 Bruno collection on the `bruno` branch.
 
-This service currently records finalized matches through `service.MatchIngest`.
-Nothing calls it at runtime yet: the RabbitMQ consumer, the public match history
-route, level, penalties and account cleanup are not implemented.
+This service records finalized matches through `service.MatchIngest` and leave
+penalties through `service.PenaltyIngest`. Nothing calls them at runtime yet: the
+RabbitMQ consumer and account cleanup are not implemented.
 
 ## Endpoints
 
@@ -14,6 +14,10 @@ route, level, penalties and account cleanup are not implemented.
 | --------------- | --------------------------------------------------------------------------------- |
 | `GET /healthz`  | Liveness. 200 while the process serves HTTP. Never touches the database.          |
 | `GET /readyz`   | Readiness. 200 while PostgreSQL answers, otherwise 503 `DEPENDENCY_UNAVAILABLE`.  |
+| `GET /api/v1/users/me/matches` | The signed-in user's match history, newest first.             |
+| `GET /internal/v1/user-stats/{user_id}` | Private listener only. Counters for User Service (`stats.read`). |
+
+Level is `floor(wins / 4) + 1`. A user with no records has zero counters and level 1.
 
 ## Configuration
 
@@ -27,6 +31,10 @@ environment only and does not load `.env` itself.
 | `APP_ENV`                 | `development`   | `development`, `production` or `test`. Sets log defaults. |
 | `LOG_FORMAT`, `LOG_LEVEL` | by `APP_ENV`    | `text` or `json`; `debug`, `info`, `warn` or `error`.   |
 | `MIGRATE_ON_START`        | `true`          | Apply embedded migrations at startup.                   |
+| `INTERNAL_PORT`           | `8090`          | Private listener port; must differ from `PORT`.         |
+| `USER_SERVICE_CREDENTIAL_FILE`, `USER_SERVICE_PREVIOUS_CREDENTIAL_FILE` | empty | User Service's credential files. Empty accepts no caller. |
+| `AUTH_INTERNAL_URL`, `AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE` | empty | Auth's private listener and this service's credential. Required in production. |
+| `AUTH_INTERNAL_TIMEOUT`   | `5s`            | Upper bound for one call to Auth.                       |
 
 ## Finalized matches
 
@@ -54,6 +62,13 @@ environment only and does not load `.env` itself.
   and returns `false`, even if its content differs from the first delivery.
 - An event that can never be stored returns `service.ErrInvalidMatch`. A cancelled
   game is not a finalized match and is refused.
+
+## Leave penalties
+
+`PenaltyIngest.Ingest` takes the event id and payload of Game Session's
+`player.penalized` record. The event id decides duplicates, and `points` comes from
+the event, so this service never computes a penalty. A penalty changes only
+`penalty_points`.
 
 ## Tests
 
