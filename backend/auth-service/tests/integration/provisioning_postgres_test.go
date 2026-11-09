@@ -33,7 +33,9 @@ type userStub struct {
 	receipts   map[int64]string
 	lookup     string
 	profiles   map[int64]string
-	server     *httptest.Server
+	// names, when set, makes PUT enforce case-insensitive username uniqueness.
+	names  map[string]int64
+	server *httptest.Server
 }
 
 type stubAnswer struct {
@@ -70,9 +72,19 @@ func (s *userStub) serve(w http.ResponseWriter, r *http.Request) {
 	operation := strings.TrimPrefix(r.URL.Path, "/internal/v1/provisioning-operations/")
 	s.operations = append(s.operations, operation)
 	var body struct {
-		UserID int64 `json:"user_id"`
+		UserID   int64  `json:"user_id"`
+		Username string `json:"username"`
 	}
 	_ = json.NewDecoder(r.Body).Decode(&body)
+	if s.names != nil {
+		name := strings.ToLower(body.Username)
+		if holder, taken := s.names[name]; taken && holder != body.UserID {
+			w.WriteHeader(http.StatusConflict)
+			_ = json.NewEncoder(w).Encode(map[string]any{"error": map[string]any{"code": "USERNAME_TAKEN", "message": "x", "details": map[string]any{}}})
+			return
+		}
+		s.names[name] = body.UserID
+	}
 	if len(s.script) > 0 {
 		answer := s.script[0]
 		s.script = s.script[1:]
