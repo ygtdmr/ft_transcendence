@@ -350,8 +350,15 @@ func TestMigrationsPostgres(t *testing.T) {
 	t.Cleanup(pool.Close)
 
 	const tables = `SELECT count(*) FROM information_schema.tables WHERE table_schema = 'stats' AND table_name <> 'schema_migrations'`
-	if got := count(t, pool, tables); got != 3 {
-		t.Fatalf("tables = %d, want 3", got)
+	if got := count(t, pool, tables); got != 4 {
+		t.Fatalf("tables = %d, want 4", got)
+	}
+	penaltiesDown, err := migrations.Files.ReadFile("000002_penalties.down.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, string(penaltiesDown)); err != nil {
+		t.Fatal(err)
 	}
 	down, err := migrations.Files.ReadFile("000001_match_results.down.sql")
 	if err != nil {

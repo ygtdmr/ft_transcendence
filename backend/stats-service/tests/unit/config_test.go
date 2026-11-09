@@ -11,7 +11,9 @@ const validDatabaseURL = "postgres://stats:secret@localhost:5432/stats?sslmode=d
 
 func setEnvironment(t *testing.T, values map[string]string) {
 	t.Helper()
-	for _, name := range []string{"APP_ENV", "LOG_FORMAT", "LOG_LEVEL", "PORT", "DATABASE_URL", "MIGRATE_ON_START"} {
+	for _, name := range []string{"APP_ENV", "LOG_FORMAT", "LOG_LEVEL", "PORT", "DATABASE_URL", "MIGRATE_ON_START", "INTERNAL_PORT",
+		"USER_SERVICE_CREDENTIAL_FILE", "USER_SERVICE_PREVIOUS_CREDENTIAL_FILE", "AUTH_INTERNAL_URL",
+		"AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE", "AUTH_INTERNAL_TIMEOUT"} {
 		t.Setenv(name, values[name])
 	}
 }
@@ -40,6 +42,9 @@ func TestLoadRejectsInvalidSettings(t *testing.T) {
 		{"wrong scheme", map[string]string{"DATABASE_URL": "mysql://stats:secret@host/stats"}, "DATABASE_URL"},
 		{"bad port", map[string]string{"DATABASE_URL": validDatabaseURL, "PORT": "70000"}, "PORT"},
 		{"bad environment", map[string]string{"DATABASE_URL": validDatabaseURL, "APP_ENV": "staging"}, "APP_ENV"},
+		{"production without auth", map[string]string{"DATABASE_URL": validDatabaseURL, "APP_ENV": "production"}, "AUTH_INTERNAL_URL"},
+		{"same internal port", map[string]string{"DATABASE_URL": validDatabaseURL, "PORT": "8090"}, "INTERNAL_PORT"},
+		{"auth url alone", map[string]string{"DATABASE_URL": validDatabaseURL, "AUTH_INTERNAL_URL": "http://auth:8090"}, "set together"},
 		{"bad migrate flag", map[string]string{"DATABASE_URL": validDatabaseURL, "MIGRATE_ON_START": "maybe"}, "MIGRATE_ON_START"},
 	} {
 		t.Run(tt.name, func(t *testing.T) {

@@ -7,11 +7,15 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/melmut-42/ft_transcendence/backend/shared/logging"
 )
 
-const defaultPort = "8080"
+const (
+	defaultPort         = "8080"
+	defaultInternalPort = "8090"
+)
 
 // Config holds validated application settings.
 type Config struct {
@@ -19,8 +23,16 @@ type Config struct {
 	LogFormat      string
 	LogLevel       string
 	Port           string
+	InternalPort   string
 	DatabaseURL    string `json:"-"`
 	MigrateOnStart bool
+	// CallerCredentials maps each private caller to its accepted credentials.
+	CallerCredentials map[string][]string `json:"-"`
+	// AuthInternalURL, AuthServiceCredential and AuthInternalTimeout reach
+	// Auth's private listener to validate browser sessions.
+	AuthInternalURL       string
+	AuthServiceCredential string `json:"-"`
+	AuthInternalTimeout   time.Duration
 }
 
 // Load reads and validates settings from the process environment. It does not
@@ -29,7 +41,8 @@ type Config struct {
 // Errors:
 //
 //   - DATABASE_URL is missing or is not a PostgreSQL URL.
-//   - PORT or MIGRATE_ON_START has an invalid value.
+//   - PORT, INTERNAL_PORT or MIGRATE_ON_START has an invalid value.
+//   - A credential file is unreadable or too short, or Auth settings are incomplete.
 //   - APP_ENV, LOG_FORMAT or LOG_LEVEL has an unsupported value.
 func Load() (Config, error) {
 	cfg := Config{
@@ -37,6 +50,7 @@ func Load() (Config, error) {
 		LogFormat:      strings.TrimSpace(os.Getenv("LOG_FORMAT")),
 		LogLevel:       strings.TrimSpace(os.Getenv("LOG_LEVEL")),
 		Port:           strings.TrimSpace(os.Getenv("PORT")),
+		InternalPort:   strings.TrimSpace(os.Getenv("INTERNAL_PORT")),
 		DatabaseURL:    strings.TrimSpace(os.Getenv("DATABASE_URL")),
 		MigrateOnStart: true,
 	}
@@ -46,6 +60,9 @@ func Load() (Config, error) {
 	if cfg.Port == "" {
 		cfg.Port = defaultPort
 	}
+	if cfg.InternalPort == "" {
+		cfg.InternalPort = defaultInternalPort
+	}
 	if raw := strings.TrimSpace(os.Getenv("MIGRATE_ON_START")); raw != "" {
 		value, err := strconv.ParseBool(raw)
 		if err != nil {
@@ -54,6 +71,14 @@ func Load() (Config, error) {
 		cfg.MigrateOnStart = value
 	}
 	if err := cfg.validate(); err != nil {
+		return Config{}, err
+	}
+	credentials, err := loadCallerCredentials()
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.CallerCredentials = credentials
+	if err := cfg.loadAuthService(); err != nil {
 		return Config{}, err
 	}
 
@@ -85,9 +110,14 @@ func (cfg *Config) configureLogging() error {
 }
 
 func (cfg Config) validate() error {
-	port, err := strconv.Atoi(cfg.Port)
-	if err != nil || port < 1 || port > 65535 {
+	if !validPort(cfg.Port) {
 		return errors.New("PORT must be an integer between 1 and 65535")
+	}
+	if !validPort(cfg.InternalPort) {
+		return errors.New("INTERNAL_PORT must be an integer between 1 and 65535")
+	}
+	if cfg.Port == cfg.InternalPort {
+		return errors.New("INTERNAL_PORT must differ from PORT")
 	}
 	if cfg.DatabaseURL == "" {
 		return errors.New("DATABASE_URL is required")
@@ -98,4 +128,10 @@ func (cfg Config) validate() error {
 	}
 
 	return nil
+}
+
+func validPort(raw string) bool {
+	port, err := strconv.Atoi(raw)
+
+	return err == nil && port >= 1 && port <= 65535
 }

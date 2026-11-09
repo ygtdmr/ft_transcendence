@@ -14,10 +14,11 @@ const minCredentialLength = 32
 // current and previous credential files. Two entries allow a rotation: install
 // the new credential, switch the caller, then remove the previous one.
 var callerCredentialFiles = map[string][2]string{
-	"web-bff":      {"WEB_BFF_CREDENTIAL_FILE", "WEB_BFF_PREVIOUS_CREDENTIAL_FILE"},
-	"game-gateway": {"GAME_GATEWAY_CREDENTIAL_FILE", "GAME_GATEWAY_PREVIOUS_CREDENTIAL_FILE"},
-	"chat-gateway": {"CHAT_GATEWAY_CREDENTIAL_FILE", "CHAT_GATEWAY_PREVIOUS_CREDENTIAL_FILE"},
-	"user-service": {"USER_SERVICE_CREDENTIAL_FILE", "USER_SERVICE_PREVIOUS_CREDENTIAL_FILE"},
+	"web-bff":       {"WEB_BFF_CREDENTIAL_FILE", "WEB_BFF_PREVIOUS_CREDENTIAL_FILE"},
+	"game-gateway":  {"GAME_GATEWAY_CREDENTIAL_FILE", "GAME_GATEWAY_PREVIOUS_CREDENTIAL_FILE"},
+	"chat-gateway":  {"CHAT_GATEWAY_CREDENTIAL_FILE", "CHAT_GATEWAY_PREVIOUS_CREDENTIAL_FILE"},
+	"user-service":  {"USER_SERVICE_CREDENTIAL_FILE", "USER_SERVICE_PREVIOUS_CREDENTIAL_FILE"},
+	"stats-service": {"STATS_SERVICE_CREDENTIAL_FILE", "STATS_SERVICE_PREVIOUS_CREDENTIAL_FILE"},
 }
 
 // loadCallerCredentials reads each caller's credential files.
