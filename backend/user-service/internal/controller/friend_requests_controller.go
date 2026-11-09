@@ -153,12 +153,21 @@ func resolutionTarget(c *gin.Context) (int64, error) {
 	if err != nil || requestID <= 0 {
 		return 0, &service.ValidationError{Field: "request_id", Reason: "must be a positive integer"}
 	}
-	var probe [1]byte
-	if n, _ := c.Request.Body.Read(probe[:]); n > 0 {
-		return 0, malformed("body", "This request takes no body.")
+	if err := rejectBody(c); err != nil {
+		return 0, err
 	}
 
 	return requestID, nil
+}
+
+// rejectBody refuses a request that must have no body.
+func rejectBody(c *gin.Context) error {
+	var probe [1]byte
+	if n, _ := c.Request.Body.Read(probe[:]); n > 0 {
+		return malformed("body", "This request takes no body.")
+	}
+
+	return nil
 }
 
 func resolveError(err error, requestID int64, side string) error {

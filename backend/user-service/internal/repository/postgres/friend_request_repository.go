@@ -19,6 +19,9 @@ const lockPair = "SELECT users.lock_user_pair($1, $2)"
 const pairBlocked = `SELECT EXISTS (SELECT 1 FROM blocks
 	WHERE (blocker_id = $1 AND blocked_id = $2) OR (blocker_id = $2 AND blocked_id = $1))`
 
+const activeFriendship = `SELECT EXISTS (SELECT 1 FROM friendships
+	WHERE user_low = LEAST($1::bigint, $2::bigint) AND user_high = GREATEST($1::bigint, $2::bigint) AND active)`
+
 // FriendRequestRepository stores friend requests and their outbox events.
 type FriendRequestRepository struct {
 	pool *pgxpool.Pool
@@ -29,8 +32,8 @@ func NewFriendRequests(pool *pgxpool.Pool) *FriendRequestRepository {
 	return &FriendRequestRepository{pool: pool}
 }
 
-func (r *FriendRequestRepository) inTx(ctx context.Context, fn func(pgx.Tx) error) error {
-	tx, err := r.pool.Begin(ctx)
+func inTx(ctx context.Context, pool *pgxpool.Pool, fn func(pgx.Tx) error) error {
+	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return classify(err)
 	}
@@ -51,7 +54,7 @@ func (r *FriendRequestRepository) inTx(ctx context.Context, fn func(pgx.Tx) erro
 func (r *FriendRequestRepository) CreateFriendRequest(ctx context.Context, senderID, recipientID int64,
 	event service.FriendEventBuilder) (service.StoredFriendRequest, error) {
 	var stored service.StoredFriendRequest
-	err := r.inTx(ctx, func(tx pgx.Tx) error {
+	err := inTx(ctx, r.pool, func(tx pgx.Tx) error {
 		if _, err := tx.Exec(ctx, lockPair, senderID, recipientID); err != nil {
 			return err
 		}
@@ -88,9 +91,7 @@ func refuseSend(ctx context.Context, tx pgx.Tx, senderID, recipientID int64) err
 	if blocked {
 		return service.ErrRelationshipBlocked
 	}
-	err := tx.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM friendships
-		WHERE user_low = LEAST($1::bigint, $2::bigint) AND user_high = GREATEST($1::bigint, $2::bigint) AND active)`,
-		senderID, recipientID).Scan(&friends)
+	err := tx.QueryRow(ctx, activeFriendship, senderID, recipientID).Scan(&friends)
 	if err != nil {
 		return err
 	}
@@ -121,7 +122,7 @@ func refuseSend(ctx context.Context, tx pgx.Tx, senderID, recipientID int64) err
 func (r *FriendRequestRepository) ResolveFriendRequest(ctx context.Context, requestID, callerID int64, state string,
 	event service.FriendEventBuilder) (service.StoredFriendRequest, error) {
 	var stored service.StoredFriendRequest
-	err := r.inTx(ctx, func(tx pgx.Tx) error {
+	err := inTx(ctx, r.pool, func(tx pgx.Tx) error {
 		var requesterID, addresseeID int64
 		err := tx.QueryRow(ctx, `SELECT requester_id, addressee_id FROM friend_requests WHERE id = $1`, requestID).
 			Scan(&requesterID, &addresseeID)

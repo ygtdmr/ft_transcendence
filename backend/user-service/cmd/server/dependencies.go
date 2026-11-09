@@ -72,7 +72,8 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 		}
 		avatars := service.AvatarURLs{Base: cfg.AvatarBaseURL}
 		requests := service.NewFriendRequests(userpostgres.NewFriendRequests(pool), avatars, service.NoPresence{})
-		public = append(public, controller.NewFriendRequests(requests, sessions))
+		blocks := service.NewBlocks(userpostgres.NewBlocks(pool), avatars)
+		public = append(public, controller.NewFriendRequests(requests, sessions), controller.NewBlocks(blocks, sessions))
 	} else {
 		logger.WarnContext(ctx, "AUTH_INTERNAL_URL is not set; routes that need a signed-in user are not served")
 	}
