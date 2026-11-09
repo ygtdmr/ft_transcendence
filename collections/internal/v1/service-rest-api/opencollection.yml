@@ -25,7 +25,7 @@ docs:
 
     Each receiving service serves `/internal/v1/*` only on a separate private listener (`INTERNAL_PORT`). That listener is attached only to the private service network and never to the network the public reverse proxy uses for browser traffic. Public listeners never serve `/internal/*`, and the public reverse proxy never forwards `/internal/*`. The private listener never serves public `/api/*` or `/ws/*` routes.
 
-    The initial deployment uses plaintext HTTP inside that isolated private service network. This is an explicit trust boundary that requires security review before release. TLS can be added to the private listener later without changing routes, payloads or credentials. External backend connections remain HTTPS/WSS.
+    The initial deployment uses plaintext HTTP inside that isolated private service network. This isolated network is the trust boundary for private calls. The public reverse proxy never forwards `/internal/*`. TLS can be added to the private listener later without changing routes, payloads or credentials. External backend connections remain HTTPS/WSS.
 
     ## Service authentication
 
@@ -39,7 +39,7 @@ docs:
     - The receiver maps each accepted credential to exactly one caller identity and that caller's operation scopes for this receiver. Caller identity comes only from that mapping, never from a header, body field or network address.
     - The receiver compares credentials in constant time and fails closed: an empty configuration or an unreadable secret accepts no caller.
     - Credentials come from protected deployment configuration (mounted secret files). They are never hardcoded, committed, returned, logged, written to audit records or placed in URLs.
-    - Rotation: a receiver accepts at most two active credentials per caller. Install the new credential at the receiver, switch the caller, then remove the old credential. No rotation interval is specified.
+    - Rotation: a receiver accepts at most two active credentials per caller. Install the new credential at the receiver, switch the caller, then remove the old credential. Credentials rotate when a credential may be exposed or its holder changes; there is no fixed interval.
     - The service credential authenticates the calling service only. It never replaces the end user's session, user-level authorization or resource permission checks. Callers obtain an actor `user_id` from a validated session, never from browser input. The browser `ft_session` cookie, when an operation needs it, travels unchanged as a `Cookie` header next to the service credential and is never treated as a service credential.
 
     | Status | Code | Meaning |
@@ -57,14 +57,23 @@ docs:
     | --- | --- | --- | --- | --- |
     | `user-service` | `auth-service` | `profile.provision` | Provision profile | `PUT /internal/v1/provisioning-operations/{operation_id}` |
     | `user-service` | `auth-service` | `provisioning.read` | Read provisioning receipt | `GET /internal/v1/provisioning-operations/{operation_id}`, `GET /internal/v1/provisioning-operations?user_id=` |
-    | `user-service` | `auth-service`, domain services | `profile.read` | Read canonical profile | `GET /internal/v1/profiles/{user_id}` |
+    | `user-service` | `auth-service`, `game-session` | `profile.read` | Read canonical profile | `GET /internal/v1/profiles/{user_id}` |
     | `user-service` | `channel-service`, `game-session` | `friend.verdict` | Active-friend verdict | `GET /internal/v1/friendship-verdicts?actor_user_id=&target_user_id=` |
-    | `auth-service` | `game-gateway`, `chat-gateway`, `web-bff`, protected services | `session.validate` | Validate session | `GET /internal/v1/sessions/current` |
+    | `auth-service` | `game-gateway`, `chat-gateway`, `web-bff` | `session.validate` | Validate session | `GET /internal/v1/sessions/current` |
     | `auth-service` | `user-service` | `account.metadata.read` | Read account metadata | `GET /internal/v1/accounts/{user_id}` |
     | `auth-service` | `user-service` | `account.deletion.begin` | Begin account deletion | `PUT /internal/v1/account-deletions/{operation_id}` |
     | `auth-service` | `user-service` | `account.deletion.complete` | Complete account deletion | `PUT /internal/v1/account-deletions/{operation_id}/completion` |
+    | `game-session` | `auth-service` | `membership.read` | Read current room membership | `GET /internal/v1/memberships/{user_id}` |
+    | `game-session` | `auth-service` | `session.departure` | Record logout departure | `PUT /internal/v1/session-departures/{session_id}` |
+    | `game-session` | `channel-service` | `room.access.read` | Room access verdict | `GET /internal/v1/rooms/{room_id}/access-verdicts?user_id=` |
+    | `game-session`, `chat-service`, `stats-service` | `user-service` | `account.cleanup` | Remove the user's local data | `PUT /internal/v1/account-cleanups/{operation_id}` |
+    | `stats-service` | `user-service` | `stats.read` | Read user counters | `GET /internal/v1/user-stats/{user_id}` |
+    | `game-gateway`, `chat-gateway` | `auth-service` | `session.revocation.notify` | Close a revoked session's sockets | `PUT /internal/v1/session-revocations/{session_id}` |
+    | `game-gateway`, `chat-gateway` | `user-service` | `connections.read` | Read the socket registry | `GET /internal/v1/connections?user_id=` |
 
-    Operations without a route keep the semantics in `workspace.yml`, Auth and User Service Boundary. The cleanup contracts of the other account-deletion participants are defined with their owning services. The exact callers of `profile.read`, `session.validate` and the other services' private operations (Game Session membership and lifecycle, Channel Service verdicts, gateway socket registries, Stats, Board Generator and deletion cleanup) are defined with their owning services before those callers are implemented.
+    A row without a request file in this collection fixes the receiver, caller, scope and route. The receiving service's owner adds the request file with its payloads and errors, following the common rules below. Each caller holds its own credential for each receiver. Board Generator is a package inside Game Session, so it has no private route or credential.
+
+    Game Session answers a `503` from User by failing the requesting operation with `503 SERVICE_UNAVAILABLE`. It never substitutes a cached or anonymous profile.
 
     ## Response envelopes and common errors
 
@@ -77,7 +86,7 @@ docs:
     | `503` | `SERVICE_UNAVAILABLE` | The receiver or one of its dependencies is unavailable | Retry the identical request later |
     | `500` | `INTERNAL_ERROR` | Unexpected receiver failure | Retry the identical request later |
 
-    A dependency failure is an availability failure. Receivers never turn it into a not-found, invalid-session, offline or no-friendship verdict. A network error or caller timeout means the outcome is unknown, not failed. Caller timeout values are configured per caller; no value is specified yet.
+    A dependency failure is an availability failure. Receivers never turn it into a not-found, invalid-session, offline or no-friendship verdict. A network error or caller timeout means the outcome is unknown, not failed. Each caller configures its timeout; the default is `5s` for one private call.
 
     ## Environment
 

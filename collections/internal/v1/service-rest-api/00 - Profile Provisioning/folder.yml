@@ -41,6 +41,8 @@ docs: |-
 
   The receipt is immutable. It is read from the stored operation record, never from the current profile, so a replay returns the same receipt even after the profile has changed. Current `username` and `avatar_url` come only from Read canonical profile.
 
+  When account deletion completes, User Service removes the operation record, including its username fingerprint. Only the fact that deletion is recorded for `user_id` remains, which keeps `409 USER_DELETED` for later requests.
+
   | Field | Type | Required | Nullable | Allowed values | Description |
   | --- | --- | ---: | ---: | --- | --- |
   | `data.operation_id` | string | yes | no | lowercase UUID | Operation of record for this user |
