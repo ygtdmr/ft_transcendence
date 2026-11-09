@@ -23,6 +23,8 @@ func setEnvironment(t *testing.T, values map[string]string) {
 	t.Helper()
 	for _, name := range []string{"APP_ENV", "LOG_FORMAT", "LOG_LEVEL", "PORT", "INTERNAL_PORT", "DATABASE_URL", "MIGRATE_ON_START",
 		"AUTH_SERVICE_CREDENTIAL_FILE", "AUTH_SERVICE_PREVIOUS_CREDENTIAL_FILE", "AVATAR_BASE_URL",
+		"CHANNEL_SERVICE_CREDENTIAL_FILE", "CHANNEL_SERVICE_PREVIOUS_CREDENTIAL_FILE",
+		"GAME_SESSION_CREDENTIAL_FILE", "GAME_SESSION_PREVIOUS_CREDENTIAL_FILE",
 		"AUTH_INTERNAL_URL", "AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE", "AUTH_INTERNAL_TIMEOUT"} {
 		t.Setenv(name, values[name])
 	}
@@ -212,6 +214,41 @@ func writeSecret(t *testing.T, value string) string {
 	}
 
 	return path
+}
+
+// TestLoadVerdictCallerCredentials checks the friendship verdict callers.
+//
+// Expected output:
+//
+//   - Channel Service and Game Session each load current and previous credentials.
+//   - One credential configured for two callers is refused.
+func TestLoadVerdictCallerCredentials(t *testing.T) {
+	channel, channelPrevious := strings.Repeat("h", 40), strings.Repeat("i", 40)
+	game, gamePrevious := strings.Repeat("g", 40), strings.Repeat("j", 40)
+	setEnvironment(t, map[string]string{
+		"DATABASE_URL":                             validDatabaseURL,
+		"CHANNEL_SERVICE_CREDENTIAL_FILE":          writeSecret(t, channel),
+		"CHANNEL_SERVICE_PREVIOUS_CREDENTIAL_FILE": writeSecret(t, channelPrevious),
+		"GAME_SESSION_CREDENTIAL_FILE":             writeSecret(t, game),
+		"GAME_SESSION_PREVIOUS_CREDENTIAL_FILE":    writeSecret(t, gamePrevious),
+	})
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	for caller, want := range map[string][]string{"channel-service": {channel, channelPrevious}, "game-session": {game, gamePrevious}} {
+		got := cfg.CallerCredentials[caller]
+		if len(got) != 2 || !slices.Contains(got, want[0]) || !slices.Contains(got, want[1]) {
+			t.Fatalf("%s credentials = %d values, want current and previous", caller, len(got))
+		}
+	}
+
+	shared := writeSecret(t, channel)
+	setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL,
+		"CHANNEL_SERVICE_CREDENTIAL_FILE": shared, "GAME_SESSION_CREDENTIAL_FILE": shared})
+	if _, err := config.Load(); err == nil {
+		t.Fatal("Load() accepted one credential for two callers")
+	}
 }
 
 // TestLoadCallerCredentials checks reading service credentials from secret files.
