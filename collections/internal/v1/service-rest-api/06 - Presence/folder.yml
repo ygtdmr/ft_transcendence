@@ -1,0 +1,18 @@
+info:
+  name: 06 - Presence
+  type: folder
+  seq: 6
+docs: |-
+  # Presence
+
+  User Service owns presence. It derives presence from the active socket registries of Game Gateway and Chat Gateway, and it stores no presence state.
+
+  User Service holds the private URL of every running Gateway instance in its configuration and queries all of them. A user has one of three states:
+
+  | State | Evidence |
+  | --- | --- |
+  | Online | At least one Gateway instance reports the user |
+  | Offline | Every Gateway instance answered and none reports the user |
+  | Unknown | No answering instance reports the user and at least one instance did not answer |
+
+  Unknown is never reported as Offline. A registry lists only open sockets with an authenticated session. Reconnect grace, room membership and seating are separate facts owned by Game Session; a socket closing during reconnect grace removes the user from that registry at once.

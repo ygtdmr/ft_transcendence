@@ -32,6 +32,7 @@ docs:
     | `POST` | `/api/v2/rooms` | Create and host a v2 room |
     | `POST` | `/api/v2/rooms/{room_id}/members` | Join `WAITING` or a paused `IN_GAME` as an unseated member |
     | `GET` | `/api/v2/rooms/{room_id}` | Read recipient-specific room/game/post-game state |
+    | `GET` | `/api/v2/rooms/{room_id}/presence` | Read global online state of current members |
     | `DELETE` | `/api/v2/rooms/{room_id}/members/me` | Exit; when currently `IN_GAME`, record a participant's leave penalty and recheck staffing |
     | `GET` | `/api/v2/rooms/lookup/{room_code}` | Resolve a room code |
     | `POST` | `/api/v2/rooms/{room_id}/invites` | Send a transient invite through Chat Gateway v2 |

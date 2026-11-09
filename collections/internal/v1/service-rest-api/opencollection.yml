@@ -70,6 +70,7 @@ docs:
     | `stats-service` | `user-service` | `stats.read` | Read user counters | `GET /internal/v1/user-stats/{user_id}` |
     | `game-gateway`, `chat-gateway` | `auth-service` | `session.revocation.notify` | Close a revoked session's sockets | `PUT /internal/v1/session-revocations/{session_id}` |
     | `game-gateway`, `chat-gateway` | `user-service` | `connections.read` | Read the socket registry | `GET /internal/v1/connections?user_id=` |
+    | `user-service` | `web-bff` | `presence.read` | Read users' presence | `GET /internal/v1/presence?user_id=` |
 
     A row without a request file in this collection fixes the receiver, caller, scope and route. The receiving service's owner adds the request file with its payloads and errors, following the common rules below. Each caller holds its own credential for each receiver. Board Generator is a package inside Game Session, so it has no private route or credential.
 
@@ -90,7 +91,7 @@ docs:
 
     ## Environment
 
-    Select `local`. Set `userInternalUrl`, `authInternalUrl` and `statsInternalUrl` to the User and Auth private listeners, and each `<caller>To<Receiver>ServiceCredential` variable to the local credential for that pair. Keep real credential values only in local, uncommitted environment configuration.
+    Select `local`. Set `userInternalUrl`, `authInternalUrl`, `statsInternalUrl` and `gameGatewayInternalUrl` to the private listeners, and each `<caller>To<Receiver>ServiceCredential` variable to the local credential for that pair. Keep real credential values only in local, uncommitted environment configuration.
   type: text/markdown
 bundled: false
 extensions: {}

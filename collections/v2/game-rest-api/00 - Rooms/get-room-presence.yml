@@ -1,0 +1,65 @@
+info:
+  name: Get room presence
+  type: http
+  seq: 7
+  tags: [rooms, presence]
+http:
+  method: GET
+  url: "{{baseUrl}}/api/{{gameApiVersion}}/rooms/{{roomId}}/presence"
+  headers:
+    - name: Accept
+      value: application/json
+docs: |-
+  # Get room presence
+
+  ## Purpose
+
+  Returns global online state for the current members of a room. Web BFF reads the member list from Game Session, which also authorizes the caller, and then asks User Service for those users. The room snapshot and room events carry no presence, so a User Service outage never affects them.
+
+  `is_online` is global: any authenticated Game or Chat socket counts. It says nothing about a member's room connection or reconnect grace, and it grants no room right.
+
+  The frontend requests this route when the room view opens, after the room socket reconnects, and at a fixed client refresh interval. Membership events do not trigger a request. A member with no value yet is shown as Unknown until the next response. On `503`, the frontend shows Unknown for all members and retries at the next refresh.
+
+  ## Request parameters
+
+  | Parameter | Location | Required | Type | Allowed values | Nullable | Description | Example |
+  | --- | --- | ---: | --- | --- | ---: | --- | --- |
+  | `room_id` | path | yes | integer | positive | no | Requested room | `1001` |
+  | `ft_session` cookie | request cookie | yes | string | active JWT access credential | no | Requesting identity | set by Register/Login |
+  | `Accept` | header | yes | string | `application/json` | no | Requested response media type | `application/json` |
+
+  ## Response fields
+
+  | Field | Type | Required | Nullable | Allowed values | Description |
+  | --- | --- | ---: | ---: | --- | --- |
+  | `data.members[].user_id` | integer | yes | no | positive | Current room member, ascending |
+  | `data.members[].is_online` | boolean | yes | no | `true`, `false` | Global online state |
+
+  ## Errors
+
+  `401 UNAUTHORIZED`, `404 ROOM_NOT_FOUND`, `403 NOT_ROOM_MEMBER`, `422 VALIDATION_ERROR`, and `503 SERVICE_UNAVAILABLE` when a member's presence is Unknown or User Service cannot answer. Read-only; no event.
+examples:
+  - name: Success - Two members
+    request: {url: "{{baseUrl}}/api/{{gameApiVersion}}/rooms/1001/presence", method: GET, headers: [], params: [], body: {mode: none}}
+    response:
+      status: 200
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "data": {
+              "members": [
+                {"user_id": 42, "is_online": true},
+                {"user_id": 43, "is_online": false}
+              ]
+            }
+          }
+  - name: 503 - Presence unavailable
+    request: {url: "{{baseUrl}}/api/{{gameApiVersion}}/rooms/1001/presence", method: GET, headers: [], params: [], body: {mode: none}}
+    response:
+      status: 503
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: '{"error":{"code":"SERVICE_UNAVAILABLE","message":"Presence is unavailable.","details":{}}}'
