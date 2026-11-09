@@ -1,0 +1,67 @@
+# stats-service
+
+Owns finalized match results, win and loss counters, and match history. It does
+not store passwords, sessions, profiles or live game state. The API contract is the
+Bruno collection on the `bruno` branch.
+
+This service currently records finalized matches through `service.MatchIngest`.
+Nothing calls it at runtime yet: the RabbitMQ consumer, the public match history
+route, level, penalties and account cleanup are not implemented.
+
+## Endpoints
+
+| Method and path | Meaning                                                                           |
+| --------------- | --------------------------------------------------------------------------------- |
+| `GET /healthz`  | Liveness. 200 while the process serves HTTP. Never touches the database.          |
+| `GET /readyz`   | Readiness. 200 while PostgreSQL answers, otherwise 503 `DEPENDENCY_UNAVAILABLE`.  |
+
+## Configuration
+
+Copy `.env.example` to `.env` for reference. The service reads the process
+environment only and does not load `.env` itself.
+
+| Variable                  | Default         | Meaning                                                 |
+| ------------------------- | --------------- | ------------------------------------------------------- |
+| `DATABASE_URL`            | none, required  | `postgres://` URL. The service uses its own `stats` schema. |
+| `PORT`                    | `8080`          | HTTP port.                                              |
+| `APP_ENV`                 | `development`   | `development`, `production` or `test`. Sets log defaults. |
+| `LOG_FORMAT`, `LOG_LEVEL` | by `APP_ENV`    | `text` or `json`; `debug`, `info`, `warn` or `error`.   |
+| `MIGRATE_ON_START`        | `true`          | Apply embedded migrations at startup.                   |
+
+## Finalized matches
+
+`MatchIngest.Ingest` takes the payload of Game Session's `match.finalized` event:
+
+```json
+{
+  "game_id": 5001,
+  "room_id": 1001,
+  "winner": "RED",
+  "loser": "BLUE",
+  "end_reason": "ALL_TEAM_CARDS_REVEALED",
+  "score": { "red": 9, "blue": 5 },
+  "started_at": "2026-09-10T08:30:00Z",
+  "finished_at": "2026-09-10T08:50:00Z",
+  "players": [
+    { "user_id": 42, "username": "player_one", "team": "RED", "role": "OPERATIVE" }
+  ]
+}
+```
+
+- `username` is the name recorded with the match and never changes afterwards.
+- One transaction stores the match, its participants and each player's counters.
+- `game_id` decides duplicates. A repeated or concurrent delivery changes nothing
+  and returns `false`, even if its content differs from the first delivery.
+- An event that can never be stored returns `service.ErrInvalidMatch`. A cancelled
+  game is not a finalized match and is refused.
+
+## Tests
+
+From this directory:
+
+```
+go test ./...
+```
+
+Integration tests need a PostgreSQL server where the role may create databases.
+Set `STATS_TEST_DATABASE_URL` to run them; otherwise they are skipped.
