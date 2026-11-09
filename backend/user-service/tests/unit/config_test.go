@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/config"
 )
@@ -21,7 +22,8 @@ const validDatabaseURL = "postgres://user:secret@localhost:5432/user?sslmode=dis
 func setEnvironment(t *testing.T, values map[string]string) {
 	t.Helper()
 	for _, name := range []string{"APP_ENV", "LOG_FORMAT", "LOG_LEVEL", "PORT", "INTERNAL_PORT", "DATABASE_URL", "MIGRATE_ON_START",
-		"AUTH_SERVICE_CREDENTIAL_FILE", "AUTH_SERVICE_PREVIOUS_CREDENTIAL_FILE", "AVATAR_BASE_URL"} {
+		"AUTH_SERVICE_CREDENTIAL_FILE", "AUTH_SERVICE_PREVIOUS_CREDENTIAL_FILE", "AVATAR_BASE_URL",
+		"AUTH_INTERNAL_URL", "AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE", "AUTH_INTERNAL_TIMEOUT"} {
 		t.Setenv(name, values[name])
 	}
 }
@@ -68,7 +70,10 @@ func TestLoadEnvironmentDefaults(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.environment, func(t *testing.T) {
-			setEnvironment(t, map[string]string{"APP_ENV": tt.environment, "DATABASE_URL": validDatabaseURL})
+			setEnvironment(t, map[string]string{
+				"APP_ENV": tt.environment, "DATABASE_URL": validDatabaseURL, "AUTH_INTERNAL_URL": "http://auth-service:8090",
+				"AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, strings.Repeat("o", 40)),
+			})
 
 			cfg, err := config.Load()
 			if err != nil {
@@ -140,6 +145,10 @@ func TestLoadRejectsInvalidSettings(t *testing.T) {
 		{"internal port not a number", map[string]string{"DATABASE_URL": validDatabaseURL, "INTERNAL_PORT": "x"}, "INTERNAL_PORT"},
 		{"internal port equals port", map[string]string{"DATABASE_URL": validDatabaseURL, "PORT": "9000", "INTERNAL_PORT": "9000"}, "INTERNAL_PORT"},
 		{"missing credential file", map[string]string{"DATABASE_URL": validDatabaseURL, "AUTH_SERVICE_CREDENTIAL_FILE": "/nonexistent/secret"}, "AUTH_SERVICE_CREDENTIAL_FILE"},
+		{"auth url without credential", map[string]string{"DATABASE_URL": validDatabaseURL, "AUTH_INTERNAL_URL": "http://auth:8090"}, "set together"},
+		{"auth credential without url", map[string]string{"DATABASE_URL": validDatabaseURL, "AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE": "/nonexistent/secret"}, "set together"},
+		{"auth required in production", map[string]string{"DATABASE_URL": validDatabaseURL, "APP_ENV": "production"}, "AUTH_INTERNAL_URL"},
+		{"auth timeout invalid", map[string]string{"DATABASE_URL": validDatabaseURL, "AUTH_INTERNAL_TIMEOUT": "soon"}, "AUTH_INTERNAL_TIMEOUT"},
 		{"unknown environment", map[string]string{"DATABASE_URL": validDatabaseURL, "APP_ENV": "staging"}, "APP_ENV"},
 		{"unknown log format", map[string]string{"DATABASE_URL": validDatabaseURL, "LOG_FORMAT": "xml"}, "LOG_FORMAT"},
 		{"unknown log level", map[string]string{"DATABASE_URL": validDatabaseURL, "LOG_LEVEL": "loud"}, "LOG_LEVEL"},
@@ -159,6 +168,38 @@ func TestLoadRejectsInvalidSettings(t *testing.T) {
 				t.Fatalf("error %q leaks the database password", err)
 			}
 		})
+	}
+}
+
+// TestLoadAuthService checks the settings for calling Auth's private listener.
+//
+// Expected output:
+//
+//   - The URL, credential and timeout are loaded; the timeout defaults to 5s.
+//   - A credential shared with an inbound caller is refused.
+//   - A URL with a path is refused.
+func TestLoadAuthService(t *testing.T) {
+	outbound := writeSecret(t, strings.Repeat("o", 40))
+	setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL, "AUTH_INTERNAL_URL": "http://auth-service:8090/",
+		"AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE": outbound})
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.AuthInternalURL != "http://auth-service:8090" || cfg.AuthServiceCredential != strings.Repeat("o", 40) || cfg.AuthInternalTimeout != 5*time.Second {
+		t.Fatalf("auth settings = %q %v", cfg.AuthInternalURL, cfg.AuthInternalTimeout)
+	}
+
+	setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL, "AUTH_INTERNAL_URL": "http://auth-service:8090",
+		"AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE": outbound, "AUTH_SERVICE_CREDENTIAL_FILE": outbound})
+	if _, err := config.Load(); err == nil || !strings.Contains(err.Error(), "must differ") {
+		t.Fatalf("shared credential = %v", err)
+	}
+
+	setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL, "AUTH_INTERNAL_URL": "http://auth-service:8090/x",
+		"AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE": outbound})
+	if _, err := config.Load(); err == nil || !strings.Contains(err.Error(), "AUTH_INTERNAL_URL") {
+		t.Fatalf("url with path = %v", err)
 	}
 }
 

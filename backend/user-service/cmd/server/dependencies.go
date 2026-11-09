@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/client/authclient"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/config"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/controller"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/middleware/serviceauth"
@@ -62,5 +63,19 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 		controller.NewInternalProvisioning(profileService, auth),
 		controller.NewInternalProfile(profileReads, auth))
 
-	return []*http.Server{server.New(cfg.Port, healthController, logger), internal}, pool.Close, nil
+	var public []server.RouteRegistrar
+	if cfg.AuthInternalURL != "" {
+		sessions, err := authclient.New(cfg.AuthInternalURL, cfg.AuthServiceCredential, cfg.AuthInternalTimeout)
+		if err != nil {
+			pool.Close()
+			return nil, nil, err
+		}
+		avatars := service.AvatarURLs{Base: cfg.AvatarBaseURL}
+		requests := service.NewFriendRequests(userpostgres.NewFriendRequests(pool), avatars, service.NoPresence{})
+		public = append(public, controller.NewFriendRequests(requests, sessions))
+	} else {
+		logger.WarnContext(ctx, "AUTH_INTERNAL_URL is not set; routes that need a signed-in user are not served")
+	}
+
+	return []*http.Server{server.New(cfg.Port, healthController, logger, public...), internal}, pool.Close, nil
 }

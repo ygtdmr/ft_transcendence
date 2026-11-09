@@ -117,6 +117,20 @@ are plain numbers with no foreign key. Foreign keys exist only inside `users`.
 | `provisioning_operations`, `deletion_operations` | Idempotent, resumable workflow records keyed by `operation_id`.                                    |
 | `outbox`                                           | Transactional outbox with a stable `event_id` per event. Unpublished rows have `published_at IS NULL`. |
 
+## Public routes and sessions
+
+Friend requests are served under `/api/v1/friends/requests`. The `ft_session`
+cookie is the only browser credential: each request forwards it to Auth's private
+session validation. A refused session is `401 UNAUTHORIZED`; an Auth outage is
+`503 SERVICE_UNAVAILABLE`. Set `AUTH_INTERNAL_URL` and
+`AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE` to enable these routes; both are required
+in production.
+
+Live presence is not read yet, so `is_online` is always `false`.
+
+Every friend request change takes the pair lock first, then the request row, and
+records its integration event in the same transaction.
+
 ## Integration events
 
 A change that other services must learn about records its event with
