@@ -1,0 +1,8 @@
+info:
+  name: 04 - Stats Reads
+  type: folder
+  seq: 4
+docs: |-
+  # Stats reads
+
+  Stats Service answers these private reads from its own PostgreSQL records. A dependency failure returns `503 SERVICE_UNAVAILABLE`; callers never turn it into zero counters.

@@ -429,7 +429,7 @@ docs: |-
 
   ## Match History and Stats
 
-  Every competitive terminal transition (normal win or assassin) appends exactly one internal `match.finalized` record containing the final participating rosters, winner, end reason, score, and timestamps. `INSUFFICIENT_PLAYERS` appends an auditable `game.cancelled` lifecycle record but no `match.finalized`; it changes no wins, losses, matches played, level, or match history. Stats consumes finalized matches idempotently by `game_id`.
+  Every competitive terminal transition (normal win or assassin) appends exactly one internal `match.finalized` record containing the final participating rosters, winner, end reason, score, and timestamps. `INSUFFICIENT_PLAYERS` appends an auditable `game.cancelled` lifecycle record but no `match.finalized`; it changes no wins, losses, matches played, level, or match history. Stats consumes finalized matches idempotently by `game_id`. A user's level is `floor(wins / 4) + 1`.
 
   ## Privacy Policy and Terms of Service
 
