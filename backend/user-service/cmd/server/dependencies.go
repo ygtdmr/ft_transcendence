@@ -94,7 +94,8 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 		friends := service.NewFriends(userpostgres.NewFriends(pool), avatars, service.NoPresence{})
 		public = append(public, controller.NewFriendRequests(requests, sessions), controller.NewBlocks(blocks, sessions),
 			controller.NewFriends(friends, sessions),
-			controller.NewUserSearch(service.NewUserSearch(userpostgres.NewUserSearch(pool), avatars), sessions))
+			controller.NewUserSearch(service.NewUserSearch(userpostgres.NewUserSearch(pool), avatars), sessions),
+			controller.NewReports(service.NewReports(userpostgres.NewReports(pool), cfg.ReportWindow), sessions))
 		if avatarStorage != nil {
 			logCleanup := func(key string, err error) {
 				logger.WarnContext(ctx, "replaced avatar file could not be removed", "key", key, "error", err)
