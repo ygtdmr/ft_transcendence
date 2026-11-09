@@ -117,6 +117,20 @@ func (r *Reader) Port(name string, fallback int) int {
 	return port
 }
 
+// Int returns an integer within [min, max], or fallback when unset.
+func (r *Reader) Int(name string, fallback, min, max int) int {
+	v, ok := r.value(name)
+	if !ok {
+		return fallback
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil || n < min || n > max {
+		r.fail(name, fmt.Sprintf("must be an integer between %d and %d", min, max))
+		return fallback
+	}
+	return n
+}
+
 // Duration returns a Go duration within [min, max], or fallback when unset.
 // A max of zero means no upper bound.
 func (r *Reader) Duration(name string, fallback, min, max time.Duration) time.Duration {
