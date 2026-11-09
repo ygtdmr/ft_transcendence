@@ -39,7 +39,7 @@ docs: |-
 
   ## State changes, events, and errors
 
-  Read-only; no event. Missing, invalid, revoked, or expired `ft_session` returns `401 UNAUTHORIZED` and an empty details object — the frontend should attempt `POST /api/v1/auth/refresh` before treating this as a full logout.
+  Read-only; no event. Missing, invalid, revoked, or expired `ft_session` returns `401 UNAUTHORIZED` and an empty details object — the frontend should attempt `POST /api/v1/auth/refresh` before treating this as a full logout. If User Service cannot supply the current username, the response is `503 SERVICE_UNAVAILABLE`; a stored name is never returned.
 examples:
   - name: Success - No active room
     request: {url: "{{baseUrl}}/api/{{apiVersion}}/auth/session", method: GET, headers: [{name: Accept, value: application/json, enabled: true}], params: [], body: {mode: none}}
