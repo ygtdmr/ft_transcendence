@@ -132,8 +132,8 @@ are plain numbers with no foreign key. Foreign keys exist only inside `users`.
 ## Public routes and sessions
 
 Friends are served under `/api/v1/friends`, friend requests under
-`/api/v1/friends/requests`, and blocks under `/api/v1/users/{user_id}/block`. The
-`ft_session` cookie is the only browser credential: each request forwards it to Auth's private
+`/api/v1/friends/requests`, username search at `/api/v1/users/search`, and blocks
+under `/api/v1/users/{user_id}/block`. The `ft_session` cookie is the only browser credential: each request forwards it to Auth's private
 session validation. A refused session is `401 UNAUTHORIZED`; an Auth outage is
 `503 SERVICE_UNAVAILABLE`. Set `AUTH_INTERNAL_URL` and
 `AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE` to enable these routes; both are required
@@ -147,6 +147,11 @@ request row, and records its integration events in the same transaction.
 A block cancels the pair's pending request and suspends their friendship.
 Unblocking lifts only the caller's own block. The friendship becomes active again
 once neither user blocks the other; a cancelled request stays cancelled.
+
+Username search matches a case-insensitive substring and treats the query as plain
+text. It omits the caller and users being deleted. Each result shows the caller's
+relationship to that user; a block placed by the other user reads as `NONE`. The
+search has no substring index, so it scans `profiles`.
 
 ## Integration events
 

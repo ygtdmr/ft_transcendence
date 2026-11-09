@@ -31,7 +31,8 @@ func blockHandler(t *testing.T, pool *pgxpool.Pool) http.Handler {
 	return server.New("0", health, logger,
 		controller.NewFriendRequests(requests, fakeSessions{}),
 		controller.NewBlocks(blocks, fakeSessions{}),
-		controller.NewFriends(service.NewFriends(userpostgres.NewFriends(pool), avatars, service.NoPresence{}), fakeSessions{})).Handler
+		controller.NewFriends(service.NewFriends(userpostgres.NewFriends(pool), avatars, service.NoPresence{}), fakeSessions{}),
+		controller.NewUserSearch(service.NewUserSearch(userpostgres.NewUserSearch(pool), avatars), fakeSessions{})).Handler
 }
 
 func blockPath(target int64) string { return fmt.Sprintf("/api/v1/users/%d/block", target) }
