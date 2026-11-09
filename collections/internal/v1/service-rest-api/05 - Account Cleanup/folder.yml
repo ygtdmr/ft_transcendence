@@ -1,0 +1,8 @@
+info:
+  name: 05 - Account Cleanup
+  type: folder
+  seq: 5
+docs: |-
+  # Account cleanup
+
+  Each account-deletion participant removes its own data when User Service's deletion coordinator calls it with one stable `operation_id`. Stats Service implements this route; other participants define theirs with their own services.

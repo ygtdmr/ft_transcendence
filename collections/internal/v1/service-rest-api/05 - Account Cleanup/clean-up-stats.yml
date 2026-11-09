@@ -1,0 +1,73 @@
+info:
+  name: Clean up Stats account data
+  type: http
+  seq: 1
+  tags: [internal, deletion]
+http:
+  method: PUT
+  url: "{{statsInternalUrl}}/internal/v1/account-cleanups/6b1f0c2e-9a4d-4c7e-8f3b-2d5e7a9c1b40"
+  headers:
+    - name: Authorization
+      value: "Bearer {{userToStatsServiceCredential}}"
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "user_id": 42
+      }
+docs: |-
+  # Clean up Stats account data
+
+  Scope `account.cleanup`. Caller: User Service's deletion coordinator. One transaction clears the user's counters and penalty points, and anonymizes retained finalized-match participants as `user_id: null`, `username: "deleted_user"`. Other players' counters do not change.
+
+  A match or penalty that arrives after cleanup cannot recreate the identity: the match is stored with the player anonymized and adds no counters, and the penalty adds no points.
+
+  ## Request parameters
+
+  | Parameter | Location | Required | Type | Allowed values | Nullable | Description | Example |
+  | --- | --- | ---: | --- | --- | ---: | --- | --- |
+  | `operation_id` | path | yes | string | UUID, normalized to lowercase | no | Deletion operation of record | `6b1f0c2e-9a4d-4c7e-8f3b-2d5e7a9c1b40` |
+  | `user_id` | body | yes | integer | positive | no | Account being deleted | `42` |
+
+  ## Response fields
+
+  | Field | Type | Required | Nullable | Allowed values | Description |
+  | --- | --- | ---: | ---: | --- | --- |
+  | `data.operation_id` | string | yes | no | lowercase UUID | Operation of record |
+  | `data.user_id` | integer | yes | no | positive | Deleted account |
+  | `data.state` | string enum | yes | no | `COMPLETED` | Stats cleanup is done |
+  | `data.completed_at` | string | yes | no | ISO 8601 UTC | When cleanup committed |
+
+  ## Status and errors
+
+  | Status | Code | Condition | `details` |
+  | --- | --- | --- | --- |
+  | `201` | none | Cleanup applied now | none |
+  | `200` | none | Same operation and user replayed; returns the stored receipt | none |
+  | `400` | `VALIDATION_ERROR` | Malformed JSON, more than one JSON value, or unknown or missing body fields | `{ "field": "body" }` |
+  | `401` | `SERVICE_UNAUTHENTICATED` | Missing or unknown service credential | `{}` |
+  | `403` | `SERVICE_FORBIDDEN` | Caller lacks `account.cleanup` | `{}` |
+  | `409` | `OPERATION_CONFLICT` | `operation_id` already belongs to another user | `{}` |
+  | `409` | `DELETION_CONFLICT` | User already cleaned up by another operation | `{}` |
+  | `422` | `VALIDATION_ERROR` | `operation_id` is not a UUID, or `user_id` is not a positive integer | `{ "field": string }` |
+  | `500` | `INTERNAL_ERROR` | Unexpected failure | `{}` |
+  | `503` | `SERVICE_UNAVAILABLE` | Database unavailable; retry the identical request | `{}` |
+examples:
+  - name: Success
+    request: {url: "{{statsInternalUrl}}/internal/v1/account-cleanups/6b1f0c2e-9a4d-4c7e-8f3b-2d5e7a9c1b40", method: PUT, headers: [], params: [], body: {mode: none}}
+    response:
+      status: 201
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "data": {
+              "operation_id": "6b1f0c2e-9a4d-4c7e-8f3b-2d5e7a9c1b40",
+              "user_id": 42,
+              "state": "COMPLETED",
+              "completed_at": "2026-11-05T09:30:00.123456Z"
+            }
+          }
