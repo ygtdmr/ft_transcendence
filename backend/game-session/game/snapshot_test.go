@@ -44,15 +44,15 @@ func TestEveryoneSeesAllColorsWhenFinished(t *testing.T) {
 	}
 }
 
-func TestColorsStayHiddenWhenCancelled(t *testing.T) {
+func TestEveryoneSeesAllColorsWhenCancelled(t *testing.T) {
 	game := newTestGame()
 	if err := game.cancelForInsufficientPlayers(testNow); err != nil {
 		t.Fatalf("cancel: %v", err)
 	}
 
 	operative := RoleOperative
-	if hidden := hiddenColorCount(t, game, &operative); hidden != 25 {
-		t.Fatalf("operative must not see colors after cancellation, %d hidden", hidden)
+	if hidden := hiddenColorCount(t, game, &operative); hidden != 0 {
+		t.Fatalf("operative must see every color after cancellation, %d hidden", hidden)
 	}
 	spymaster := RoleSpymaster
 	if hidden := hiddenColorCount(t, game, &spymaster); hidden != 0 {

@@ -28,7 +28,7 @@ func copyPtr[T any](value *T) *T {
 func cardViewForRole(card card, role *Role, status GameStatus) CardView {
 	view := newCardView(card)
 	isSpymaster := role != nil && *role == RoleSpymaster
-	if isSpymaster || status == GameStatusFinished { //|| status != GameStatusInProgress - if game cancelled or finished, show colors
+	if isSpymaster || status != GameStatusInProgress {
 		view.Color = &card.color
 	}
 	return view
