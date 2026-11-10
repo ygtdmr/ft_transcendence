@@ -28,7 +28,7 @@ func newServer(t *testing.T) *httptest.Server {
 	if err := store.ResetForTests(); err != nil {
 		t.Fatalf("reset: %v", err)
 	}
-	svc := service.NewRoomService(store, placeholderProfiles{})
+	svc := service.NewRoomService(store, placeholderProfiles{}, nil)
 	handler := rest.NewHandler(svc, store)
 	server := httptest.NewServer(handler.Routes())
 	t.Cleanup(server.Close)

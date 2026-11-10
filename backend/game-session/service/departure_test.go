@@ -66,7 +66,8 @@ func TestDeparturesUseStoredUsernameWithoutProfileService(t *testing.T) {
 				},
 			}
 			profiles := &unavailableProfiles{}
-			svc := NewRoomService(store, profiles)
+			penalty := &room.PenaltyConfig{Base: 10, SpymasterMultiplier: 3, OperativeMultiplier: 2}
+			svc := NewRoomService(store, profiles, penalty)
 			if kick {
 				_, err = svc.Kick(1, 1, 2, now)
 			} else {
@@ -88,6 +89,9 @@ func TestDeparturesUseStoredUsernameWithoutProfileService(t *testing.T) {
 			}
 			if !kick && (store.penalty == nil || store.penalty.UserID != 2) {
 				t.Fatal("leave penalty missing")
+			}
+			if !kick && (store.penalty.Points != 30 || !store.penalty.PenalizedAt.Equal(now)) {
+				t.Fatalf("wrong penalty values: %+v", store.penalty)
 			}
 		})
 	}

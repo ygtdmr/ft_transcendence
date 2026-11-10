@@ -5,12 +5,15 @@ import (
 	"os"
 	"strconv"
 	"time"
+
+	"game-session/room"
 )
 
 type Config struct {
 	DatabaseURL  string
 	Port         int
 	TickInterval time.Duration
+	Penalty      *room.PenaltyConfig
 }
 
 // env isimleri Furkan'ın shared/config paketi merge olunca ona göre güncellenecek
@@ -36,6 +39,12 @@ func Load() (Config, error) {
 			return Config{}, errors.New("TICK_INTERVAL must be a positive duration like 1s")
 		}
 		cfg.TickInterval = interval
+	}
+	penalty, err := room.PenaltyConfigFromEnv(os.Getenv)
+	if err == nil {
+		cfg.Penalty = &penalty
+	} else if !errors.Is(err, room.ErrPenaltyNotConfigured) {
+		return Config{}, err
 	}
 	return cfg, nil
 }

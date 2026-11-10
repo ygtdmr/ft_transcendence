@@ -1,6 +1,8 @@
 package postgres
 
 import (
+	"encoding/json"
+	"errors"
 	"testing"
 	"time"
 
@@ -162,27 +164,10 @@ func TestSaveGamePersistsMove(t *testing.T) {
 func TestSaveGameEndSetsLastGameAndOutbox(t *testing.T) {
 	s := openTestStore(t)
 	r, g := startedGame(t, s)
-	team := g.ToRecord().CurrentTurn.Team
-	spy := playerFor(t, g, team, game.RoleSpymaster)
-	op := playerFor(t, g, team, game.RoleOperative)
-	now := gameNow.Add(10 * time.Second)
 
-	spyRole := game.RoleSpymaster
-	snapshot, _ := g.SnapshotForRole(&spyRole)
-	if _, err := g.GiveClue(spy, &game.Clue{Word: "hint", Number: 9}, now); err != nil {
-		t.Fatalf("clue: %v", err)
-	}
-	for _, card := range snapshot.Board {
-		if card.Color == nil || game.Team(*card.Color) != team {
-			continue
-		}
-		if _, err := g.GuessCard(op, card.CardID, now); err != nil {
-			t.Fatalf("guess %d: %v", card.CardID, err)
-		}
-	}
-	if g.Status() != game.GameStatusFinished {
-		t.Fatalf("game must be finished, got %s", g.Status())
-	}
+	now := gameNow.Add(10 * time.Second)
+	team := g.ToRecord().CurrentTurn.Team
+	revealAllTeamCards(t, g, now)
 
 	_, members, _ := s.RoomByID(r.RoomID)
 	result, err := r.HandleGameEnd(room.RoomInput{Members: members, CurrentGame: g}, now)
@@ -232,6 +217,8 @@ func TestSaveLeaveInGameWritesPenaltyAndPause(t *testing.T) {
 	if result.Penalty == nil || !result.GamePaused {
 		t.Fatalf("seated in-game exit must penalize and pause, got %+v", result)
 	}
+	result.Penalty.Points = 20
+	result.Penalty.PenalizedAt = now
 	if err := s.SaveLeave(r, 2, g, result.Penalty); err != nil {
 		t.Fatalf("save leave: %v", err)
 	}
@@ -248,6 +235,18 @@ func TestSaveLeaveInGameWritesPenaltyAndPause(t *testing.T) {
 	if len(events) != 1 {
 		t.Fatalf("want one player.penalized event, got %d", len(events))
 	}
+	var payload map[string]any
+	if err := json.Unmarshal(events[0].OutboxContent, &payload); err != nil {
+		t.Fatalf("payload: %v", err)
+	}
+	for _, key := range []string{"user_id", "room_id", "game_id", "role", "reason", "points", "penalized_at"} {
+		if _, ok := payload[key]; !ok {
+			t.Fatalf("payload missing %q: %s", key, events[0].OutboxContent)
+		}
+	}
+	if payload["user_id"] != float64(2) || payload["points"] != float64(20) || payload["role"] != "OPERATIVE" {
+		t.Fatalf("unexpected payload values: %s", events[0].OutboxContent)
+	}
 }
 
 func TestNextGameIDIncrements(t *testing.T) {
@@ -259,5 +258,110 @@ func TestNextGameIDIncrements(t *testing.T) {
 	b, err := s.NextGameID()
 	if err != nil || b <= a {
 		t.Fatalf("ids must increase: %d %d %v", a, b, err)
+	}
+}
+
+func revealAllTeamCards(t *testing.T, g *game.Game, now time.Time) {
+	t.Helper()
+	team := g.ToRecord().CurrentTurn.Team
+	spy := playerFor(t, g, team, game.RoleSpymaster)
+	op := playerFor(t, g, team, game.RoleOperative)
+	spyRole := game.RoleSpymaster
+	snapshot, _ := g.SnapshotForRole(&spyRole)
+	if _, err := g.GiveClue(spy, &game.Clue{Word: "hint", Number: 9}, now); err != nil {
+		t.Fatalf("clue: %v", err)
+	}
+	for _, card := range snapshot.Board {
+		if card.Color == nil || game.Team(*card.Color) != team {
+			continue
+		}
+		if _, err := g.GuessCard(op, card.CardID, now); err != nil {
+			t.Fatalf("guess %d: %v", card.CardID, err)
+		}
+	}
+	if g.Status() != game.GameStatusFinished {
+		t.Fatalf("game must be finished, got %s", g.Status())
+	}
+}
+
+func countOutbox(t *testing.T, s *Store, roomID int64, eventType string) int {
+	t.Helper()
+	var n int64
+	if err := s.db.Model(&outboxRow{}).Where("room_id = ? AND event_type = ?", roomID, eventType).Count(&n).Error; err != nil {
+		t.Fatalf("count %s: %v", eventType, err)
+	}
+	return int(n)
+}
+
+func TestGameEndFinalizesOnlyOnce(t *testing.T) {
+	s := openTestStore(t)
+	r, g := startedGame(t, s)
+	now := gameNow.Add(10 * time.Second)
+	revealAllTeamCards(t, g, now)
+
+	_, members, _ := s.RoomByID(r.RoomID)
+	result, err := r.HandleGameEnd(room.RoomInput{Members: members, CurrentGame: g}, now)
+	if err != nil {
+		t.Fatalf("first handle end: %v", err)
+	}
+	if err := s.SaveGameEnd(r, result.Members, g, result.LastGame); err != nil {
+		t.Fatalf("first save: %v", err)
+	}
+
+	again, members2, _ := s.RoomByID(r.RoomID)
+	g2, _ := s.LoadCurrentGame(r.RoomID)
+	_, err = again.HandleGameEnd(room.RoomInput{Members: members2, CurrentGame: g2}, now.Add(time.Second))
+	if !errors.Is(err, room.ErrInvalidRoomState) {
+		t.Fatalf("second finalization must be rejected with ErrInvalidRoomState, got %v", err)
+	}
+
+	if n := countOutbox(t, s, r.RoomID, "match.finalized"); n != 1 {
+		t.Fatalf("want exactly one match.finalized, got %d", n)
+	}
+}
+
+func TestStaffingCancellationEmitsOnlyGameCancelled(t *testing.T) {
+	s := openTestStore(t)
+	r, g := startedGame(t, s)
+	now := gameNow.Add(10 * time.Second)
+
+	_, members, _ := s.RoomByID(r.RoomID)
+	profiles := map[int64]room.Profile{1: {Username: "one"}}
+	left, err := r.Leave(room.RoomInput{Members: members, CurrentGame: g, Profiles: profiles}, 1, room.DepartureExited, now)
+	if err != nil || !left.GamePaused {
+		t.Fatalf("spymaster leave must pause the game: %v %+v", err, left)
+	}
+	if err := s.SaveLeave(r, 1, g, left.Penalty); err != nil {
+		t.Fatalf("save leave: %v", err)
+	}
+
+	later := now.Add(121 * time.Second)
+	r2, members2, _ := s.RoomByID(r.RoomID)
+	g2, _ := s.LoadCurrentGame(r.RoomID)
+	cancelled, err := g2.CancelIfStaffingExpired(later)
+	if err != nil || !cancelled {
+		t.Fatalf("staffing deadline must cancel the game: %v %v", cancelled, err)
+	}
+	result, err := r2.HandleGameEnd(room.RoomInput{Members: members2, CurrentGame: g2}, later)
+	if err != nil || !result.RoomClosed || result.LastGame != nil {
+		t.Fatalf("cancellation must close the room without a last game: %v %+v", err, result)
+	}
+	if err := s.SaveGameEnd(r2, result.Members, g2, result.LastGame); err != nil {
+		t.Fatalf("save cancelled end: %v", err)
+	}
+
+	if n := countOutbox(t, s, r.RoomID, "game.cancelled"); n != 1 {
+		t.Fatalf("want exactly one game.cancelled, got %d", n)
+	}
+	if n := countOutbox(t, s, r.RoomID, "match.finalized"); n != 0 {
+		t.Fatalf("cancellation must not emit match.finalized, got %d", n)
+	}
+	last, err := s.LoadLastGameResult(r.RoomID)
+	if err != nil || last != nil {
+		t.Fatalf("cancelled game must not become last_game: %v %+v", err, last)
+	}
+	closed, remaining, _ := s.RoomByID(r.RoomID)
+	if closed.Status != room.StatusClosed || len(remaining) != 0 {
+		t.Fatalf("room must be CLOSED and empty, got %s with %d members", closed.Status, len(remaining))
 	}
 }

@@ -236,6 +236,18 @@ func (s *RoomService) Leave(roomID int64, userID int64, reason room.DepartureRea
 		if err != nil {
 			return err
 		}
+		if result.Penalty != nil {
+			if s.penalty == nil {
+				result.Penalty = nil
+			} else {
+				points, err := s.penalty.Points(result.Penalty.Role)
+				if err != nil {
+					return err
+				}
+				result.Penalty.Points = points
+				result.Penalty.PenalizedAt = now
+			}
+		}
 
 		gameToSave := currentGame
 		if !result.GamePaused {
