@@ -63,7 +63,7 @@ docs:
     | `auth-service` | `user-service` | `account.metadata.read` | Read account metadata | `GET /internal/v1/accounts/{user_id}` |
     | `auth-service` | `user-service` | `account.deletion.begin` | Begin account deletion | `PUT /internal/v1/account-deletions/{operation_id}` |
     | `auth-service` | `user-service` | `account.deletion.complete` | Complete account deletion | `PUT /internal/v1/account-deletions/{operation_id}/completion` |
-    | `game-session` | `auth-service` | `membership.read` | Read current room membership | `GET /internal/v1/memberships/{user_id}` |
+    | `game-session` | `auth-service`, `user-service` | `membership.read` | Read current room membership | `GET /internal/v1/memberships/{user_id}` |
     | `game-session` | `auth-service` | `session.departure` | Record logout departure | `PUT /internal/v1/session-departures/{session_id}` |
     | `game-session` | `channel-service` | `room.access.read` | Room access verdict | `GET /internal/v1/rooms/{room_id}/access-verdicts?user_id=` |
     | `game-session`, `chat-service`, `stats-service` | `user-service` | `account.cleanup` | Remove the user's local data | `PUT /internal/v1/account-cleanups/{operation_id}` |
