@@ -131,4 +131,4 @@ docs: |-
   | `payload.deficient_team` | enum | yes | no | `RED`, `BLUE` | Team whose deadline expired first |
   | `payload.closed_at` | `string<date-time>` | yes | no | ISO 8601 UTC | Closure time |
 
-  Cancellation is an operational outcome, not a competitive result: it creates no winner, loss, match-history row, or `match.finalized` record. A later REST snapshot or join of the closed room returns `404 ROOM_NOT_FOUND`.
+  Cancellation is an operational outcome, not a competitive result: it creates no winner, loss, match-history row, or `match.finalized` record. The `game.cancelled` payload carries the full board with affiliations for the members still in the room; unrevealed cards stay hidden only while the game is paused. A later REST snapshot or join of the closed room returns `404 ROOM_NOT_FOUND`.

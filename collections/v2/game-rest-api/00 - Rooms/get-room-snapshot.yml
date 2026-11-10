@@ -111,7 +111,7 @@ docs: |-
 
   ## Errors and privacy invariant
 
-  `401 UNAUTHORIZED`, `404 ROOM_NOT_FOUND`, `403 NOT_ROOM_MEMBER`, `422 VALIDATION_ERROR`. Errors reveal no room state. During active gameplay, the server projects every card for the authenticated viewer and never sends an Operative an unrevealed affiliation. Competitive completion must disclose all affiliations to users already in the room; exact result delivery/access needs contract review, and cancellation disclosure remains unresolved.
+  `401 UNAUTHORIZED`, `404 ROOM_NOT_FOUND`, `403 NOT_ROOM_MEMBER`, `422 VALIDATION_ERROR`. Errors reveal no room state. During active gameplay, the server projects every card for the authenticated viewer and never sends an Operative an unrevealed affiliation. Competitive completion must disclose all affiliations to users already in the room; exact result delivery/access needs contract review. Cancellation discloses all affiliations to the users still in the room, exactly like competitive completion.
 examples:
   - name: Newly created room
     request: {url: "{{baseUrl}}/api/{{gameApiVersion}}/rooms/1001", method: GET, headers: [], params: [], body: {mode: none}}
