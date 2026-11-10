@@ -1,6 +1,7 @@
 package unit_test
 
 import (
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -25,7 +26,10 @@ func setEnvironment(t *testing.T, values map[string]string) {
 		"AUTH_SERVICE_CREDENTIAL_FILE", "AUTH_SERVICE_PREVIOUS_CREDENTIAL_FILE", "AVATAR_BASE_URL", "AVATAR_STORAGE_DIR", "REPORT_WINDOW",
 		"CHANNEL_SERVICE_CREDENTIAL_FILE", "CHANNEL_SERVICE_PREVIOUS_CREDENTIAL_FILE",
 		"GAME_SESSION_CREDENTIAL_FILE", "GAME_SESSION_PREVIOUS_CREDENTIAL_FILE",
-		"AUTH_INTERNAL_URL", "AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE", "AUTH_INTERNAL_TIMEOUT"} {
+		"AUTH_INTERNAL_URL", "AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE", "AUTH_INTERNAL_TIMEOUT",
+		"WEB_BFF_CREDENTIAL_FILE", "WEB_BFF_PREVIOUS_CREDENTIAL_FILE",
+		"GAME_GATEWAY_INTERNAL_URLS", "GAME_GATEWAY_OUTBOUND_CREDENTIAL_FILE",
+		"CHAT_GATEWAY_INTERNAL_URLS", "CHAT_GATEWAY_OUTBOUND_CREDENTIAL_FILE", "GATEWAY_INTERNAL_TIMEOUT"} {
 		t.Setenv(name, values[name])
 	}
 }
@@ -76,6 +80,10 @@ func TestLoadEnvironmentDefaults(t *testing.T) {
 				"APP_ENV": tt.environment, "DATABASE_URL": validDatabaseURL, "AUTH_INTERNAL_URL": "http://auth-service:8090",
 				"AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, strings.Repeat("o", 40)),
 				"AVATAR_STORAGE_DIR":                    "/var/lib/user-service/avatars",
+				"GAME_GATEWAY_INTERNAL_URLS":            "http://game-gateway:8090",
+				"GAME_GATEWAY_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, strings.Repeat("g", 40)),
+				"CHAT_GATEWAY_INTERNAL_URLS":            "http://chat-gateway:8090",
+				"CHAT_GATEWAY_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, strings.Repeat("c", 40)),
 			})
 
 			cfg, err := config.Load()
@@ -340,5 +348,54 @@ func TestLoadAvatarBaseURL(t *testing.T) {
 	cfg, err := config.Load()
 	if err != nil || cfg.AvatarBaseURL != "https://example.com" {
 		t.Fatalf("AvatarBaseURL = %q, %v", cfg.AvatarBaseURL, err)
+	}
+}
+
+// TestLoadGateways checks the Gateway registry settings.
+//
+// Expected output: none set leaves presence unconfigured outside production
+// and fails in production; a full set lists every instance; a partial set,
+// a URL with a path, a repeated instance and a reused credential are refused.
+func TestLoadGateways(t *testing.T) {
+	game := writeSecret(t, strings.Repeat("g", 40))
+	chat := writeSecret(t, strings.Repeat("c", 40))
+	full := map[string]string{"DATABASE_URL": validDatabaseURL,
+		"GAME_GATEWAY_INTERNAL_URLS": "http://game-gateway-1:8090, http://game-gateway-2:8090/", "GAME_GATEWAY_OUTBOUND_CREDENTIAL_FILE": game,
+		"CHAT_GATEWAY_INTERNAL_URLS": "http://chat-gateway:8090", "CHAT_GATEWAY_OUTBOUND_CREDENTIAL_FILE": chat}
+
+	setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL})
+	if cfg, err := config.Load(); err != nil || cfg.Gateways != nil || cfg.GatewayInternalTimeout != 5*time.Second {
+		t.Fatalf("unset = %v, %v", cfg.Gateways, err)
+	}
+	setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL, "APP_ENV": "production", "AVATAR_STORAGE_DIR": "/data",
+		"AUTH_INTERNAL_URL": "http://auth-service:8090", "AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, strings.Repeat("o", 40))})
+	if _, err := config.Load(); err == nil || !strings.Contains(err.Error(), "GATEWAY") {
+		t.Fatalf("production without gateways = %v", err)
+	}
+
+	setEnvironment(t, full)
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cfg.Gateways) != 2 || !slices.Equal(cfg.Gateways[0].URLs, []string{"http://game-gateway-1:8090", "http://game-gateway-2:8090"}) ||
+		cfg.Gateways[0].Credential != strings.Repeat("g", 40) || !slices.Equal(cfg.Gateways[1].URLs, []string{"http://chat-gateway:8090"}) {
+		t.Fatalf("gateways = %+v", cfg.Gateways)
+	}
+
+	for name, change := range map[string]map[string]string{
+		"partial":        {"CHAT_GATEWAY_OUTBOUND_CREDENTIAL_FILE": ""},
+		"path":           {"CHAT_GATEWAY_INTERNAL_URLS": "http://chat-gateway:8090/x"},
+		"repeated":       {"CHAT_GATEWAY_INTERNAL_URLS": "http://game-gateway-1:8090"},
+		"shared":         {"CHAT_GATEWAY_OUTBOUND_CREDENTIAL_FILE": game},
+		"inbound reused": {"WEB_BFF_CREDENTIAL_FILE": chat},
+		"timeout":        {"GATEWAY_INTERNAL_TIMEOUT": "0s"},
+	} {
+		values := maps.Clone(full)
+		maps.Copy(values, change)
+		setEnvironment(t, values)
+		if _, err := config.Load(); err == nil {
+			t.Fatalf("%s accepted", name)
+		}
 	}
 }

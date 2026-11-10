@@ -42,9 +42,14 @@ func (fakeSessions) ValidateSession(_ context.Context, session string) (int64, e
 
 func friendHandler(t *testing.T, pool *pgxpool.Pool) http.Handler {
 	t.Helper()
+	return friendHandlerWithPresence(t, pool, service.NoPresence{})
+}
+
+func friendHandlerWithPresence(t *testing.T, pool *pgxpool.Pool, presence service.PresenceReader) http.Handler {
+	t.Helper()
 	gin.SetMode(gin.TestMode)
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	requests := service.NewFriendRequests(userpostgres.NewFriendRequests(pool), service.AvatarURLs{}, service.NoPresence{})
+	requests := service.NewFriendRequests(userpostgres.NewFriendRequests(pool), service.AvatarURLs{}, presence)
 	health := controller.NewHealth(service.NewHealth(userpostgres.NewHealth(pool)))
 	return server.New("0", health, logger, controller.NewFriendRequests(requests, fakeSessions{})).Handler
 }
@@ -555,5 +560,51 @@ func TestFriendRequestConcurrencyPostgres(t *testing.T) {
 		if got := count(t, pool, `SELECT count(*) FROM friendships WHERE user_low = 3 AND user_high = 4 AND active`); got != 0 {
 			t.Fatalf("round %d: %d active friendships remain after a block", n, got)
 		}
+	}
+}
+
+// failingPresence reports every user as unknown.
+type failingPresence struct{}
+
+func (failingPresence) Online(context.Context, []int64) (map[int64]bool, error) {
+	return nil, fmt.Errorf("%w: test registry outage", service.ErrUnavailable)
+}
+
+// TestFriendRequestAcceptPresenceOutagePostgres checks that an unknown sender
+// presence fails Accept before anything is committed.
+//
+// Expected output: 503 SERVICE_UNAVAILABLE with the request still pending, no
+// friendship and no resolved event; retrying with presence back succeeds.
+func TestFriendRequestAcceptPresenceOutagePostgres(t *testing.T) {
+	pool := schemaPool(t)
+	seedProfiles(t, pool, 7, 3)
+	handler := friendHandler(t, pool)
+
+	sent := sendTo(handler, 7, 3)
+	var request struct {
+		RequestID int64 `json:"request_id"`
+	}
+	if err := json.Unmarshal(sent.Data, &request); err != nil || sent.status != http.StatusCreated {
+		t.Fatalf("send = %d %s", sent.status, sent.raw)
+	}
+
+	outage := friendCall(friendHandlerWithPresence(t, pool, failingPresence{}), http.MethodPost,
+		resolvePath(request.RequestID, "accept"), "", session(3))
+	if outage.status != http.StatusServiceUnavailable || outage.Error.Code != "SERVICE_UNAVAILABLE" {
+		t.Fatalf("accept during outage = %d %s", outage.status, outage.raw)
+	}
+	if got := count(t, pool, `SELECT count(*) FROM friend_requests WHERE state = 'pending'`); got != 1 {
+		t.Fatalf("pending requests = %d, want 1", got)
+	}
+	if got := count(t, pool, `SELECT count(*) FROM friendships`); got != 0 {
+		t.Fatalf("friendships = %d, want 0", got)
+	}
+	if resolved := outboxPayloads(t, pool, service.EventFriendRequestResolved); len(resolved) != 0 {
+		t.Fatalf("resolved events = %v", resolved)
+	}
+
+	retry := friendCall(handler, http.MethodPost, resolvePath(request.RequestID, "accept"), "", session(3))
+	if retry.status != http.StatusOK {
+		t.Fatalf("retry = %d %s", retry.status, retry.raw)
 	}
 }

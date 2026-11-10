@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/client/authclient"
+	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/client/gatewayclient"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/config"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/controller"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/middleware/serviceauth"
@@ -58,12 +59,21 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 		logger.WarnContext(ctx, "no service credentials configured; private routes accept no caller")
 	}
 	auth := serviceauth.New(cfg.CallerCredentials, serviceauth.DefaultMatrix())
+	presence, err := newPresence(cfg)
+	if err != nil {
+		pool.Close()
+		return nil, nil, err
+	}
+	if cfg.Gateways == nil {
+		logger.WarnContext(ctx, "no Gateway registry configured; every user is reported offline")
+	}
 	profileService := service.NewProfile(userpostgres.NewProfile(pool))
 	profileReads := service.NewProfileRead(userpostgres.NewProfile(pool), service.AvatarURLs{Base: cfg.AvatarBaseURL})
 	internal := server.NewInternal(cfg.InternalPort, logger,
 		controller.NewInternalProvisioning(profileService, auth),
 		controller.NewInternalProfile(profileReads, auth),
-		controller.NewInternalFriendshipVerdict(service.NewFriendshipVerdicts(userpostgres.NewFriendshipVerdicts(pool)), auth))
+		controller.NewInternalFriendshipVerdict(service.NewFriendshipVerdicts(userpostgres.NewFriendshipVerdicts(pool)), auth),
+		controller.NewInternalPresence(presence, auth))
 
 	cleanup := pool.Close
 	var avatarStorage *avatarfiles.Store
@@ -89,9 +99,9 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 			return nil, nil, err
 		}
 		avatars := service.AvatarURLs{Base: cfg.AvatarBaseURL}
-		requests := service.NewFriendRequests(userpostgres.NewFriendRequests(pool), avatars, service.NoPresence{})
+		requests := service.NewFriendRequests(userpostgres.NewFriendRequests(pool), avatars, presence)
 		blocks := service.NewBlocks(userpostgres.NewBlocks(pool), avatars)
-		friends := service.NewFriends(userpostgres.NewFriends(pool), avatars, service.NoPresence{})
+		friends := service.NewFriends(userpostgres.NewFriends(pool), avatars, presence)
 		public = append(public, controller.NewFriendRequests(requests, sessions), controller.NewBlocks(blocks, sessions),
 			controller.NewFriends(friends, sessions),
 			controller.NewUserSearch(service.NewUserSearch(userpostgres.NewUserSearch(pool), avatars), sessions),
@@ -110,4 +120,29 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 	}
 
 	return []*http.Server{server.New(cfg.Port, healthController, logger, public...), internal}, cleanup, nil
+}
+
+// newPresence returns presence over every configured Gateway instance, or
+// NoPresence when cfg has no Gateway registry, which Load allows only outside
+// production.
+//
+// Errors:
+//
+//   - A Gateway client cannot be created; see gatewayclient.New.
+func newPresence(cfg config.Config) (service.PresenceReader, error) {
+	if cfg.Gateways == nil {
+		return service.NoPresence{}, nil
+	}
+	var instances []service.ConnectionReader
+	for _, gateway := range cfg.Gateways {
+		for _, origin := range gateway.URLs {
+			client, err := gatewayclient.New(origin, gateway.Credential, cfg.GatewayInternalTimeout)
+			if err != nil {
+				return nil, err
+			}
+			instances = append(instances, client)
+		}
+	}
+
+	return service.NewPresence(instances...), nil
 }

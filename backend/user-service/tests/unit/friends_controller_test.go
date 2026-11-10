@@ -39,8 +39,15 @@ type presenceStub struct {
 	err    error
 }
 
-func (p presenceStub) IsOnline(_ context.Context, userID int64) (bool, error) {
-	return p.online[userID], p.err
+func (p presenceStub) Online(_ context.Context, userIDs []int64) (map[int64]bool, error) {
+	if p.err != nil {
+		return nil, p.err
+	}
+	online := map[int64]bool{}
+	for _, id := range userIDs {
+		online[id] = p.online[id]
+	}
+	return online, nil
 }
 
 func friendsRequest(store *friendStoreStub, presence service.PresenceReader, method, target, cookie string) *httptest.ResponseRecorder {

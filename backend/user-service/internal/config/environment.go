@@ -38,6 +38,10 @@ type Config struct {
 	AuthInternalURL       string
 	AuthServiceCredential string `json:"-"`
 	AuthInternalTimeout   time.Duration
+	// Gateways lists the Game Gateway and Chat Gateway instances queried for
+	// presence, or nil outside production when none is configured.
+	Gateways               []Gateway
+	GatewayInternalTimeout time.Duration
 	// ReportWindow is how long a reporter must wait before reporting the same
 	// user again.
 	ReportWindow   time.Duration
@@ -63,6 +67,7 @@ type Config struct {
 //   - Credentials: a configured credential file is unreadable, too short, or
 //     holds a credential already assigned to another caller.
 //   - Auth settings: see loadAuthService.
+//   - Gateway settings: see loadGateways.
 func Load() (Config, error) {
 	cfg := Config{
 		Environment:      strings.TrimSpace(os.Getenv("APP_ENV")),
@@ -104,6 +109,9 @@ func Load() (Config, error) {
 	}
 	cfg.CallerCredentials = credentials
 	if err := cfg.loadAuthService(); err != nil {
+		return Config{}, err
+	}
+	if err := cfg.loadGateways(); err != nil {
 		return Config{}, err
 	}
 

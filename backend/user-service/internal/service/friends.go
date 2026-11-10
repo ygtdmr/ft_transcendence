@@ -70,13 +70,17 @@ func (s *Friends) List(ctx context.Context, userID int64, limit, offset int) (Fr
 	if err != nil {
 		return FriendPage{}, err
 	}
+	ids := make([]int64, 0, len(stored.Friends))
+	for _, profile := range stored.Friends {
+		ids = append(ids, profile.UserID)
+	}
+	online, err := s.presence.Online(ctx, ids)
+	if err != nil {
+		return FriendPage{}, err
+	}
 	friends := make([]Friend, 0, len(stored.Friends))
 	for _, profile := range stored.Friends {
-		online, err := s.presence.IsOnline(ctx, profile.UserID)
-		if err != nil {
-			return FriendPage{}, err
-		}
-		friends = append(friends, Friend{FriendUser: friendUser(s.avatars, profile), IsOnline: online})
+		friends = append(friends, Friend{FriendUser: friendUser(s.avatars, profile), IsOnline: online[profile.UserID]})
 	}
 
 	return FriendPage{Total: stored.Total, Limit: limit, Offset: offset,
