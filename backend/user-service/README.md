@@ -44,6 +44,8 @@ environment only and does not load `.env` itself.
 | `GAME_GATEWAY_INTERNAL_URLS`, `CHAT_GATEWAY_INTERNAL_URLS` | none | Comma-separated private origins of every running Gateway instance. Required in production. |
 | `GAME_GATEWAY_OUTBOUND_CREDENTIAL_FILE`, `CHAT_GATEWAY_OUTBOUND_CREDENTIAL_FILE` | none | This service's credential for each Gateway kind. Set with the URLs. |
 | `GATEWAY_INTERNAL_TIMEOUT` | `5s` | Upper bound for one registry query, as a Go duration. |
+| `STATS_INTERNAL_URL`, `STATS_SERVICE_OUTBOUND_CREDENTIAL_FILE` | none | Stats' private listener and this service's credential for it. Required in production; without them the public profile route is not served. |
+| `STATS_INTERNAL_TIMEOUT` | `5s` | Upper bound for one call to Stats, as a Go duration. |
 
 ## Internal API
 
@@ -141,12 +143,18 @@ are plain numbers with no foreign key. Foreign keys exist only inside `users`.
 
 Friends are served under `/api/v1/friends`, friend requests under
 `/api/v1/friends/requests`, username search at `/api/v1/users/search`, and blocks
-under `/api/v1/users/{user_id}/block`. Avatars are served under
+under `/api/v1/users/{user_id}/block`, and public profiles at `GET /api/v1/users/{user_id}`. Avatars are served under
 `/api/v1/avatars/presets` and `/api/v1/users/me/avatar`. The `ft_session` cookie is the only browser credential: each request forwards it to Auth's private
 session validation. A refused session is `401 UNAUTHORIZED`; an Auth outage is
 `503 SERVICE_UNAVAILABLE`. Set `AUTH_INTERNAL_URL` and
 `AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE` to enable these routes; both are required
 in production.
+
+A public profile combines the canonical profile and the viewer's relationship
+with Stats counters and presence. A missing user or one being deleted is
+`404 USER_NOT_FOUND`. A Stats or presence failure is `503 SERVICE_UNAVAILABLE`,
+never zero counters or offline. Penalty points are not part of it. The own
+profile at `GET /api/v1/users/me` is not served yet.
 
 ## Presence
 
