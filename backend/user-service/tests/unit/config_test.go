@@ -29,7 +29,8 @@ func setEnvironment(t *testing.T, values map[string]string) {
 		"AUTH_INTERNAL_URL", "AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE", "AUTH_INTERNAL_TIMEOUT",
 		"WEB_BFF_CREDENTIAL_FILE", "WEB_BFF_PREVIOUS_CREDENTIAL_FILE",
 		"GAME_GATEWAY_INTERNAL_URLS", "GAME_GATEWAY_OUTBOUND_CREDENTIAL_FILE",
-		"CHAT_GATEWAY_INTERNAL_URLS", "CHAT_GATEWAY_OUTBOUND_CREDENTIAL_FILE", "GATEWAY_INTERNAL_TIMEOUT"} {
+		"CHAT_GATEWAY_INTERNAL_URLS", "CHAT_GATEWAY_OUTBOUND_CREDENTIAL_FILE", "GATEWAY_INTERNAL_TIMEOUT",
+		"STATS_INTERNAL_URL", "STATS_SERVICE_OUTBOUND_CREDENTIAL_FILE", "STATS_INTERNAL_TIMEOUT"} {
 		t.Setenv(name, values[name])
 	}
 }
@@ -78,12 +79,14 @@ func TestLoadEnvironmentDefaults(t *testing.T) {
 		t.Run(tt.environment, func(t *testing.T) {
 			setEnvironment(t, map[string]string{
 				"APP_ENV": tt.environment, "DATABASE_URL": validDatabaseURL, "AUTH_INTERNAL_URL": "http://auth-service:8090",
-				"AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, strings.Repeat("o", 40)),
-				"AVATAR_STORAGE_DIR":                    "/var/lib/user-service/avatars",
-				"GAME_GATEWAY_INTERNAL_URLS":            "http://game-gateway:8090",
-				"GAME_GATEWAY_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, strings.Repeat("g", 40)),
-				"CHAT_GATEWAY_INTERNAL_URLS":            "http://chat-gateway:8090",
-				"CHAT_GATEWAY_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, strings.Repeat("c", 40)),
+				"AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE":  writeSecret(t, strings.Repeat("o", 40)),
+				"AVATAR_STORAGE_DIR":                     "/var/lib/user-service/avatars",
+				"GAME_GATEWAY_INTERNAL_URLS":             "http://game-gateway:8090",
+				"GAME_GATEWAY_OUTBOUND_CREDENTIAL_FILE":  writeSecret(t, strings.Repeat("g", 40)),
+				"CHAT_GATEWAY_INTERNAL_URLS":             "http://chat-gateway:8090",
+				"CHAT_GATEWAY_OUTBOUND_CREDENTIAL_FILE":  writeSecret(t, strings.Repeat("c", 40)),
+				"STATS_INTERNAL_URL":                     "http://stats-service:8090",
+				"STATS_SERVICE_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, strings.Repeat("t", 40)),
 			})
 
 			cfg, err := config.Load()
@@ -390,6 +393,42 @@ func TestLoadGateways(t *testing.T) {
 		"shared":         {"CHAT_GATEWAY_OUTBOUND_CREDENTIAL_FILE": game},
 		"inbound reused": {"WEB_BFF_CREDENTIAL_FILE": chat},
 		"timeout":        {"GATEWAY_INTERNAL_TIMEOUT": "0s"},
+	} {
+		values := maps.Clone(full)
+		maps.Copy(values, change)
+		setEnvironment(t, values)
+		if _, err := config.Load(); err == nil {
+			t.Fatalf("%s accepted", name)
+		}
+	}
+}
+
+// TestLoadStatsService checks the Stats settings.
+//
+// Expected output: unset is allowed outside production; a full pair is kept
+// with a 5s default timeout; a partial pair, a URL with a path and a reused
+// credential are refused.
+func TestLoadStatsService(t *testing.T) {
+	stats := writeSecret(t, strings.Repeat("t", 40))
+	setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL})
+	if cfg, err := config.Load(); err != nil || cfg.StatsInternalURL != "" {
+		t.Fatalf("unset = %q, %v", cfg.StatsInternalURL, err)
+	}
+
+	full := map[string]string{"DATABASE_URL": validDatabaseURL, "STATS_INTERNAL_URL": "http://stats-service:8090/",
+		"STATS_SERVICE_OUTBOUND_CREDENTIAL_FILE": stats}
+	setEnvironment(t, full)
+	cfg, err := config.Load()
+	if err != nil || cfg.StatsInternalURL != "http://stats-service:8090" || cfg.StatsServiceCredential != strings.Repeat("t", 40) ||
+		cfg.StatsInternalTimeout != 5*time.Second {
+		t.Fatalf("stats = %q %v, %v", cfg.StatsInternalURL, cfg.StatsInternalTimeout, err)
+	}
+
+	for name, change := range map[string]map[string]string{
+		"partial":        {"STATS_SERVICE_OUTBOUND_CREDENTIAL_FILE": ""},
+		"path":           {"STATS_INTERNAL_URL": "http://stats-service:8090/x"},
+		"inbound reused": {"WEB_BFF_CREDENTIAL_FILE": stats},
+		"timeout":        {"STATS_INTERNAL_TIMEOUT": "-1s"},
 	} {
 		values := maps.Clone(full)
 		maps.Copy(values, change)

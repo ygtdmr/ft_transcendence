@@ -7,6 +7,7 @@ import (
 
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/client/authclient"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/client/gatewayclient"
+	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/client/statsclient"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/config"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/controller"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/middleware/serviceauth"
@@ -106,6 +107,17 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 			controller.NewFriends(friends, sessions),
 			controller.NewUserSearch(service.NewUserSearch(userpostgres.NewUserSearch(pool), avatars), sessions),
 			controller.NewReports(service.NewReports(userpostgres.NewReports(pool), cfg.ReportWindow), sessions))
+		if cfg.StatsInternalURL != "" {
+			stats, err := statsclient.New(cfg.StatsInternalURL, cfg.StatsServiceCredential, cfg.StatsInternalTimeout)
+			if err != nil {
+				cleanup()
+				return nil, nil, err
+			}
+			profiles := service.NewPublicProfiles(userpostgres.NewPublicProfiles(pool), publicStats{stats}, presence, avatars)
+			public = append(public, controller.NewPublicProfile(profiles, sessions))
+		} else {
+			logger.WarnContext(ctx, "STATS_INTERNAL_URL is not set; the public profile route is not served")
+		}
 		if avatarStorage != nil {
 			logCleanup := func(key string, err error) {
 				logger.WarnContext(ctx, "replaced avatar file could not be removed", "key", key, "error", err)
@@ -145,4 +157,18 @@ func newPresence(cfg config.Config) (service.PresenceReader, error) {
 	}
 
 	return service.NewPresence(instances...), nil
+}
+
+// publicStats adapts the Stats client to the counters a public profile shows.
+type publicStats struct{ client *statsclient.Client }
+
+// PublicStats implements service.StatsReader. Penalty points are dropped.
+func (p publicStats) PublicStats(ctx context.Context, userID int64) (service.PublicStats, error) {
+	stats, err := p.client.UserStats(ctx, userID)
+	if err != nil {
+		return service.PublicStats{}, err
+	}
+
+	return service.PublicStats{Level: stats.Level, Wins: stats.Wins, Losses: stats.Losses,
+		MatchesPlayed: stats.MatchesPlayed}, nil
 }
