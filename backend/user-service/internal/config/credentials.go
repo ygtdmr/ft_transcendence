@@ -17,6 +17,7 @@ var callerCredentialFiles = map[string][2]string{
 	"auth-service":    {"AUTH_SERVICE_CREDENTIAL_FILE", "AUTH_SERVICE_PREVIOUS_CREDENTIAL_FILE"},
 	"channel-service": {"CHANNEL_SERVICE_CREDENTIAL_FILE", "CHANNEL_SERVICE_PREVIOUS_CREDENTIAL_FILE"},
 	"game-session":    {"GAME_SESSION_CREDENTIAL_FILE", "GAME_SESSION_PREVIOUS_CREDENTIAL_FILE"},
+	"web-bff":         {"WEB_BFF_CREDENTIAL_FILE", "WEB_BFF_PREVIOUS_CREDENTIAL_FILE"},
 }
 
 // loadCallerCredentials reads each caller's credential files.

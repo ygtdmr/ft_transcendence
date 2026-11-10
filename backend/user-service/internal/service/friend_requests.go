@@ -60,18 +60,6 @@ type FriendRequestStore interface {
 	PendingFriendRequests(ctx context.Context, userID int64) ([]StoredFriendRequest, error)
 }
 
-// PresenceReader answers whether a user has an open authenticated connection.
-type PresenceReader interface {
-	IsOnline(ctx context.Context, userID int64) (bool, error)
-}
-
-// NoPresence reports every user as offline. It stands in until live presence
-// is read from the Gateway registries.
-type NoPresence struct{}
-
-// IsOnline implements PresenceReader.
-func (NoPresence) IsOnline(context.Context, int64) (bool, error) { return false, nil }
-
 // FriendUser is one side of a friend request as clients see it.
 type FriendUser struct {
 	UserID    int64  `json:"user_id"`
@@ -149,25 +137,46 @@ func (s *FriendRequests) List(ctx context.Context, userID int64) (incoming, outg
 }
 
 // Accept resolves a request addressed to callerID and creates the friendship.
-// It returns the new friend. The friendship is committed before presence is
-// read, so a presence failure does not undo it.
+// It returns the new friend. The sender's presence is read before the
+// friendship is committed, so an unknown presence changes nothing and the
+// caller can retry the same request.
 //
 // Errors:
 //
 //   - ErrRequestNotFound, ErrRelationshipBlocked: nothing changed.
-//   - ErrUnavailable or other errors.
+//   - ErrUnavailable or other errors. A presence failure before the commit
+//     leaves the request pending.
 func (s *FriendRequests) Accept(ctx context.Context, requestID, callerID int64) (Friend, error) {
+	pending, err := s.store.PendingFriendRequests(ctx, callerID)
+	if err != nil {
+		return Friend{}, err
+	}
+	var online map[int64]bool
+	for _, request := range pending {
+		if request.ID == requestID && request.To.UserID == callerID {
+			if online, err = s.presence.Online(ctx, []int64{request.From.UserID}); err != nil {
+				return Friend{}, err
+			}
+			break
+		}
+	}
 	stored, err := s.store.ResolveFriendRequest(ctx, requestID, callerID, FriendRequestAccepted, s.resolvedEvent)
 	if err != nil {
 		return Friend{}, err
 	}
 	friend := s.user(stored.From)
-	online, err := s.presence.IsOnline(ctx, friend.UserID)
-	if err != nil {
-		return Friend{}, err
+	isOnline, known := online[friend.UserID]
+	if !known {
+		// The request became pending after the read above; the friendship is
+		// committed, so a presence failure here cannot be undone.
+		after, err := s.presence.Online(ctx, []int64{friend.UserID})
+		if err != nil {
+			return Friend{}, err
+		}
+		isOnline = after[friend.UserID]
 	}
 
-	return Friend{FriendUser: friend, IsOnline: online}, nil
+	return Friend{FriendUser: friend, IsOnline: isOnline}, nil
 }
 
 // Decline resolves a request addressed to callerID without a friendship.

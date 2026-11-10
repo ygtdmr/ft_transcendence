@@ -23,6 +23,7 @@ const (
 	ScopeProvisioningRead = "provisioning.read"
 	ScopeProfileRead      = "profile.read"
 	ScopeFriendVerdict    = "friend.verdict"
+	ScopePresenceRead     = "presence.read"
 )
 
 // Matrix is the authorization matrix: the scopes each caller may use on this receiver.
@@ -34,6 +35,7 @@ func DefaultMatrix() Matrix {
 		"auth-service":    {ScopeProfileProvision, ScopeProvisioningRead, ScopeProfileRead},
 		"channel-service": {ScopeFriendVerdict},
 		"game-session":    {ScopeFriendVerdict},
+		"web-bff":         {ScopePresenceRead},
 	}
 }
 

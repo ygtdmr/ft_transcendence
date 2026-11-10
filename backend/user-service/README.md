@@ -39,6 +39,11 @@ environment only and does not load `.env` itself.
 | `CHANNEL_SERVICE_PREVIOUS_CREDENTIAL_FILE` | none, optional | Previous Channel Service credential, accepted during a rotation. |
 | `GAME_SESSION_CREDENTIAL_FILE` | none, optional | File holding Game Session's service credential (32+ characters). |
 | `GAME_SESSION_PREVIOUS_CREDENTIAL_FILE` | none, optional | Previous Game Session credential, accepted during a rotation. |
+| `WEB_BFF_CREDENTIAL_FILE` | none, optional | File holding Web BFF's service credential (32+ characters). |
+| `WEB_BFF_PREVIOUS_CREDENTIAL_FILE` | none, optional | Previous Web BFF credential, accepted during a rotation. |
+| `GAME_GATEWAY_INTERNAL_URLS`, `CHAT_GATEWAY_INTERNAL_URLS` | none | Comma-separated private origins of every running Gateway instance. Required in production. |
+| `GAME_GATEWAY_OUTBOUND_CREDENTIAL_FILE`, `CHAT_GATEWAY_OUTBOUND_CREDENTIAL_FILE` | none | This service's credential for each Gateway kind. Set with the URLs. |
+| `GATEWAY_INTERNAL_TIMEOUT` | `5s` | Upper bound for one registry query, as a Go duration. |
 
 ## Internal API
 
@@ -62,6 +67,7 @@ one as previous, switch the caller, then remove the previous file.
 | `GET /internal/v1/provisioning-operations?user_id=` | `auth-service`, `provisioning.read` | Read the receipt of a user's operation |
 | `GET /internal/v1/profiles/{user_id}` | `auth-service`, `profile.read` | Read the current canonical profile |
 | `GET /internal/v1/friendship-verdicts?actor_user_id=&target_user_id=` | `channel-service`, `game-session`, `friend.verdict` | Read the active-friend verdict |
+| `GET /internal/v1/presence?user_id=` | `web-bff`, `presence.read` | Read presence for 1 to 100 users |
 
 Provisioning takes `user_id`, `username` and `created_at` in the body. It
 answers `201` with a new receipt or `200` with the stored receipt for an
@@ -142,7 +148,20 @@ session validation. A refused session is `401 UNAUTHORIZED`; an Auth outage is
 `AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE` to enable these routes; both are required
 in production.
 
-Live presence is not read yet, so `is_online` is always `false`.
+## Presence
+
+Presence comes from the active socket registries of every configured Game
+Gateway and Chat Gateway instance, queried concurrently through
+`GET /internal/v1/connections` on each read; the service stores no presence
+state. A user is online when any instance reports them and offline when every
+instance answers without reporting them. Otherwise presence is unknown, and the
+read returns `503 SERVICE_UNAVAILABLE` instead of `is_online: false`.
+
+Accept friend request reads the sender's presence before committing, so an
+unknown presence leaves the request pending and the call can be retried.
+
+Without Gateway settings, which only non-production environments allow, every
+user is reported offline and startup logs a warning.
 
 Every friend request and block change takes the pair lock first, then the
 request row, and records its integration events in the same transaction.
