@@ -64,3 +64,15 @@ variables:
     value: ""
     type: string
     description: "Local Channel Service-to-User service credential; set only in uncommitted local configuration"
+  - name: gameInternalUrl
+    value: ""
+    type: string
+    description: "Game Session private listener origin (INTERNAL_PORT); never routed through the public reverse proxy"
+  - name: authToGameServiceCredential
+    value: ""
+    type: string
+    description: "Local Auth-to-Game Session service credential; set only in uncommitted local configuration"
+  - name: userToGameServiceCredential
+    value: ""
+    type: string
+    description: "Local User-to-Game Session service credential; set only in uncommitted local configuration"

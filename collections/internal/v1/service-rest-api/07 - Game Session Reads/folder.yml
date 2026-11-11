@@ -1,0 +1,8 @@
+info:
+  name: 07 - Game Session Reads
+  type: folder
+  seq: 7
+docs: |-
+  # Game Session reads
+
+  Game Session answers these private reads from its own membership index. A dependency failure returns `503 SERVICE_UNAVAILABLE`; callers never turn it into "no active room".

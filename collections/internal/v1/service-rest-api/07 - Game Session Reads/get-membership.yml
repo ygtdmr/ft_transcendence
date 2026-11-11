@@ -1,0 +1,68 @@
+info:
+  name: Get membership
+  type: http
+  seq: 1
+  tags: [internal, game-session]
+http:
+  method: GET
+  url: "{{gameInternalUrl}}/internal/v1/memberships/42"
+  headers:
+    - name: Authorization
+      value: "Bearer {{authToGameServiceCredential}}"
+    - name: Accept
+      value: application/json
+docs: |-
+  # Get membership
+
+  Returns one user's current room membership as the `(active_room_id, active_room_api_version)` pair. Scope `membership.read`. The callers are Auth Service (for `GET /api/v1/auth/session`) and User Service (for the own profile). Game Session is the only source of this pair; it is never stored by the caller.
+
+  A user with no open room has both fields `null`. Game Session only serves Game v2 rooms, so a non-null version is always `v2`.
+
+  ## Response fields
+
+  | Field | Type | Required | Nullable | Allowed values | Description |
+  | --- | --- | ---: | ---: | --- | --- |
+  | `data.user_id` | integer | yes | no | positive | User ID |
+  | `data.active_room_id` | integer | yes | yes | positive or `null` | Current live room, `null` when the user is in no room |
+  | `data.active_room_api_version` | string enum | yes | yes | `v2` or `null` | Room protocol version; `null` exactly when `active_room_id` is `null` |
+
+  ## Errors
+
+  | Status | Code | Condition | `details` |
+  | --- | --- | --- | --- |
+  | `401` | `SERVICE_UNAUTHENTICATED` | Missing or unknown service credential | `{}` |
+  | `403` | `SERVICE_FORBIDDEN` | Caller lacks `membership.read` | `{}` |
+  | `422` | `VALIDATION_ERROR` | `user_id` is not a positive integer | `{ "field": "user_id" }` |
+  | `500` | `INTERNAL_ERROR` | Unexpected failure | `{}` |
+  | `503` | `SERVICE_UNAVAILABLE` | Database unavailable | `{}` |
+examples:
+  - name: Success - User in a room
+    request: {url: "{{gameInternalUrl}}/internal/v1/memberships/42", method: GET, headers: [], params: [], body: {mode: none}}
+    response:
+      status: 200
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "data": {
+              "user_id": 42,
+              "active_room_id": 1001,
+              "active_room_api_version": "v2"
+            }
+          }
+  - name: Success - No active room
+    request: {url: "{{gameInternalUrl}}/internal/v1/memberships/42", method: GET, headers: [], params: [], body: {mode: none}}
+    response:
+      status: 200
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "data": {
+              "user_id": 42,
+              "active_room_id": null,
+              "active_room_api_version": null
+            }
+          }
