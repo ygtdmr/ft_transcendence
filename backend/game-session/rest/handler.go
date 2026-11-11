@@ -43,6 +43,13 @@ func (h *Handler) Routes() http.Handler {
 	return router
 }
 
+func (h *Handler) InternalRoutes(access *ServiceAccessCheck) http.Handler {
+	router := gin.New()
+	router.Use(gin.Recovery())
+	router.GET("/internal/v1/memberships/:user_id", access.RequireScope("membership.read"), h.membership)
+	return router
+}
+
 func (h *Handler) health(c *gin.Context) {
 	writeData(c, http.StatusOK, map[string]string{"status": "ok"})
 }
