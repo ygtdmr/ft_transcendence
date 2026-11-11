@@ -260,3 +260,7 @@ func (s *RoomService) Leave(roomID int64, userID int64, reason room.DepartureRea
 	}
 	return result, nil
 }
+
+func (s *RoomService) ActiveRoom(userID int64) (int64, bool, error) {
+	return s.store.ActiveRoomOf(userID)
+}
