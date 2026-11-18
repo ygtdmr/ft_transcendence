@@ -6,7 +6,9 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -44,9 +46,22 @@ func (b *lockedBuffer) String() string {
 //
 // Prometheus counters are process-global, so each server gets its own service
 // label (derived from the test name); otherwise counts leak between tests.
+// serviceSeq makes every service label unique within the test process.
+var serviceSeq atomic.Int64
+
+// uniqueService returns a service label for one test server. The Prometheus
+// counters in the metrics package are process-global, so a label that repeats
+// (for example under -count=2) would add to the previous run's counters and
+// break the exact values these tests assert.
+func uniqueService(t *testing.T) string {
+	t.Helper()
+	name := strings.ToLower(strings.NewReplacer("/", "-", "_", "-").Replace(t.Name()))
+	return "itest-" + name + "-" + strconv.FormatInt(serviceSeq.Add(1), 10)
+}
+
 func newConventionsServer(t *testing.T) (*httptest.Server, *lockedBuffer, string) {
 	t.Helper()
-	service := "itest-" + strings.ToLower(strings.NewReplacer("/", "-", "_", "-").Replace(t.Name()))
+	service := uniqueService(t)
 	logs := newLockedBuffer()
 	logger, err := logging.New(logging.Config{Format: "json", Level: "debug", Service: service, Environment: "test"}, logs)
 	if err != nil {
