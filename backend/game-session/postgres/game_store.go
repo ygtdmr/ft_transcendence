@@ -171,9 +171,7 @@ func saveMembers(tx *gorm.DB, members []room.RoomMember) error {
 }
 
 func (s *Store) SaveGame(g *game.Game) error {
-	return s.db.Transaction(func(tx *gorm.DB) error {
-		return updateGame(tx, g)
-	})
+	return updateGame(s.db, g)
 }
 
 // UPDATE rooms SET status = 'IN_GAME', countdown_ends_at = NULL WHERE room_id = 1;
@@ -182,15 +180,13 @@ func (s *Store) SaveGame(g *game.Game) error {
 // INSERT INTO game_cards (game_id, card_id, word, color) VALUES (7, 1, 'AFRICA', 'RED');
 // INSERT INTO game_history (game_id, seq, type, at) VALUES (7, 1, 'GAME_STARTED', now());
 func (s *Store) SaveGameStart(r *room.Room, members []room.RoomMember, g *game.Game) error {
-	return s.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Save(r).Error; err != nil {
-			return err
-		}
-		if err := saveMembers(tx, members); err != nil {
-			return err
-		}
-		return insertGame(tx, r.RoomID, g)
-	})
+	if err := s.db.Save(r).Error; err != nil {
+		return err
+	}
+	if err := saveMembers(s.db, members); err != nil {
+		return err
+	}
+	return insertGame(s.db, r.RoomID, g)
 }
 
 // UPDATE rooms SET status = 'POST_GAME', post_game_ends_at = now() + interval '60 seconds' WHERE room_id = 1;
@@ -201,59 +197,52 @@ func (s *Store) SaveGameStart(r *room.Room, members []room.RoomMember, g *game.G
 // INSERT INTO game_players (game_id, user_id, team, role) VALUES (7, 42, 'RED', 'SPYMASTER'), (7, 43, 'RED', 'OPERATIVE');
 // INSERT INTO outbox_events (room_id, event_type, outbox_content, room_version) VALUES (1, 'match.finalized', '{"game_id": 7, "winner": "RED"}', 12);
 func (s *Store) SaveGameEnd(r *room.Room, members []room.RoomMember, g *game.Game, lastGame *room.LastGameView) error {
-	return s.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Save(r).Error; err != nil {
+	if err := s.db.Save(r).Error; err != nil {
+		return err
+	}
+	if err := saveMembers(s.db, members); err != nil {
+		return err
+	}
+	if err := updateGame(s.db, g); err != nil {
+		return err
+	}
+	if r.Status == room.StatusClosed {
+		if err := s.db.Where("room_id = ?", r.RoomID).Delete(&room.RoomMember{}).Error; err != nil {
 			return err
 		}
-		if err := saveMembers(tx, members); err != nil {
+	}
+	if lastGame == nil {
+		return insertOutbox(s.db, r, "game.cancelled", map[string]any{"room_id": r.RoomID, "game_id": g.GameID()})
+	}
+	if err := s.db.Table("rooms").Where("room_id = ?", r.RoomID).Update("last_game_id", lastGame.GameID).Error; err != nil {
+		return err
+	}
+	players := make([]gamePlayerRow, len(lastGame.Players))
+	for i, p := range lastGame.Players {
+		players[i] = gamePlayerRow{GameID: lastGame.GameID, UserID: p.UserID, Team: p.Team, Role: p.Role}
+	}
+	if len(players) > 0 {
+		if err := s.db.CreateInBatches(players, 20).Error; err != nil {
 			return err
 		}
-
-		if err := updateGame(tx, g); err != nil {
-			return err
-		}
-
-		if r.Status == room.StatusClosed {
-			if err := tx.Where("room_id = ?", r.RoomID).Delete(&room.RoomMember{}).Error; err != nil {
-				return err
-			}
-		}
-		if lastGame == nil {
-			return insertOutbox(tx, r, "game.cancelled", map[string]any{"room_id": r.RoomID, "game_id": g.GameID()})
-		}
-		if err := tx.Table("rooms").Where("room_id = ?", r.RoomID).Update("last_game_id", lastGame.GameID).Error; err != nil {
-			return err
-		}
-		players := make([]gamePlayerRow, len(lastGame.Players))
-		for i, p := range lastGame.Players {
-			players[i] = gamePlayerRow{GameID: lastGame.GameID, UserID: p.UserID, Team: p.Team, Role: p.Role}
-		}
-		if len(players) > 0 {
-			if err := tx.CreateInBatches(players, 20).Error; err != nil {
-				return err
-			}
-		}
-		return insertOutbox(tx, r, "match.finalized", toMatchFinalizedEvent(lastGame))
-	})
+	}
+	return insertOutbox(s.db, r, "match.finalized", toMatchFinalizedEvent(lastGame))
 }
 
 // UPDATE rooms SET countdown_ends_at = NULL WHERE room_id = 1;
 // UPDATE room_members SET team = 'RED', role = 'SPYMASTER', ready = false WHERE user_id = 43;
 // UPDATE games SET phase = 'WAITING_FOR_CLUE', phase_before_pause = NULL, red_missing_roles = '{}' WHERE game_id = 7;
 func (s *Store) SaveSeatInGame(r *room.Room, member room.RoomMember, g *game.Game) error {
-	err := s.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Save(r).Error; err != nil {
-			return err
-		}
-		if err := tx.Save(&member).Error; err != nil {
-			return err
-		}
-		return updateGame(tx, g)
-	})
-	if isUniqueViolation(err, constraintOneSpymaster) {
-		return room.ErrRoleConflict
+	if err := s.db.Save(r).Error; err != nil {
+		return err
 	}
-	return err
+	if err := s.db.Save(&member).Error; err != nil {
+		if isUniqueViolation(err, constraintOneSpymaster) {
+			return room.ErrRoleConflict
+		}
+		return err
+	}
+	return updateGame(s.db, g)
 }
 
 // UPDATE rooms SET host_user_id = 44, countdown_ends_at = NULL WHERE room_id = 1;
@@ -261,21 +250,19 @@ func (s *Store) SaveSeatInGame(r *room.Room, member room.RoomMember, g *game.Gam
 // UPDATE games SET phase = 'PAUSED_FOR_PLAYERS', phase_before_pause = 'GUESSING', red_missing_roles = '{SPYMASTER}' WHERE game_id = 7;
 // INSERT INTO outbox_events (room_id, event_type, outbox_content, room_version) VALUES (1, 'player.penalized', '{"user_id": 43, "room_id": 1, "game_id": 7, "role": "SPYMASTER", "reason": "EXITED", "points": 30, "penalized_at": "2026-11-05T13:00:10Z"}', 12);
 func (s *Store) SaveLeave(r *room.Room, departedUserID int64, g *game.Game, penalty *room.Penalty) error {
-	return s.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Save(r).Error; err != nil {
+	if err := s.db.Save(r).Error; err != nil {
+		return err
+	}
+	if err := s.db.Where("room_id = ? AND user_id = ?", r.RoomID, departedUserID).Delete(&room.RoomMember{}).Error; err != nil {
+		return err
+	}
+	if g != nil {
+		if err := updateGame(s.db, g); err != nil {
 			return err
 		}
-		if err := tx.Where("room_id = ? AND user_id = ?", r.RoomID, departedUserID).Delete(&room.RoomMember{}).Error; err != nil {
-			return err
-		}
-		if g != nil {
-			if err := updateGame(tx, g); err != nil {
-				return err
-			}
-		}
-		if penalty != nil {
-			return insertOutbox(tx, r, "player.penalized", penalty)
-		}
-		return nil
-	})
+	}
+	if penalty != nil {
+		return insertOutbox(s.db, r, "player.penalized", penalty)
+	}
+	return nil
 }

@@ -10,6 +10,7 @@ import (
 	"game-session/game"
 	"game-session/postgres"
 	"game-session/room"
+	"game-session/roomaction"
 	"game-session/service"
 	"game-session/worker"
 )
@@ -35,20 +36,22 @@ func newHarness(t *testing.T) harness {
 	if err := store.ResetForTests(); err != nil {
 		t.Fatalf("reset: %v", err)
 	}
-	svc := service.NewRoomService(store, placeholderProfiles{}, nil)
-	return harness{store: store, svc: svc, worker: worker.New(store, svc, slog.New(slog.NewTextHandler(os.Stderr, nil)))}
+	svc := service.NewRoomService(placeholderProfiles{}, nil)
+	actions := roomaction.New(svc, placeholderProfiles{})
+
+	return harness{store: store, svc: svc, worker: worker.New(store, svc, actions, slog.New(slog.NewTextHandler(os.Stderr, nil)))}
 }
 
 func readyRoom(t *testing.T, h harness) int64 {
 	t.Helper()
 	capacity := 4
-	snapshot, err := h.svc.Create(1, &capacity, now)
+	snapshot, err := h.svc.Create(h.store, 1, &capacity, now)
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
 	roomID := snapshot.RoomID
 	for _, id := range []int64{2, 3, 4} {
-		if _, err := h.svc.Join(roomID, id, now); err != nil {
+		if _, err := h.svc.Join(h.store, roomID, id, now); err != nil {
 			t.Fatalf("join %d: %v", id, err)
 		}
 	}
@@ -58,12 +61,12 @@ func readyRoom(t *testing.T, h harness) int64 {
 		role game.Role
 	}{{1, game.TeamRed, game.RoleSpymaster}, {2, game.TeamRed, game.RoleOperative}, {3, game.TeamBlue, game.RoleSpymaster}, {4, game.TeamBlue, game.RoleOperative}}
 	for _, s := range seats {
-		if _, err := h.svc.SelectRole(roomID, s.user, s.team, s.role, now); err != nil {
+		if _, err := h.svc.SelectRole(h.store, roomID, s.user, s.team, s.role, now); err != nil {
 			t.Fatalf("seat %d: %v", s.user, err)
 		}
 	}
 	for _, id := range []int64{1, 2, 3, 4} {
-		if _, err := h.svc.SetReady(roomID, id, true, now); err != nil {
+		if _, err := h.svc.SetReady(h.store, roomID, id, true, now); err != nil {
 			t.Fatalf("ready %d: %v", id, err)
 		}
 	}
@@ -99,11 +102,11 @@ func TestTickStartsGameWhenCountdownEnds(t *testing.T) {
 func TestTickRemovesMemberWhenGraceExpires(t *testing.T) {
 	h := newHarness(t)
 	capacity := 4
-	snapshot, _ := h.svc.Create(1, &capacity, now)
-	if _, err := h.svc.Join(snapshot.RoomID, 2, now); err != nil {
+	snapshot, _ := h.svc.Create(h.store, 1, &capacity, now)
+	if _, err := h.svc.Join(h.store, snapshot.RoomID, 2, now); err != nil {
 		t.Fatalf("join: %v", err)
 	}
-	if _, err := h.svc.MarkDisconnected(snapshot.RoomID, 2, now); err != nil {
+	if _, err := h.svc.MarkDisconnected(h.store, snapshot.RoomID, 2, now); err != nil {
 		t.Fatalf("disconnect: %v", err)
 	}
 
@@ -122,8 +125,8 @@ func TestTickRemovesMemberWhenGraceExpires(t *testing.T) {
 func TestTickClosesEmptyRoomAfterTimeout(t *testing.T) {
 	h := newHarness(t)
 	capacity := 4
-	snapshot, _ := h.svc.Create(1, &capacity, now)
-	if _, err := h.svc.Leave(snapshot.RoomID, 1, room.DepartureExited, now); err != nil {
+	snapshot, _ := h.svc.Create(h.store, 1, &capacity, now)
+	if _, err := h.svc.Leave(h.store, snapshot.RoomID, 1, room.DepartureExited, now); err != nil {
 		t.Fatalf("leave: %v", err)
 	}
 

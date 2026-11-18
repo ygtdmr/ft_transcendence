@@ -15,6 +15,7 @@ import (
 	"game-session/postgres"
 	"game-session/rest"
 	"game-session/room"
+	"game-session/roomaction"
 	"game-session/service"
 	"game-session/worker"
 )
@@ -25,6 +26,7 @@ func createServers(cfg config.Config, handler *rest.Handler, log *slog.Logger) (
 		Handler:           handler.Routes(),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
+
 	serviceScopes := map[string][]string{
 		"auth-service": {"membership.read", "session.departure"},
 		"user-service": {"membership.read", "account.cleanup"},
@@ -33,7 +35,6 @@ func createServers(cfg config.Config, handler *rest.Handler, log *slog.Logger) (
 		log.Warn("no service credential files configured, internal API will reject every caller")
 	}
 	access := rest.NewServiceAccessCheck(cfg.ServiceTokens, serviceScopes)
-
 	internal := &http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.InternalPort),
 		Handler:           handler.InternalRoutes(access),
@@ -62,7 +63,6 @@ func shutdownServer(server *http.Server, name string, log *slog.Logger, shutdown
 	}
 }
 
-// shutdown iki sunucuyu nazikçe kapatır ve worker'ın durmasını bekler; hepsi için toplam 10 saniye.
 func shutdown(server, internalServer *http.Server, workerDone <-chan struct{}, log *slog.Logger) {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -98,9 +98,11 @@ func main() {
 	if cfg.Penalty == nil {
 		log.Warn("leave penalty is not configured, penalties will not be recorded")
 	}
-	svc := service.NewRoomService(store, profiles, cfg.Penalty)
-	handler := rest.NewHandler(svc, store)
-	deadlines := worker.New(store, svc, log)
+	svc := service.NewRoomService(profiles, cfg.Penalty)
+	actions := roomaction.New(svc, profiles)
+	handler := rest.NewHandler(svc, actions, store)
+	deadlines := worker.New(store, svc, actions, log)
+//	commands := websocketprotocol.NewCommandHandler(actions, store)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -110,7 +112,7 @@ func main() {
 		defer close(workerDone)
 		deadlines.Run(ctx, cfg.TickInterval)
 	}()
-	
+
 	server, internalServer := createServers(cfg, handler, log)
 	go startServer(server, "public", log, stop)
 	go startServer(internalServer, "internal", log, stop)

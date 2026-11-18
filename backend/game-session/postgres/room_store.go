@@ -61,6 +61,7 @@ func (s *Store) ActiveRoomOf(userID int64) (int64, bool, error) {
 
 // INSERT INTO rooms (room_code, host_user_id, max_players) VALUES ('ABC123', 42, 8) RETURNING room_id;
 // INSERT INTO room_members (room_id, user_id) VALUES (1, 42);
+// Retry needs a savepoint: a unique violation would abort the outer transaction.
 func (s *Store) SaveNewRoom(r *room.Room, host room.RoomMember) error {
 	err := s.db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(r).Error; err != nil {
@@ -82,12 +83,10 @@ func (s *Store) SaveNewRoom(r *room.Room, host room.RoomMember) error {
 // UPDATE rooms SET countdown_ends_at = NULL, empty_since = NULL, close_at = NULL WHERE room_id = 1;
 // INSERT INTO room_members (room_id, user_id) VALUES (1, 43);
 func (s *Store) SaveJoin(r *room.Room, member room.RoomMember) error {
-	err := s.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Save(r).Error; err != nil {
-			return err
-		}
-		return tx.Create(&member).Error
-	})
+	if err := s.db.Save(r).Error; err != nil {
+		return err
+	}
+	err := s.db.Create(&member).Error
 	if isUniqueViolation(err, constraintOneActiveRoom) {
 		return room.ErrAlreadyInRoom
 	}
@@ -97,12 +96,10 @@ func (s *Store) SaveJoin(r *room.Room, member room.RoomMember) error {
 // UPDATE rooms SET countdown_ends_at = NULL WHERE room_id = 1;
 // UPDATE room_members SET team = 'RED', role = 'SPYMASTER', ready = false WHERE user_id = 43;
 func (s *Store) SaveMember(r *room.Room, member room.RoomMember) error {
-	err := s.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Save(r).Error; err != nil {
-			return err
-		}
-		return tx.Save(&member).Error
-	})
+	if err := s.db.Save(r).Error; err != nil {
+		return err
+	}
+	err := s.db.Save(&member).Error
 	if isUniqueViolation(err, constraintOneSpymaster) {
 		return room.ErrRoleConflict
 	}
@@ -117,10 +114,8 @@ func (s *Store) SaveRoom(r *room.Room) error {
 // UPDATE rooms SET status = 'WAITING', post_game_ends_at = NULL WHERE room_id = 1;
 // DELETE FROM room_members WHERE room_id = 1 AND user_id IN (43, 44);
 func (s *Store) SaveExpiredPostGame(r *room.Room, removedUserIDs []int64) error {
-	return s.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Save(r).Error; err != nil {
-			return err
-		}
-		return tx.Where("room_id = ? AND user_id IN ?", r.RoomID, removedUserIDs).Delete(&room.RoomMember{}).Error
-	})
+	if err := s.db.Save(r).Error; err != nil {
+		return err
+	}
+	return s.db.Where("room_id = ? AND user_id IN ?", r.RoomID, removedUserIDs).Delete(&room.RoomMember{}).Error
 }

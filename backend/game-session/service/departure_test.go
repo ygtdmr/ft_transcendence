@@ -25,7 +25,6 @@ type departureStore struct {
 	penalty *room.Penalty
 }
 
-func (s *departureStore) Transaction(fn func(RoomStore) error) error { return fn(s) }
 func (s *departureStore) RoomByID(int64) (*room.Room, []room.RoomMember, error) {
 	return &s.r, s.members, nil
 }
@@ -67,11 +66,11 @@ func TestDeparturesUseStoredUsernameWithoutProfileService(t *testing.T) {
 			}
 			profiles := &unavailableProfiles{}
 			penalty := &room.PenaltyConfig{Base: 10, SpymasterMultiplier: 3, OperativeMultiplier: 2}
-			svc := NewRoomService(store, profiles, penalty)
+			svc := NewRoomService(profiles, penalty)
 			if kick {
-				_, err = svc.Kick(1, 1, 2, now)
+				_, err = svc.Kick(store, 1, 1, 2, now)
 			} else {
-				_, err = svc.Leave(1, 2, room.DepartureExited, now)
+				_, err = svc.Leave(store, 1, 2, room.DepartureExited, now)
 			}
 			if err != nil {
 				t.Fatal(err)

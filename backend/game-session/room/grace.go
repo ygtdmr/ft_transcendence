@@ -16,8 +16,6 @@ func (r *Room) MarkDisconnected(input RoomInput, userID int64, now time.Time) (R
 	if member.GraceEndsAt != nil {
 		return *member, nil
 	}
-	// Post-game'de grace yok: ortak 60s karar süresi (PostGameEndsAt) kopukken de akar,
-	// geri dönüş onu uzatmaz (Bruno connect.yml).
 	if member.State == StatePostGame {
 		return *member, nil
 	}

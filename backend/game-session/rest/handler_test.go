@@ -12,6 +12,7 @@ import (
 	"game-session/postgres"
 	"game-session/rest"
 	"game-session/room"
+	"game-session/roomaction"
 	"game-session/service"
 )
 
@@ -28,8 +29,8 @@ func newServer(t *testing.T) *httptest.Server {
 	if err := store.ResetForTests(); err != nil {
 		t.Fatalf("reset: %v", err)
 	}
-	svc := service.NewRoomService(store, placeholderProfiles{}, nil)
-	handler := rest.NewHandler(svc, store)
+	svc := service.NewRoomService(placeholderProfiles{}, nil)
+	handler := rest.NewHandler(svc, roomaction.New(svc, placeholderProfiles{}), store)
 	server := httptest.NewServer(handler.Routes())
 	t.Cleanup(server.Close)
 	return server

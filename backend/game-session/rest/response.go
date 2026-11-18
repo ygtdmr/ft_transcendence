@@ -24,19 +24,15 @@ type dataEnvelope struct {
 	Data any `json:"data"`
 }
 
-func writeJSON(c *gin.Context, status int, body any) {
-	c.JSON(status, body)
-}
-
 func writeData(c *gin.Context, status int, data any) {
-	writeJSON(c, status, dataEnvelope{Data: data})
+	c.JSON(status, dataEnvelope{Data: data})
 }
 
 func writeError(c *gin.Context, status int, code string, message string, details map[string]any) {
 	if details == nil {
 		details = map[string]any{}
 	}
-	writeJSON(c, status, errorEnvelope{Error: apiError{Code: code, Message: message, Details: details}})
+	c.JSON(status, errorEnvelope{Error: apiError{Code: code, Message: message, Details: details}})
 }
 
 func writeDomainError(c *gin.Context, err error) {
