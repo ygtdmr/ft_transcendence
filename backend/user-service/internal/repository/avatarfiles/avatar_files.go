@@ -8,11 +8,15 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"regexp"
 
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/service"
 )
 
-var _ service.AvatarFiles = (*Store)(nil)
+var (
+	_ service.AvatarFiles      = (*Store)(nil)
+	_ service.AvatarFileLister = (*Store)(nil)
+)
 
 // Store keeps avatar files in one directory. os.Root confines every operation
 // to that directory, even if a link inside it points elsewhere.
@@ -111,6 +115,57 @@ func (s *Store) Read(key string) ([]byte, error) {
 
 	return data, err
 }
+
+// List implements service.AvatarFileLister. It returns only regular files
+// this store writes: avatar keys and temporary upload files.
+func (s *Store) List() ([]service.StoredFile, error) {
+	dir, err := s.root.Open(".")
+	if err != nil {
+		return nil, err
+	}
+	defer dir.Close()
+	entries, err := dir.ReadDir(-1)
+	if err != nil {
+		return nil, err
+	}
+	files := make([]service.StoredFile, 0, len(entries))
+	for _, entry := range entries {
+		if !entry.Type().IsRegular() || !ownedName(entry.Name()) {
+			continue
+		}
+		info, err := entry.Info()
+		if errors.Is(err, fs.ErrNotExist) {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, service.StoredFile{Name: entry.Name(), Modified: info.ModTime()})
+	}
+
+	return files, nil
+}
+
+// RemoveFile implements service.AvatarFileLister for a key or a temporary
+// file name; any other name is refused.
+func (s *Store) RemoveFile(name string) error {
+	if !ownedName(name) {
+		return errors.New("not an avatar storage file")
+	}
+	if err := s.root.Remove(name); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return err
+	}
+
+	return nil
+}
+
+// ownedName reports a name this store writes.
+func ownedName(name string) bool {
+	return service.ValidAvatarKey(name) || temporaryPattern.MatchString(name)
+}
+
+// temporaryPattern matches names from temporaryName.
+var temporaryPattern = regexp.MustCompile(`^\.upload-[0-9a-f]{16}$`)
 
 // temporaryName cannot match a key, so an abandoned file is never served.
 func temporaryName() (string, error) {
