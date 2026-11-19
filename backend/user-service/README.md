@@ -44,6 +44,8 @@ environment only and does not load `.env` itself.
 | `GATEWAY_INTERNAL_TIMEOUT` | `5s` | Upper bound for one registry query, as a Go duration. |
 | `STATS_INTERNAL_URL`, `STATS_SERVICE_OUTBOUND_CREDENTIAL_FILE` | none | Stats' private listener and this service's credential for it. Required in production; without them the public profile route is not served. |
 | `STATS_INTERNAL_TIMEOUT` | `5s` | Upper bound for one call to Stats, as a Go duration. |
+| `GAME_INTERNAL_URL`, `GAME_SERVICE_OUTBOUND_CREDENTIAL_FILE` | none | Game Session's private listener and this service's credential for it. Required in production; without them the own profile reports no active room. |
+| `GAME_INTERNAL_TIMEOUT` | `5s` | Upper bound for one call to Game Session, as a Go duration. |
 
 ## Internal API
 
@@ -151,8 +153,16 @@ in production.
 A public profile combines the canonical profile and the viewer's relationship
 with Stats counters and presence. A missing user or one being deleted is
 `404 USER_NOT_FOUND`. A Stats or presence failure is `503 SERVICE_UNAVAILABLE`,
-never zero counters or offline. Penalty points are not part of it. The own
-profile at `GET /api/v1/users/me` is not served yet.
+never zero counters or offline. Penalty points are not part of it.
+
+The own profile at `GET /api/v1/users/me` combines the canonical profile with
+the email and account creation time from Auth (`account.metadata.read`), Stats
+counters with penalty points, and the live `active_room_id` and
+`active_room_api_version` from Game Session (`membership.read`). A recorded
+deletion, a missing profile or account, or an account that is not `ACTIVE` is
+`401 UNAUTHORIZED`. An Auth, Stats or Game Session failure is
+`503 SERVICE_UNAVAILABLE`, never zero counters or no active room. The route is
+served with the public profile route, so it needs the Stats settings.
 
 ## Presence
 
