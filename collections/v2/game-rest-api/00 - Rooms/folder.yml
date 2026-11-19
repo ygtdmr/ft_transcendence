@@ -9,7 +9,6 @@ docs: |-
 
   Every room has a capacity, `max_players`, in `4..20` (default `20`). Every member counts, seated or unseated. The host sets it on create and can change it while the room is `WAITING`; it can never drop below `player_count`.
 
-  A room member can invite a friend with `Invite friend`; the transient invite is accepted for delivery through Chat Gateway v2, and accepting it is an ordinary v2 Join.
 
   A game can start only with at least four configured, ready members; exactly one Spymaster and at least one Operative per `RED` and `BLUE`. REST room snapshots use the same enums and privacy projections as realtime state.
 

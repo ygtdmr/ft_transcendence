@@ -78,7 +78,7 @@ docs: |-
   | `CARD_ALREADY_REVEALED` | card was already revealed | unchanged; open |
   | `NO_GUESSES_REMAINING` | stale guess/pass after zero | unchanged; open |
   | `GAME_ALREADY_FINISHED` | game command after terminal result | unchanged; open |
-  All codes in this catalog apply to `/ws/v2/rooms/{roomId}`. Chat errors remain documented in their independent v1/v2 chat collections.
+  All codes in this catalog apply to `/ws/v2/rooms/{roomId}`.
 
   ## Concrete examples
 

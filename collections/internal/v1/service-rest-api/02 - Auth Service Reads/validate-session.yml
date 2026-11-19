@@ -16,7 +16,7 @@ http:
 docs: |-
   # Validate session
 
-  Returns the current active-session verdict for the browser credential the caller received. Scope `session.validate`. Callers: `game-gateway`, `chat-gateway`, `web-bff` and protected services that receive browser requests. The verdict has no profile, room or presence dependency.
+  Returns the current active-session verdict for the browser credential the caller received. Scope `session.validate`. Callers: `game-gateway`, `notification-gateway`, `web-bff` and protected services that receive browser requests. The verdict has no profile, room or presence dependency.
 
   ## Request parameters
 

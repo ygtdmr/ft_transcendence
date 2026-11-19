@@ -41,7 +41,7 @@ docs: |-
 
   ## Live update
 
-  A successful change reaches every view of the user at once. Members of the user's active room receive `room.player.updated` with `changed_fields: ["username"]` on the Game v2 room socket. The user's own sessions, their friends, and the other side of each pending friend request receive `user.profile.updated` on the Chat v2 socket. See `Social events` in the Chat v2 collection.
+  A successful change reaches every view of the user at once. Members of the user's active room receive `room.player.updated` with `changed_fields: ["username"]` on the Game v2 room socket. The user's own sessions, their friends, and the other side of each pending friend request receive `user.profile.updated` on the notification socket. See `Social events` in the `WebSocket v2 - Notifications` collection.
 
   ## Errors
 

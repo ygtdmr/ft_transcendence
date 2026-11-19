@@ -16,7 +16,7 @@ http:
     data: |-
       {
         "reason": "HARASSMENT",
-        "details": "Insulting messages in the room chat.",
+        "details": "Offensive clues during the game.",
         "room_id": 1001
       }
 docs: |-
@@ -33,7 +33,7 @@ docs: |-
   | `ft_session` cookie | request cookie | yes | string | active JWT access credential | no | Reporter | set by Register/Login |
   | `user_id` | path | yes | integer | positive, existing user, not self | no | Reported user | `44` |
   | `reason` | body | yes | string enum | `HARASSMENT`, `CHEATING`, `OFFENSIVE_USERNAME`, `SPAM`, `OTHER` | no | Report category | `HARASSMENT` |
-  | `details` | body | no | string | `0..500` characters after trimming | no | Free-text description | `Insulting messages in the room chat.` |
+  | `details` | body | no | string | `0..500` characters after trimming | no | Free-text description | `Offensive clues during the game.` |
   | `room_id` | body | no | integer | positive | yes | Room where it happened, for context; not validated against current membership | `1001` |
 
   ## Success behavior
@@ -61,7 +61,7 @@ docs: |-
   Every error stores nothing.
 examples:
   - name: Success - Report filed
-    request: {url: "{{baseUrl}}/api/{{apiVersion}}/users/44/reports", method: POST, headers: [{name: Content-Type, value: application/json, enabled: true}], params: [], body: {mode: json, json: '{"reason":"HARASSMENT","details":"Insulting messages in the room chat.","room_id":1001}'}}
+    request: {url: "{{baseUrl}}/api/{{apiVersion}}/users/44/reports", method: POST, headers: [{name: Content-Type, value: application/json, enabled: true}], params: [], body: {mode: json, json: '{"reason":"HARASSMENT","details":"Offensive clues during the game.","room_id":1001}'}}
     response:
       status: 201
       headers: [{name: Content-Type, value: application/json}]

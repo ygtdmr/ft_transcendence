@@ -9,7 +9,6 @@ docs: |-
 
   Every room has a capacity, `max_players`, in `4..8` (default `8`). The host sets it on create and can change it while the room is `WAITING` with `room.settings.update`; it can never drop below the current `player_count`. Join returns `409 ROOM_FULL` once `player_count` equals `max_players`.
 
-  A room member can invite a friend with `Invite friend`; the invite is a live notification on the recipient's chat socket, and accepting it is an ordinary Join.
 
   A game can start only with at least four configured, ready members; exactly one Spymaster and at least one Operative per `RED` and `BLUE`. REST room snapshots use the same enums and privacy projections as realtime state.
 

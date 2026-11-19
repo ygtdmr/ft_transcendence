@@ -36,7 +36,7 @@ docs: |-
   User Service validates `confirm_username` and persists a durable deletion `operation_id`. This is a coordinated workflow across service-owned databases, not one cross-service transaction. Auth first blocks new authentication and revokes all user sessions with cause `ACCOUNT_DELETED`. Required cleanup is then coordinated idempotently; `204 No Content` is returned only after it completes:
 
   1. Removes the user from any active room as a departure with reason `ACCOUNT_DELETED`. In a Game v2 room this emits `room.player.left` and rechecks staffing during `IN_GAME` (possibly `game.staffing.required`); no leave penalty is recorded. In a v1 `IN_GAME` room it applies the v1 `PLAYER_FORFEIT`.
-  2. User deletes its profile/avatar and social relationships; Channel Service deletes the user's DIRECT channels/messages and user read state; Stats clears the user's penalty points. Each service deletes only its own records.
+  2. User deletes its profile/avatar and social relationships; Stats clears the user's penalty points. Each service deletes only its own records.
   3. Stats keeps other players' finalized match records; the deleted participant appears there as `user_id: null`, `username: "deleted_user"`.
   4. Auth completes removal of its account/credentials/Google links after required cleanup. Its all-session revocation notifications close every user socket with `4401`; User's public response clears `ft_session` and `ft_refresh` on their original paths.
 

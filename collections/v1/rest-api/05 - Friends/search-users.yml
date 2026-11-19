@@ -21,7 +21,7 @@ docs: |-
 
   ## Purpose and preconditions
 
-  Friend discovery (`workspace.yml`, Friends, Presence, and Chat Scope): add-by-`user_id`-only is too hard for normal use, so this adds a minimal authenticated username search. Requires an active session.
+  Friend discovery (`workspace.yml`, Friends and Presence): add-by-`user_id`-only is too hard for normal use, so this adds a minimal authenticated username search. Requires an active session.
 
   ## Request parameters
 

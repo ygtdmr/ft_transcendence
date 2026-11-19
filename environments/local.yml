@@ -8,10 +8,10 @@ variables:
     value: "v2"
     type: string
     description: "Version prefix for the new room and game lifecycle contracts"
-  - name: chatApiVersion
+  - name: notificationApiVersion
     value: "v2"
     type: string
-    description: "Version prefix for the new Channel Service and Chat Gateway contracts"
+    description: "Version prefix for the Notification Gateway socket contract"
   - name: baseUrl
     value: "http://localhost:3000"
     type: string
@@ -19,11 +19,7 @@ variables:
   - name: wsUrl
     value: "ws://localhost:3000"
     type: string
-    description: "Local Game Gateway WebSocket origin"
-  - name: chatWsUrl
-    value: "ws://localhost:3000"
-    type: string
-    description: "Same-origin Chat Gateway route through the local reverse proxy"
+    description: "Local same-origin WebSocket origin for the Game Gateway and Notification Gateway routes"
   - name: userId
     value: "42"
     type: number
@@ -36,10 +32,6 @@ variables:
     value: "5001"
     type: number
     description: "Canonical match ID used by state examples"
-  - name: channelId
-    value: "7001"
-    type: number
-    description: "Current direct-chat channel ID"
   - name: userInternalUrl
     value: ""
     type: string
@@ -60,10 +52,10 @@ variables:
     value: ""
     type: string
     description: "Local Game Gateway-to-Auth service credential; set only in uncommitted local configuration"
-  - name: channelToUserServiceCredential
+  - name: gameSessionToUserServiceCredential
     value: ""
     type: string
-    description: "Local Channel Service-to-User service credential; set only in uncommitted local configuration"
+    description: "Local Game Session-to-User service credential; set only in uncommitted local configuration"
   - name: gameInternalUrl
     value: ""
     type: string

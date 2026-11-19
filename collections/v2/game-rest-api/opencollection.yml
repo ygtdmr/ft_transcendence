@@ -35,13 +35,12 @@ docs:
     | `GET` | `/api/v2/rooms/{room_id}/presence` | Read global online state of current members |
     | `DELETE` | `/api/v2/rooms/{room_id}/members/me` | Exit; when currently `IN_GAME`, record a participant's leave penalty and recheck staffing |
     | `GET` | `/api/v2/rooms/lookup/{room_code}` | Resolve a room code |
-    | `POST` | `/api/v2/rooms/{room_id}/invites` | Send a transient invite through Chat Gateway v2 |
 
     ## Version-defining behavior
 
     Room status is `WAITING | COUNTDOWN | IN_GAME | POST_GAME | CLOSED`; game status is separately `IN_PROGRESS | GAME_FINISHED | GAME_CANCELLED`; member state is `IN_LOBBY | IN_GAME | POST_GAME`. Every join starts unseated: `team:null`, `role:null`, `ready:false`; there is no spectator role. After a terminal result, snapshots are recipient-specific: returned members see the lobby and `last_game`, while pending members continue seeing the completed game and common deadline.
 
-    Team, role, readiness, room settings, host kick, Back to Lobby, countdown, and gameplay mutations are WebSocket v2 commands. REST remains responsible for room membership bootstrapping, snapshots, explicit Exit, lookup, and invites.
+    Team, role, readiness, room settings, host kick, Back to Lobby, countdown, and gameplay mutations are WebSocket v2 commands. REST remains responsible for room membership bootstrapping, snapshots, explicit Exit, and lookup.
 
     ## Response conventions
 

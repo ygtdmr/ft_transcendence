@@ -106,4 +106,4 @@ docs: |-
 
   ## Scope boundary
 
-  There is no rematch, spectator, bot, matchmaking, room-password, kick/ban, custom-board, or custom-timer protocol in this revision. Basic chat is documented in `08 - Chat`.
+  There is no rematch, spectator, bot, matchmaking, room-password, kick/ban, custom-board, or custom-timer protocol in this revision.

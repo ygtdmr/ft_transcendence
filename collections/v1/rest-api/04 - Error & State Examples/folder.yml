@@ -33,14 +33,12 @@ docs: |-
   | `401` | `UNAUTHORIZED` | `A valid active session is required.` | every other protected endpoint |
   | `404` | `USER_NOT_FOUND` | `User 9999 was not found.` | public profile, add friend |
   | `409` | `ALREADY_FRIENDS` | `User 43 is already a friend.` | add friend |
-  | `404` | `NOT_FRIENDS` | `User 9999 is not a friend.` | remove friend, invite friend |
+  | `404` | `NOT_FRIENDS` | `User 9999 is not a friend.` | remove friend |
   | `404` | `ROOM_NOT_FOUND` | `Room 9999 was not found.` | join, get, leave, lookup |
-  | `409` | `ROOM_NOT_JOINABLE` | `Room 1001 is not joinable while status is COUNTDOWN.` | join, invite friend |
-  | `409` | `ROOM_FULL` | `Room 1001 is full (8 of 8 players).` | join, invite friend |
-  | `409` | `USER_OFFLINE` | `User 43 is not online.` | invite friend |
-  | `409` | `USER_IN_ROOM` | `User 43 already belongs to an active room.` | invite friend |
+  | `409` | `ROOM_NOT_JOINABLE` | `Room 1001 is not joinable while status is COUNTDOWN.` | join |
+  | `409` | `ROOM_FULL` | `Room 1001 is full (8 of 8 players).` | join |
   | `409` | `ALREADY_IN_ROOM` | `User 46 already belongs to active room 1002.` | create, join |
-  | `403` | `NOT_ROOM_MEMBER` | `User 47 is not a member of room 1001.` | get, leave, invite friend |
+  | `403` | `NOT_ROOM_MEMBER` | `User 47 is not a member of room 1001.` | get, leave |
   | `422` | `INVALID_AVATAR_PRESET` | `Avatar preset 'dragon' does not exist.` | select avatar preset |
   | `422` | `INVALID_IMAGE` | `Avatar must be image/jpeg, image/png, or image/webp under 2 MiB.` | upload avatar |
   | `422` | `CONFIRMATION_MISMATCH` | `confirm_username must match your current username.` | delete own account |

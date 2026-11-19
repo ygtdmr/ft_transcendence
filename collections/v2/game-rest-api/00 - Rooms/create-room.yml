@@ -82,7 +82,7 @@ docs: |-
 
   ## State changes and events
 
-  Sets the user's `active_room_id` and durably records an outbox event keyed by `room_id`. Channel Service consumes it and idempotently provisions exactly one Chat v2 `ROOM` channel. Room creation does not roll back when Chat infrastructure is temporarily unavailable; the outbox retries until delivery. The frontend treats room chat as provisioning until `chat.channel.available` arrives or the channel appears in `GET /api/v2/channels`. There is no client create-room-channel request. Repeated delivery for the same `room_id` returns the same channel and never creates a duplicate.
+  Sets the user's `active_room_id` and durably records an outbox event keyed by `room_id`.
 
   `room_code` is generated server-side, is not reused while the room is active, and is the value shown to the room creator to share for Join Room. See `Lookup room by code` for how another client resolves it back to `room_id`.
 

@@ -1,0 +1,31 @@
+info:
+  name: Connect to Notification Gateway
+  type: websocket
+  seq: 1
+  tags: [connection, notifications, presence, gateway]
+websocket:
+  url: "{{wsUrl}}/ws/{{notificationApiVersion}}/notifications"
+settings:
+  timeout: 30000
+  keepAliveInterval: 20000
+docs: |-
+  # Connect to Notification Gateway
+
+  Opens one authenticated, per-user realtime connection directly to Notification Gateway. The HttpOnly `ft_session` cookie is the only credential; the gateway validates Origin first, then asks Auth Service to validate the active session through its internal session-validation operation. Admission does not require User, Stats or Game Session data. After upgrade it registers the connection under the authenticated `user_id` and `session_id` in its in-memory socket registry. Multi-tab connections are supported. Disconnect removes this connection; User Service queries the registry over internal REST for current presence.
+
+  Success is `101 Switching Protocols`. The gateway then emits `notifications.ready` with the authenticated `user_id` and `connected_at`. The socket does not replay missed events; after every `notifications.ready` that follows a drop, the client reloads `GET /api/v1/friends` and `GET /api/v1/friends/requests`.
+
+  ```json
+  {
+    "type": "notifications.ready",
+    "sent_at": "2026-09-10T08:40:00Z",
+    "payload": {
+      "user_id": 42,
+      "connected_at": "2026-09-10T08:40:00Z"
+    }
+  }
+  ```
+
+  The socket accepts no client commands: any client frame receives `{"type":"error","payload":{"code":"INVALID_EVENT"}}` and the socket stays open; repeated protocol abuse may close it after an error.
+
+  Handshake failures: `401 UNAUTHORIZED` for an invalid session and `403 ORIGIN_NOT_ALLOWED` for a rejected origin. If the session is explicitly revoked after connection, Notification Gateway emits `UNAUTHORIZED` when possible and closes every local socket associated with that `session_id` with `4401`; the revocation notification reaches every Gateway instance and leaves the user's other active sessions open.

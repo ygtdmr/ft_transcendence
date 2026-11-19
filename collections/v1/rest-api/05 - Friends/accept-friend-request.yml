@@ -25,7 +25,7 @@ docs: |-
 
   ## Success behavior
 
-  `200 OK` returns the new friend, in the `List friends` entry shape (`user_id`, `username`, `avatar_url`, `is_online`). Both users' Chat v2 sockets receive `friend.request.resolved` with `status: ACCEPTED` and the new friend for each side, so both friend lists update without a reload.
+  `200 OK` returns the new friend, in the `List friends` entry shape (`user_id`, `username`, `avatar_url`, `is_online`). Both users' notification sockets receive `friend.request.resolved` with `status: ACCEPTED` and the new friend for each side, so both friend lists update without a reload.
 
   ## Errors
 

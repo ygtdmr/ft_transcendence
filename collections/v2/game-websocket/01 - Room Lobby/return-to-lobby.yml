@@ -23,7 +23,7 @@ docs: |-
 
   Returning preserves `room_id`, `room_code`, membership, host, team, and role. It hides the completed board/turn/score from that returned member's lobby projection and exposes the completed match there as `last_game`; the server retains the completed-game projection for members who remain `POST_GAME`. Competitive completion requires full affiliations for users already in the room; exact delivery and historical-access details require contract review, and cancelled-game disclosure is unresolved. Readiness resets to `false`. A new game is created only after every remaining member is `IN_LOBBY` and the ordinary start predicate becomes valid.
 
-  The requester independently regains access to the room's Chat v2 `ROOM` channel. Chat Gateway emits `chat.channel.access_changed` with `access:ACTIVE` and reason `BACK_TO_LOBBY`; members still in `POST_GAME` remain unable to list, read, or send to that channel.
+  
 
   Requester ack:
 

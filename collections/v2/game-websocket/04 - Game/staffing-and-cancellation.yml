@@ -86,7 +86,7 @@ docs: |-
   }
   ```
 
-  If either team's deadline expires first, the game is cancelled without a winner and the room shuts down. The server emits `game.cancelled`, then `room.closed`, then closes every room socket with `4404`. It clears every remaining membership (`active_room_id` becomes `null`), all temporary room and game state, and ROOM chat access, and releases the room code. No `room.post_game.started` follows and there is no post-game decision window. Clients return every remaining member to the Lobby with a notice built from `room.closed.payload.reason`.
+  If either team's deadline expires first, the game is cancelled without a winner and the room shuts down. The server emits `game.cancelled`, then `room.closed`, then closes every room socket with `4404`. It clears every remaining membership (`active_room_id` becomes `null`), and all temporary room and game state, and releases the room code. No `room.post_game.started` follows and there is no post-game decision window. Clients return every remaining member to the Lobby with a notice built from `room.closed.payload.reason`.
 
   ```json
   {

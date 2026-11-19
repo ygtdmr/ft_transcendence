@@ -1,0 +1,10 @@
+info:
+  name: 00 - Notification Gateway
+  type: folder
+  seq: 0
+docs: |-
+  # Notification Gateway
+
+  Auth Service validates the socket session. User Service owns canonical profiles, social relationships, social/profile notifications and presence queries. Notification Gateway only authenticates connections, keeps the per-user socket registry and delivers User Service events; it holds no domain data and makes no authorization decision beyond session validity.
+
+  The browser connects to the same public origin at `{{wsUrl}}/ws/{{notificationApiVersion}}/notifications`; the reverse proxy routes that path directly to Notification Gateway, separate from Game Gateway. Multi-tab connections are supported and every event reaches all of the affected user's open notification sockets.

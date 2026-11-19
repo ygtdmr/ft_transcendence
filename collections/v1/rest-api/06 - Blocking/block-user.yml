@@ -32,7 +32,7 @@ docs: |-
   | `data.user_id` | integer | yes | no | positive | Blocked user |
   | `data.blocked_at` | `string<date-time>` | yes | no | ISO 8601 UTC | When the block started |
 
-  Emitted on Chat v2 sockets: `friend.request.resolved` with `status: CANCELLED` to both users for each cancelled request; `friend.removed` to both users when a friendship was suspended; `chat.channel.access_changed` with `access: INACTIVE` for their DIRECT channel, reason `USER_BLOCKED` to the blocker and `FRIENDSHIP_REMOVED` to the blocked user, so the block itself is never revealed.
+  Emitted on notification sockets: `friend.request.resolved` with `status: CANCELLED` to both users for each cancelled request; `friend.removed` to both users when a friendship was suspended, so the block itself is never revealed.
 
   ## Errors
 
