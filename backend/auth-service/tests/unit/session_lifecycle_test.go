@@ -22,8 +22,11 @@ type lifecycleSpy struct {
 }
 
 func (s *lifecycleSpy) CurrentMembership(context.Context, int64) (service.Membership, error) {
-	if s.failure == "membership" {
-		return service.Membership{}, errors.New("private Game outage")
+	switch s.failure {
+	case "membership":
+		return service.Membership{}, errors.New("private Game configuration fault")
+	case "membership-unavailable":
+		return service.Membership{}, fmt.Errorf("%w: private Game outage", service.ErrMembershipUnavailable)
 	}
 	return s.membership, nil
 }
@@ -60,7 +63,7 @@ func (s *lifecycleSpy) SessionRevoked(ctx context.Context, _ int64, id, _ string
 func TestLiveSessionMembership(t *testing.T) {
 	roomID, version := int64(1001), "v2"
 	lifecycle := &lifecycleSpy{membership: service.Membership{RoomID: &roomID, APIVersion: &version}}
-	auth, repo, registered := registeredSession(t, service.WithSessionLifecycle(lifecycle))
+	auth, repo, registered := registeredSession(t, service.WithMembershipReader(lifecycle))
 	lifecycle.repo = repo
 	identity, err := auth.Authenticate(context.Background(), registered.Credentials.AccessToken)
 	if err != nil {
@@ -80,8 +83,30 @@ func TestLiveSessionMembership(t *testing.T) {
 		t.Fatal("inconsistent Game membership was reported as valid")
 	}
 	lifecycle.failure = "membership"
-	if _, err := auth.CurrentSession(context.Background(), identity); err == nil {
-		t.Fatal("Game outage was reported as an empty membership")
+	if _, err := auth.CurrentSession(context.Background(), identity); err == nil || errors.Is(err, service.ErrServiceUnavailable) {
+		t.Fatalf("Game configuration fault = %v, want a plain error", err)
+	}
+	lifecycle.failure = "membership-unavailable"
+	if _, err := auth.CurrentSession(context.Background(), identity); !errors.Is(err, service.ErrServiceUnavailable) {
+		t.Fatalf("Game outage = %v, want ErrServiceUnavailable", err)
+	}
+}
+
+// TestMembershipReaderIsIndependentOfLifecycle checks that a membership reader
+// alone does not make logout call Game departure or Gateway closure.
+func TestMembershipReaderIsIndependentOfLifecycle(t *testing.T) {
+	reader := &lifecycleSpy{}
+	auth, repo, registered := registeredSession(t, service.WithMembershipReader(reader))
+	reader.repo = repo
+	identity, err := auth.Authenticate(context.Background(), registered.Credentials.AccessToken)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := auth.Logout(context.Background(), identity); err != nil {
+		t.Fatal(err)
+	}
+	if len(reader.ended) != 0 || len(reader.closed) != 0 {
+		t.Fatal("membership reader was used as a session lifecycle")
 	}
 }
 
