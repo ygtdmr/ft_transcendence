@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/client/authclient"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/client/gatewayclient"
@@ -90,6 +91,11 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 			_ = avatarStorage.Close()
 			pool.Close()
 		}
+		sweep := service.NewAvatarSweep(avatarStorage, userpostgres.NewAvatars(pool))
+		sweep.OnError = func(name string, err error) {
+			logger.Warn("unreferenced avatar file could not be removed", "name", name, "error", err)
+		}
+		cleanup = startAvatarSweep(ctx, sweep, cleanup, logger)
 	}
 
 	public := []server.RouteRegistrar{controller.NewAvatarFiles(avatarReader)}
@@ -171,4 +177,40 @@ func (p publicStats) PublicStats(ctx context.Context, userID int64) (service.Pub
 
 	return service.PublicStats{Level: stats.Level, Wins: stats.Wins, Losses: stats.Losses,
 		MatchesPlayed: stats.MatchesPlayed}, nil
+}
+
+// avatarSweepInterval is how often unreferenced avatar files are removed.
+const avatarSweepInterval = time.Hour
+
+// startAvatarSweep removes unreferenced avatar files at startup and then every
+// avatarSweepInterval until shutdown. The returned cleanup stops the sweep,
+// waits for it, then runs next.
+func startAvatarSweep(ctx context.Context, sweep *service.AvatarSweep, next func(), logger *slog.Logger) func() {
+	sweepCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		ticker := time.NewTicker(avatarSweepInterval)
+		defer ticker.Stop()
+		for {
+			removed, err := sweep.Sweep(sweepCtx, time.Now())
+			switch {
+			case err != nil && sweepCtx.Err() == nil:
+				logger.ErrorContext(sweepCtx, "avatar_sweep_failed", "error", err)
+			case removed > 0:
+				logger.InfoContext(sweepCtx, "unreferenced avatar files removed", "count", removed)
+			}
+			select {
+			case <-sweepCtx.Done():
+				return
+			case <-ticker.C:
+			}
+		}
+	}()
+
+	return func() {
+		cancel()
+		<-done
+		next()
+	}
 }
