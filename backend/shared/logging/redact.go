@@ -3,34 +3,18 @@ package logging
 import (
 	"context"
 	"log/slog"
-	"strings"
 
 	"github.com/melmut-42/ft_transcendence/backend/shared/requestid"
+	"github.com/melmut-42/ft_transcendence/backend/shared/sensitive"
 	"github.com/melmut-42/ft_transcendence/backend/shared/tracecontext"
 )
 
 // Redacted replaces the value of a sensitive attribute.
-const Redacted = "[REDACTED]"
+const Redacted = sensitive.Redacted
 
-// sensitiveFragments are lower-case substrings of attribute keys whose values
-// must never reach a log sink: credentials, tokens, session material and
-// authorization headers. Matching is on the key, so "refresh_token",
-// "Authorization" and "set-cookie" are all covered.
-var sensitiveFragments = []string{
-	"password", "passwd", "secret", "token", "jwt", "cookie", "authorization",
-	"credential", "api_key", "apikey", "private_key", "session_id", "csrf",
-}
-
-// IsSensitiveKey reports whether values logged under key must be redacted.
-func IsSensitiveKey(key string) bool {
-	lower := strings.ToLower(key)
-	for _, fragment := range sensitiveFragments {
-		if strings.Contains(lower, fragment) {
-			return true
-		}
-	}
-	return false
-}
+// IsSensitiveKey reports whether values logged under key must be redacted. The
+// rule is shared with API error responses (see package sensitive).
+func IsSensitiveKey(key string) bool { return sensitive.IsKey(key) }
 
 // contextHandler wraps a handler to (1) redact sensitive attribute keys at any
 // depth and (2) add request_id, trace_id and span_id from the context when the

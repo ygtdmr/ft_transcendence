@@ -48,6 +48,7 @@ func WriteData(writer http.ResponseWriter, status int, data any) {
 		WriteError(writer, InternalError())
 		return
 	}
+	setAPIHeaders(writer.Header())
 	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 	writer.WriteHeader(status)
 	_, _ = writer.Write(append(body, '\n'))
@@ -55,5 +56,6 @@ func WriteData(writer http.ResponseWriter, status int, data any) {
 
 // WriteNoContent writes 204 with no body and no Content-Type.
 func WriteNoContent(writer http.ResponseWriter) {
+	setAPIHeaders(writer.Header())
 	writer.WriteHeader(http.StatusNoContent)
 }
