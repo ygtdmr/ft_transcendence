@@ -35,9 +35,10 @@ func (r *Reader) Common(service string, defaultPort int) Common {
 		Environment: env,
 		Port:        r.Port("PORT", defaultPort),
 		Logging: logging.Config{
-			Format:  r.Enum("LOG_FORMAT", format, "text", "json"),
-			Level:   r.Enum("LOG_LEVEL", level, "debug", "info", "warn", "error"),
-			Service: service,
+			Format:      r.Enum("LOG_FORMAT", format, "text", "json"),
+			Level:       r.Enum("LOG_LEVEL", level, "debug", "info", "warn", "error"),
+			Service:     service,
+			Environment: string(env),
 		},
 	}
 }

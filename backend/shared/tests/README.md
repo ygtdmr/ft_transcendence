@@ -17,6 +17,12 @@ go test -coverpkg=./httpresponse,./logging,./pagination,./postgres ./tests/...
 Real PostgreSQL connectivity requires `POSTGRES_TEST_DATABASE_URL`. That test is
 skipped when the variable is unset.
 
+The lifecycle tests (`tests/integration/lifecycle_test.go`) need no external
+services: they start real HTTP servers, and `TestServeHandlesARealSIGTERM` builds
+`tests/integration/testdata/lifecycle_server` with the local `go` toolchain and
+sends the process a real `SIGTERM`. Only `TestReadinessTracksARealPostgresOutage`
+needs `POSTGRES_TEST_DATABASE_URL` plus `POSTGRES_TEST_CONTAINER`.
+
 The dependency tests (`tests/integration/dependencies_test.go`) are skipped per
 variable: `RABBITMQ_TEST_URL`, `REDIS_TEST_URL` (AOF on, with a password),
 `REDIS_TEST_URL_NO_AOF`. The outage drills additionally need

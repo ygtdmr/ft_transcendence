@@ -13,6 +13,9 @@ type Config struct {
 	Format  string
 	Level   string
 	Service string
+	// Environment, when set, is added to every record as "environment" so logs
+	// from different deployment tiers can be told apart without the log pipeline.
+	Environment string
 }
 
 // Validate rejects unsupported formats and levels before creating a logger.
@@ -41,6 +44,12 @@ func (cfg Config) level() (slog.Level, error) {
 
 // New creates a concurrency-safe logger using only the standard library.
 // Both formats use UTC RFC3339Nano timestamps and a fixed service attribute.
+//
+// Every logger New returns also (1) redacts the values of attributes whose keys
+// look like credentials (password, token, cookie, authorization, ...) at any
+// depth, and (2) adds request_id to records written with a request context, so
+// logger.InfoContext(ctx, ...) correlates with the access log without the
+// caller passing the ID by hand.
 func New(cfg Config, output io.Writer) (*slog.Logger, error) {
 	if err := cfg.Validate(); err != nil {
 		return nil, err
@@ -61,5 +70,9 @@ func New(cfg Config, output io.Writer) (*slog.Logger, error) {
 	} else {
 		handler = slog.NewTextHandler(output, options)
 	}
-	return slog.New(handler).With("service", cfg.Service), nil
+	logger := slog.New(contextHandler{next: handler}).With("service", cfg.Service)
+	if cfg.Environment != "" {
+		logger = logger.With("environment", cfg.Environment)
+	}
+	return logger, nil
 }
