@@ -41,6 +41,13 @@ func (h *OwnProfileController) read(c *gin.Context) error {
 	if err != nil {
 		return err
 	}
+	writeOwnProfile(c, profile)
+
+	return nil
+}
+
+// writeOwnProfile writes the twelve Get own profile fields.
+func writeOwnProfile(c *gin.Context, profile service.OwnProfile) {
 	c.JSON(http.StatusOK, gin.H{"data": gin.H{
 		"user_id":                 profile.UserID,
 		"username":                profile.Username,
@@ -55,6 +62,4 @@ func (h *OwnProfileController) read(c *gin.Context) error {
 		"active_room_api_version": profile.Membership.APIVersion,
 		"created_at":              profile.CreatedAt.UTC().Format(receiptTimeLayout),
 	}})
-
-	return nil
 }

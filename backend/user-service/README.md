@@ -164,6 +164,15 @@ deletion, a missing profile or account, or an account that is not `ACTIVE` is
 `503 SERVICE_UNAVAILABLE`, never zero counters or no active room. The route is
 served with the public profile route, so it needs the Stats settings.
 
+`PATCH /api/v1/users/me` takes `{"username": string}` with `username`
+optional; any other field is `400`. The trimmed name follows the registration
+rule (`^[A-Za-z0-9_]{3,20}$`, unique without regard to letter case): a
+malformed or null value is `422 INVALID_USERNAME` and a name another user
+holds is `409 USERNAME_TAKEN`. The change takes the account lock and records
+`user.profile.updated` for the user, their active friends and the other side
+of each pending request in the same transaction. An identical name records
+nothing. The response has the Get own profile shape.
+
 ## Presence
 
 Presence comes from the active socket registries of every configured Game
