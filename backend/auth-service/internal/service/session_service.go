@@ -35,7 +35,7 @@ func (s *AuthService) Authenticate(ctx context.Context, raw string) (Identity, e
 	return Identity{User: user, SessionID: session.ID, ExpiresAt: claims.ExpiresAt}, nil
 }
 
-// CurrentSession obtains live room membership through the optional Game adapter.
+// CurrentSession obtains live room membership through the optional Game reader.
 func (s *AuthService) CurrentSession(ctx context.Context, identity Identity) (SessionResult, error) {
 	if err := s.checkIdentity(ctx, identity); err != nil {
 		return SessionResult{}, err
@@ -79,10 +79,13 @@ func (s *AuthService) checkIdentity(ctx context.Context, identity Identity) erro
 }
 
 func (s *AuthService) currentMembership(ctx context.Context, userID int64) (Membership, error) {
-	if s.lifecycle == nil {
+	if s.memberships == nil {
 		return Membership{}, nil
 	}
-	membership, err := s.lifecycle.CurrentMembership(ctx, userID)
+	membership, err := s.memberships.CurrentMembership(ctx, userID)
+	if errors.Is(err, ErrMembershipUnavailable) {
+		return Membership{}, fmt.Errorf("%w: %w", ErrServiceUnavailable, err)
+	}
 	if err != nil {
 		return Membership{}, err
 	}

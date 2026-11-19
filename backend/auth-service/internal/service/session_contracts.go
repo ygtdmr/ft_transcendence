@@ -78,12 +78,28 @@ type Membership struct {
 	APIVersion *string
 }
 
-// SessionLifecycle bridges Game membership, Game departure and Gateway socket closure.
+// ErrMembershipUnavailable reports that Game Session cannot answer a membership read now.
+var ErrMembershipUnavailable = errors.New("game session membership read unavailable")
+
+// MembershipReader reads the live room membership owned by Game Session.
+type MembershipReader interface {
+	// CurrentMembership returns userID's room, or both fields nil when the user
+	// is in no room. It returns ErrMembershipUnavailable when Game Session
+	// cannot answer now.
+	CurrentMembership(context.Context, int64) (Membership, error)
+}
+
+// WithMembershipReader makes current-session report the live room from Game
+// Session. Without it every session reports no active room.
+func WithMembershipReader(reader MembershipReader) Option {
+	return func(s *AuthService) { s.memberships = reader }
+}
+
+// SessionLifecycle bridges Game departure and Gateway socket closure.
 // EndSession must be idempotent: a database commit may fail after the external call.
 // SessionRevoked receives the revocation cause (RevocationSessionRevoked or
 // RevocationAccountDeleted) so Gateways can tell account deletion apart.
 type SessionLifecycle interface {
-	CurrentMembership(context.Context, int64) (Membership, error)
 	EndSession(context.Context, int64, string) error
 	SessionRevoked(ctx context.Context, userID int64, sessionID, cause string) error
 }
