@@ -14,9 +14,9 @@ import (
 	"game-session/config"
 	"game-session/postgres"
 	"game-session/rest"
-	"game-session/room"
 	"game-session/roomaction"
 	"game-session/service"
+	"game-session/userclient"
 	"game-session/worker"
 )
 
@@ -94,7 +94,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	profiles := placeholderProfiles{} // istemci hazır olana kadar
+	profiles := userclient.New(cfg.UserServiceURL, cfg.UserServiceCredential)
 	if cfg.Penalty == nil {
 		log.Warn("leave penalty is not configured, penalties will not be recorded")
 	}
@@ -102,7 +102,7 @@ func main() {
 	actions := roomaction.New(svc, profiles)
 	handler := rest.NewHandler(svc, actions, store)
 	deadlines := worker.New(store, svc, actions, log)
-//	commands := websocketprotocol.NewCommandHandler(actions, store)
+	//	commands := websocketprotocol.NewCommandHandler(actions, store)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -120,18 +120,4 @@ func main() {
 	<-ctx.Done()
 	log.Info("shutting down")
 	shutdown(server, internalServer, workerDone, log)
-}
-
-// User Service bağlantısı hazır olana kadar yalnızca deneme/kontrol için örnek profiller üretir.
-type placeholderProfiles struct{}
-
-func (placeholderProfiles) ProfilesByUserIDs(userIDs []int64) (map[int64]room.Profile, error) {
-	profiles := make(map[int64]room.Profile, len(userIDs))
-	for _, id := range userIDs {
-		profiles[id] = room.Profile{
-			Username:  fmt.Sprintf("user-%d", id),
-			AvatarURL: fmt.Sprintf("/static/avatars/default/%d.svg", id),
-		}
-	}
-	return profiles, nil
 }

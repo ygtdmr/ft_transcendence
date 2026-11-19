@@ -39,6 +39,8 @@ type RoomStore interface {
 	DeleteCommandResults(roomID int64) error
 }
 
+var ErrProfileSourceUnavailable = errors.New("user-service unavailable")
+
 type ProfileSource interface {
 	ProfilesByUserIDs(userIDs []int64) (map[int64]room.Profile, error)
 }
