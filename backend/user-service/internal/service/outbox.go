@@ -10,18 +10,13 @@ import (
 )
 
 // Integration event types published by User Service. Each one feeds the
-// matching chat-socket event described in the public contract, except
-// EventRelationshipBlocked.
+// matching notification-socket event described in the public contract.
 const (
 	EventUserProfileUpdated    = "user.profile.updated"
 	EventFriendRequestReceived = "friend.request.received"
 	EventFriendRequestResolved = "friend.request.resolved"
 	EventFriendRemoved         = "friend.removed"
 	EventFriendRestored        = "friend.restored"
-	// EventRelationshipBlocked names which user placed a block, so Channel
-	// Service can choose each user's access reason. It must never reach a
-	// user socket.
-	EventRelationshipBlocked = "relationship.blocked"
 )
 
 var knownEvents = map[string]bool{
@@ -30,7 +25,6 @@ var knownEvents = map[string]bool{
 	EventFriendRequestResolved: true,
 	EventFriendRemoved:         true,
 	EventFriendRestored:        true,
-	EventRelationshipBlocked:   true,
 }
 
 // ErrInvalidEvent reports an outbox event that cannot be recorded.

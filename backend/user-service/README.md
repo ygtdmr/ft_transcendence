@@ -35,14 +35,12 @@ environment only and does not load `.env` itself.
 | `REPORT_WINDOW`             | `24h`           | How long a reporter waits before reporting the same user again, as a Go duration. |
 | `AUTH_SERVICE_CREDENTIAL_FILE` | none, optional | File holding Auth Service's service credential (32+ characters).      |
 | `AUTH_SERVICE_PREVIOUS_CREDENTIAL_FILE` | none, optional | Previous Auth credential, accepted during a rotation.       |
-| `CHANNEL_SERVICE_CREDENTIAL_FILE` | none, optional | File holding Channel Service's service credential (32+ characters). |
-| `CHANNEL_SERVICE_PREVIOUS_CREDENTIAL_FILE` | none, optional | Previous Channel Service credential, accepted during a rotation. |
 | `GAME_SESSION_CREDENTIAL_FILE` | none, optional | File holding Game Session's service credential (32+ characters). |
 | `GAME_SESSION_PREVIOUS_CREDENTIAL_FILE` | none, optional | Previous Game Session credential, accepted during a rotation. |
 | `WEB_BFF_CREDENTIAL_FILE` | none, optional | File holding Web BFF's service credential (32+ characters). |
 | `WEB_BFF_PREVIOUS_CREDENTIAL_FILE` | none, optional | Previous Web BFF credential, accepted during a rotation. |
-| `GAME_GATEWAY_INTERNAL_URLS`, `CHAT_GATEWAY_INTERNAL_URLS` | none | Comma-separated private origins of every running Gateway instance. Required in production. |
-| `GAME_GATEWAY_OUTBOUND_CREDENTIAL_FILE`, `CHAT_GATEWAY_OUTBOUND_CREDENTIAL_FILE` | none | This service's credential for each Gateway kind. Set with the URLs. |
+| `GAME_GATEWAY_INTERNAL_URLS`, `NOTIFICATION_GATEWAY_INTERNAL_URLS` | none | Comma-separated private origins of every running Gateway instance. Required in production. |
+| `GAME_GATEWAY_OUTBOUND_CREDENTIAL_FILE`, `NOTIFICATION_GATEWAY_OUTBOUND_CREDENTIAL_FILE` | none | This service's credential for each Gateway kind. Set with the URLs. |
 | `GATEWAY_INTERNAL_TIMEOUT` | `5s` | Upper bound for one registry query, as a Go duration. |
 | `STATS_INTERNAL_URL`, `STATS_SERVICE_OUTBOUND_CREDENTIAL_FILE` | none | Stats' private listener and this service's credential for it. Required in production; without them the public profile route is not served. |
 | `STATS_INTERNAL_TIMEOUT` | `5s` | Upper bound for one call to Stats, as a Go duration. |
@@ -67,8 +65,8 @@ one as previous, switch the caller, then remove the previous file.
 | `PUT /internal/v1/provisioning-operations/{operation_id}` | `auth-service`, `profile.provision` | Create the profile once per operation |
 | `GET /internal/v1/provisioning-operations/{operation_id}` | `auth-service`, `provisioning.read` | Read an operation's receipt |
 | `GET /internal/v1/provisioning-operations?user_id=` | `auth-service`, `provisioning.read` | Read the receipt of a user's operation |
-| `GET /internal/v1/profiles/{user_id}` | `auth-service`, `profile.read` | Read the current canonical profile |
-| `GET /internal/v1/friendship-verdicts?actor_user_id=&target_user_id=` | `channel-service`, `game-session`, `friend.verdict` | Read the active-friend verdict |
+| `GET /internal/v1/profiles/{user_id}` | `auth-service`, `game-session`, `profile.read` | Read the current canonical profile |
+| `GET /internal/v1/friendship-verdicts?actor_user_id=&target_user_id=` | no caller currently, `friend.verdict` | Read the active-friend verdict |
 | `GET /internal/v1/presence?user_id=` | `web-bff`, `presence.read` | Read presence for 1 to 100 users |
 
 Provisioning takes `user_id`, `username` and `created_at` in the body. It
@@ -159,7 +157,7 @@ profile at `GET /api/v1/users/me` is not served yet.
 ## Presence
 
 Presence comes from the active socket registries of every configured Game
-Gateway and Chat Gateway instance, queried concurrently through
+Gateway and Notification Gateway instance, queried concurrently through
 `GET /internal/v1/connections` on each read; the service stores no presence
 state. A user is online when any instance reports them and offline when every
 instance answers without reporting them. Otherwise presence is unknown, and the
@@ -211,22 +209,19 @@ A change that other services must learn about records its event with
 `postgres.AppendEvent` inside the change's own transaction, so the change and
 the event commit or roll back together. Event types come from the catalog in
 `internal/service/outbox.go` (`user.profile.updated`, `friend.request.received`,
-`friend.request.resolved`, `friend.removed`, `friend.restored`,
-`relationship.blocked`); other types are refused.
+`friend.request.resolved`, `friend.removed`, `friend.restored`); other types
+are refused.
 
 Block changes record these payloads:
 
 | Event                     | Payload                                                 | Consumers                   |
 | ------------------------- | ------------------------------------------------------- | --------------------------- |
-| `friend.request.resolved` | `request_id`, `from_user_id`, `to_user_id`, `status`    | Chat Gateway                |
-| `friend.removed`          | `user_low`, `user_high`                                 | Chat Gateway                |
-| `friend.restored`         | `users`: both users, ordered by `user_id`               | Chat Gateway                |
-| `relationship.blocked`    | `blocker_id`, `blocked_id`                              | Channel Service only        |
+| `friend.request.resolved` | `request_id`, `from_user_id`, `to_user_id`, `status`    | Notification Gateway        |
+| `friend.removed`          | `user_low`, `user_high`                                 | Notification Gateway        |
+| `friend.restored`         | `users`: both users, ordered by `user_id`               | Notification Gateway        |
 
-`relationship.blocked` is recorded only when a block suspends a friendship, before
-that friendship's `friend.removed`. It names which user placed the block so
-Channel Service can choose each user's access reason. It must never be delivered
-to a user socket.
+No block event names the blocker: the blocked user sees an ordinary
+`friend.removed` or a cancelled request.
 
 Removing a friend records `friend.removed` with the same payload, in the same
 transaction that deletes the friendship.

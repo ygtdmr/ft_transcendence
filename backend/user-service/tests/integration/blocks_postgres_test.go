@@ -111,7 +111,7 @@ func TestBlockCancelsRequestPostgres(t *testing.T) {
 		payloadKeys(resolved[0]) != "from_user_id,request_id,status,to_user_id" {
 		t.Fatalf("resolved events = %v", resolved)
 	}
-	if got := count(t, pool, `SELECT count(*) FROM outbox WHERE event_type IN ('friend.removed', 'friend.restored', 'relationship.blocked')`); got != 0 {
+	if got := count(t, pool, `SELECT count(*) FROM outbox WHERE event_type IN ('friend.removed', 'friend.restored')`); got != 0 {
 		t.Fatalf("friendship events = %d, want 0", got)
 	}
 
@@ -132,13 +132,13 @@ func TestBlockCancelsRequestPostgres(t *testing.T) {
 //
 // Expected output:
 //
-//   - A block keeps the row inactive and records friend.removed, which does not
-//     name the blocker, and relationship.blocked, which does.
+//   - A block keeps the row inactive and records only friend.removed, which
+//     does not name the blocker.
 //   - A repeated block returns the original time and records nothing.
 //   - The friendship returns only after both blocks are lifted, with one
 //     friend.restored carrying both users in id order.
 //   - A repeated unblock records nothing.
-//   - friend.removed, relationship.blocked and friend.restored share one aggregate.
+//   - friend.removed and friend.restored share one aggregate, and no event names the blocker.
 func TestBlockSuspendsAndRestoresPostgres(t *testing.T) {
 	pool := schemaPool(t)
 	seedProfiles(t, pool, 8, 5)
@@ -155,17 +155,12 @@ func TestBlockSuspendsAndRestoresPostgres(t *testing.T) {
 		payloadKeys(removed[0]) != "user_high,user_low" {
 		t.Fatalf("removed events = %v", removed)
 	}
-	blocked := outboxPayloads(t, pool, service.EventRelationshipBlocked)
-	if len(blocked) != 1 || blocked[0]["blocker_id"] != float64(8) || blocked[0]["blocked_id"] != float64(5) {
-		t.Fatalf("relationship events = %v", blocked)
-	}
 	afterBlock := count(t, pool, `SELECT count(*) FROM outbox`)
-	if afterBlock != before+2 {
-		t.Fatalf("outbox rows = %d, want %d", afterBlock, before+2)
+	if afterBlock != before+1 {
+		t.Fatalf("outbox rows = %d, want %d", afterBlock, before+1)
 	}
-	if got := count(t, pool, `SELECT count(*) FROM outbox a JOIN outbox b ON a.aggregate_id = b.aggregate_id
-		WHERE a.event_type = 'relationship.blocked' AND b.event_type = 'friend.removed' AND a.id < b.id`); got != 1 {
-		t.Fatal("relationship.blocked must come before friend.removed")
+	if got := count(t, pool, `SELECT count(*) FROM outbox WHERE payload ? 'blocker_id' OR payload ? 'blocked_id'`); got != 0 {
+		t.Fatal("no outbox event may name the blocker")
 	}
 
 	if again := mustBlock(t, handler, 8, 5); again != blockedAt {
@@ -204,7 +199,7 @@ func TestBlockSuspendsAndRestoresPostgres(t *testing.T) {
 		t.Fatalf("restored events after repeat = %d", got)
 	}
 	if got := count(t, pool, `SELECT count(*) FROM (SELECT DISTINCT aggregate_type, aggregate_id FROM outbox
-		WHERE event_type IN ('friend.removed', 'relationship.blocked', 'friend.restored')) pairs`); got != 1 {
+		WHERE event_type IN ('friend.removed', 'friend.restored')) pairs`); got != 1 {
 		t.Fatalf("friendship aggregates = %d, want 1", got)
 	}
 }
@@ -307,8 +302,9 @@ func TestBlockRollbackPostgres(t *testing.T) {
 	if got := count(t, pool, `SELECT count(*) FROM friendships WHERE active`); got != 0 {
 		t.Fatal("the friendship must stay suspended after rollback")
 	}
-	if got := count(t, pool, `SELECT count(*) FROM outbox`); got != outbox+2 {
-		t.Fatalf("outbox rows = %d, want %d", got, outbox+2)
+	// The successful block records only friend.removed; the failed lift adds nothing.
+	if got := count(t, pool, `SELECT count(*) FROM outbox`); got != outbox+1 {
+		t.Fatalf("outbox rows = %d, want %d", got, outbox+1)
 	}
 }
 
@@ -317,7 +313,7 @@ func TestBlockRollbackPostgres(t *testing.T) {
 func friendshipEventTypes(t *testing.T, pool *pgxpool.Pool, aggregate string) []string {
 	t.Helper()
 	rows, err := pool.Query(context.Background(), `SELECT event_type FROM outbox
-		WHERE aggregate_type = 'friendship' AND aggregate_id = $1 AND event_type <> 'relationship.blocked' ORDER BY id`, aggregate)
+		WHERE aggregate_type = 'friendship' AND aggregate_id = $1 ORDER BY id`, aggregate)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -361,8 +357,8 @@ func TestBlockConcurrencyPostgres(t *testing.T) {
 	if got := count(t, pool, `SELECT count(*) FROM blocks`); got != 1 {
 		t.Fatalf("blocks = %d, want 1", got)
 	}
-	if removed, blocked := len(outboxPayloads(t, pool, service.EventFriendRemoved)), len(outboxPayloads(t, pool, service.EventRelationshipBlocked)); removed != 1 || blocked != 1 {
-		t.Fatalf("removed = %d, blocked = %d; want 1 each", removed, blocked)
+	if removed := len(outboxPayloads(t, pool, service.EventFriendRemoved)); removed != 1 {
+		t.Fatalf("removed = %d, want 1", removed)
 	}
 
 	befriend(t, handler, 3, 4)

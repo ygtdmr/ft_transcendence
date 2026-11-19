@@ -95,7 +95,7 @@ func (s *AuthService) currentMembership(ctx context.Context, userID int64) (Memb
 	return membership, nil
 }
 
-// Logout ends Game/Chat activity before committing credential revocation.
+// Logout ends Game activity before committing credential revocation.
 func (s *AuthService) Logout(ctx context.Context, identity Identity) error {
 	if err := s.checkIdentity(ctx, identity); err != nil {
 		return err

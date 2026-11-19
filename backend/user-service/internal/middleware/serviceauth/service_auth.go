@@ -30,12 +30,13 @@ const (
 type Matrix map[string][]string
 
 // DefaultMatrix returns the receiver's authorization matrix from the private contract.
+// No caller currently holds ScopeFriendVerdict; the route stays registered for
+// future friend-only operations.
 func DefaultMatrix() Matrix {
 	return Matrix{
-		"auth-service":    {ScopeProfileProvision, ScopeProvisioningRead, ScopeProfileRead},
-		"channel-service": {ScopeFriendVerdict},
-		"game-session":    {ScopeFriendVerdict},
-		"web-bff":         {ScopePresenceRead},
+		"auth-service": {ScopeProfileProvision, ScopeProvisioningRead, ScopeProfileRead},
+		"game-session": {ScopeProfileRead},
+		"web-bff":      {ScopePresenceRead},
 	}
 }
 

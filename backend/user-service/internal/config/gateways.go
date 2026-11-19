@@ -21,14 +21,14 @@ type Gateway struct {
 // gatewaySettings names each Gateway kind's instance list and credential file.
 var gatewaySettings = []struct{ name, urls, credential string }{
 	{"game", "GAME_GATEWAY_INTERNAL_URLS", "GAME_GATEWAY_OUTBOUND_CREDENTIAL_FILE"},
-	{"chat", "CHAT_GATEWAY_INTERNAL_URLS", "CHAT_GATEWAY_OUTBOUND_CREDENTIAL_FILE"},
+	{"notification", "NOTIFICATION_GATEWAY_INTERNAL_URLS", "NOTIFICATION_GATEWAY_OUTBOUND_CREDENTIAL_FILE"},
 }
 
 // loadGateways reads the settings for querying Gateway socket registries.
 //
 // Presence needs every registry, so the four settings are set together:
-// comma-separated private origins of every running Game Gateway and Chat
-// Gateway instance, and one credential file per Gateway kind. They are
+// comma-separated private origins of every running Game Gateway and
+// Notification Gateway instance, and one credential file per Gateway kind. They are
 // required in production. Elsewhere, when none is set, cfg.Gateways stays nil
 // and presence reports every user as offline.
 //
@@ -58,12 +58,12 @@ func (cfg *Config) loadGateways() error {
 	}
 	switch {
 	case set == 0 && cfg.Environment == "production":
-		return errors.New("GAME_GATEWAY_* and CHAT_GATEWAY_* registry settings are required in production")
+		return errors.New("GAME_GATEWAY_* and NOTIFICATION_GATEWAY_* registry settings are required in production")
 	case set == 0:
 		return nil
 	case set != 2*len(gatewaySettings):
 		return errors.New("GAME_GATEWAY_INTERNAL_URLS, GAME_GATEWAY_OUTBOUND_CREDENTIAL_FILE, " +
-			"CHAT_GATEWAY_INTERNAL_URLS and CHAT_GATEWAY_OUTBOUND_CREDENTIAL_FILE must be set together")
+			"NOTIFICATION_GATEWAY_INTERNAL_URLS and NOTIFICATION_GATEWAY_OUTBOUND_CREDENTIAL_FILE must be set together")
 	}
 
 	used := map[string]bool{cfg.AuthServiceCredential: true}

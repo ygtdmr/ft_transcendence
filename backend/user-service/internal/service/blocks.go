@@ -104,22 +104,15 @@ func friendshipEvent(first, second int64, eventType string, payload map[string]a
 	}
 }
 
-// placementEvents never names the blocker in an event bound for user sockets.
-// Only EventRelationshipBlocked carries the direction. It comes before
-// EventFriendRemoved in the friendship's order, so Channel Service knows the
-// access reason for each user before it sees the friendship end.
+// placementEvents never names the blocker: both users see an ordinary
+// friend.removed or a cancelled request.
 func placementEvents(placement BlockPlacement) []OutboxEvent {
 	var events []OutboxEvent
 	if request := placement.CancelledRequest; request != nil {
 		events = append(events, friendRequestEvent(*request, EventFriendRequestResolved, resolvedPayload(*request)))
 	}
 	if placement.FriendshipSuspended {
-		blocker, blocked := placement.Blocker.UserID, placement.Blocked.UserID
-		events = append(events,
-			friendshipEvent(blocker, blocked, EventRelationshipBlocked, map[string]any{
-				"blocker_id": blocker, "blocked_id": blocked,
-			}),
-			friendRemovedEvent(blocker, blocked))
+		events = append(events, friendRemovedEvent(placement.Blocker.UserID, placement.Blocked.UserID))
 	}
 
 	return events

@@ -24,12 +24,11 @@ func setEnvironment(t *testing.T, values map[string]string) {
 	t.Helper()
 	for _, name := range []string{"APP_ENV", "LOG_FORMAT", "LOG_LEVEL", "PORT", "INTERNAL_PORT", "DATABASE_URL", "MIGRATE_ON_START",
 		"AUTH_SERVICE_CREDENTIAL_FILE", "AUTH_SERVICE_PREVIOUS_CREDENTIAL_FILE", "AVATAR_BASE_URL", "AVATAR_STORAGE_DIR", "REPORT_WINDOW",
-		"CHANNEL_SERVICE_CREDENTIAL_FILE", "CHANNEL_SERVICE_PREVIOUS_CREDENTIAL_FILE",
 		"GAME_SESSION_CREDENTIAL_FILE", "GAME_SESSION_PREVIOUS_CREDENTIAL_FILE",
 		"AUTH_INTERNAL_URL", "AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE", "AUTH_INTERNAL_TIMEOUT",
 		"WEB_BFF_CREDENTIAL_FILE", "WEB_BFF_PREVIOUS_CREDENTIAL_FILE",
 		"GAME_GATEWAY_INTERNAL_URLS", "GAME_GATEWAY_OUTBOUND_CREDENTIAL_FILE",
-		"CHAT_GATEWAY_INTERNAL_URLS", "CHAT_GATEWAY_OUTBOUND_CREDENTIAL_FILE", "GATEWAY_INTERNAL_TIMEOUT",
+		"NOTIFICATION_GATEWAY_INTERNAL_URLS", "NOTIFICATION_GATEWAY_OUTBOUND_CREDENTIAL_FILE", "GATEWAY_INTERNAL_TIMEOUT",
 		"STATS_INTERNAL_URL", "STATS_SERVICE_OUTBOUND_CREDENTIAL_FILE", "STATS_INTERNAL_TIMEOUT"} {
 		t.Setenv(name, values[name])
 	}
@@ -79,14 +78,14 @@ func TestLoadEnvironmentDefaults(t *testing.T) {
 		t.Run(tt.environment, func(t *testing.T) {
 			setEnvironment(t, map[string]string{
 				"APP_ENV": tt.environment, "DATABASE_URL": validDatabaseURL, "AUTH_INTERNAL_URL": "http://auth-service:8090",
-				"AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE":  writeSecret(t, strings.Repeat("o", 40)),
-				"AVATAR_STORAGE_DIR":                     "/var/lib/user-service/avatars",
-				"GAME_GATEWAY_INTERNAL_URLS":             "http://game-gateway:8090",
-				"GAME_GATEWAY_OUTBOUND_CREDENTIAL_FILE":  writeSecret(t, strings.Repeat("g", 40)),
-				"CHAT_GATEWAY_INTERNAL_URLS":             "http://chat-gateway:8090",
-				"CHAT_GATEWAY_OUTBOUND_CREDENTIAL_FILE":  writeSecret(t, strings.Repeat("c", 40)),
-				"STATS_INTERNAL_URL":                     "http://stats-service:8090",
-				"STATS_SERVICE_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, strings.Repeat("t", 40)),
+				"AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE":         writeSecret(t, strings.Repeat("o", 40)),
+				"AVATAR_STORAGE_DIR":                            "/var/lib/user-service/avatars",
+				"GAME_GATEWAY_INTERNAL_URLS":                    "http://game-gateway:8090",
+				"GAME_GATEWAY_OUTBOUND_CREDENTIAL_FILE":         writeSecret(t, strings.Repeat("g", 40)),
+				"NOTIFICATION_GATEWAY_INTERNAL_URLS":            "http://notification-gateway:8090",
+				"NOTIFICATION_GATEWAY_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, strings.Repeat("c", 40)),
+				"STATS_INTERNAL_URL":                            "http://stats-service:8090",
+				"STATS_SERVICE_OUTBOUND_CREDENTIAL_FILE":        writeSecret(t, strings.Repeat("t", 40)),
 			})
 
 			cfg, err := config.Load()
@@ -276,36 +275,36 @@ func TestLoadAvatarStorage(t *testing.T) {
 	}
 }
 
-// TestLoadVerdictCallerCredentials checks the friendship verdict callers.
+// TestLoadGameSessionCallerCredentials checks the Game Session caller.
 //
 // Expected output:
 //
-//   - Channel Service and Game Session each load current and previous credentials.
+//   - Game Session loads its current and previous credentials.
+//   - Channel Service credential variables are ignored; no such caller exists.
 //   - One credential configured for two callers is refused.
-func TestLoadVerdictCallerCredentials(t *testing.T) {
-	channel, channelPrevious := strings.Repeat("h", 40), strings.Repeat("i", 40)
+func TestLoadGameSessionCallerCredentials(t *testing.T) {
 	game, gamePrevious := strings.Repeat("g", 40), strings.Repeat("j", 40)
 	setEnvironment(t, map[string]string{
-		"DATABASE_URL":                             validDatabaseURL,
-		"CHANNEL_SERVICE_CREDENTIAL_FILE":          writeSecret(t, channel),
-		"CHANNEL_SERVICE_PREVIOUS_CREDENTIAL_FILE": writeSecret(t, channelPrevious),
-		"GAME_SESSION_CREDENTIAL_FILE":             writeSecret(t, game),
-		"GAME_SESSION_PREVIOUS_CREDENTIAL_FILE":    writeSecret(t, gamePrevious),
+		"DATABASE_URL":                          validDatabaseURL,
+		"GAME_SESSION_CREDENTIAL_FILE":          writeSecret(t, game),
+		"GAME_SESSION_PREVIOUS_CREDENTIAL_FILE": writeSecret(t, gamePrevious),
 	})
+	t.Setenv("CHANNEL_SERVICE_CREDENTIAL_FILE", writeSecret(t, strings.Repeat("h", 40)))
 	cfg, err := config.Load()
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
 	}
-	for caller, want := range map[string][]string{"channel-service": {channel, channelPrevious}, "game-session": {game, gamePrevious}} {
-		got := cfg.CallerCredentials[caller]
-		if len(got) != 2 || !slices.Contains(got, want[0]) || !slices.Contains(got, want[1]) {
-			t.Fatalf("%s credentials = %d values, want current and previous", caller, len(got))
-		}
+	got := cfg.CallerCredentials["game-session"]
+	if len(got) != 2 || !slices.Contains(got, game) || !slices.Contains(got, gamePrevious) {
+		t.Fatalf("game-session credentials = %d values, want current and previous", len(got))
+	}
+	if _, ok := cfg.CallerCredentials["channel-service"]; ok {
+		t.Fatal("channel-service credentials were loaded")
 	}
 
-	shared := writeSecret(t, channel)
+	shared := writeSecret(t, game)
 	setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL,
-		"CHANNEL_SERVICE_CREDENTIAL_FILE": shared, "GAME_SESSION_CREDENTIAL_FILE": shared})
+		"WEB_BFF_CREDENTIAL_FILE": shared, "GAME_SESSION_CREDENTIAL_FILE": shared})
 	if _, err := config.Load(); err == nil {
 		t.Fatal("Load() accepted one credential for two callers")
 	}
@@ -361,10 +360,10 @@ func TestLoadAvatarBaseURL(t *testing.T) {
 // a URL with a path, a repeated instance and a reused credential are refused.
 func TestLoadGateways(t *testing.T) {
 	game := writeSecret(t, strings.Repeat("g", 40))
-	chat := writeSecret(t, strings.Repeat("c", 40))
+	notification := writeSecret(t, strings.Repeat("c", 40))
 	full := map[string]string{"DATABASE_URL": validDatabaseURL,
 		"GAME_GATEWAY_INTERNAL_URLS": "http://game-gateway-1:8090, http://game-gateway-2:8090/", "GAME_GATEWAY_OUTBOUND_CREDENTIAL_FILE": game,
-		"CHAT_GATEWAY_INTERNAL_URLS": "http://chat-gateway:8090", "CHAT_GATEWAY_OUTBOUND_CREDENTIAL_FILE": chat}
+		"NOTIFICATION_GATEWAY_INTERNAL_URLS": "http://notification-gateway:8090", "NOTIFICATION_GATEWAY_OUTBOUND_CREDENTIAL_FILE": notification}
 
 	setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL})
 	if cfg, err := config.Load(); err != nil || cfg.Gateways != nil || cfg.GatewayInternalTimeout != 5*time.Second {
@@ -382,16 +381,16 @@ func TestLoadGateways(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(cfg.Gateways) != 2 || !slices.Equal(cfg.Gateways[0].URLs, []string{"http://game-gateway-1:8090", "http://game-gateway-2:8090"}) ||
-		cfg.Gateways[0].Credential != strings.Repeat("g", 40) || !slices.Equal(cfg.Gateways[1].URLs, []string{"http://chat-gateway:8090"}) {
+		cfg.Gateways[0].Credential != strings.Repeat("g", 40) || !slices.Equal(cfg.Gateways[1].URLs, []string{"http://notification-gateway:8090"}) {
 		t.Fatalf("gateways = %+v", cfg.Gateways)
 	}
 
 	for name, change := range map[string]map[string]string{
-		"partial":        {"CHAT_GATEWAY_OUTBOUND_CREDENTIAL_FILE": ""},
-		"path":           {"CHAT_GATEWAY_INTERNAL_URLS": "http://chat-gateway:8090/x"},
-		"repeated":       {"CHAT_GATEWAY_INTERNAL_URLS": "http://game-gateway-1:8090"},
-		"shared":         {"CHAT_GATEWAY_OUTBOUND_CREDENTIAL_FILE": game},
-		"inbound reused": {"WEB_BFF_CREDENTIAL_FILE": chat},
+		"partial":        {"NOTIFICATION_GATEWAY_OUTBOUND_CREDENTIAL_FILE": ""},
+		"path":           {"NOTIFICATION_GATEWAY_INTERNAL_URLS": "http://notification-gateway:8090/x"},
+		"repeated":       {"NOTIFICATION_GATEWAY_INTERNAL_URLS": "http://game-gateway-1:8090"},
+		"shared":         {"NOTIFICATION_GATEWAY_OUTBOUND_CREDENTIAL_FILE": game},
+		"inbound reused": {"WEB_BFF_CREDENTIAL_FILE": notification},
 		"timeout":        {"GATEWAY_INTERNAL_TIMEOUT": "0s"},
 	} {
 		values := maps.Clone(full)

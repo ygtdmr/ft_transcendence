@@ -78,7 +78,7 @@ type Membership struct {
 	APIVersion *string
 }
 
-// SessionLifecycle bridges Game membership and Game/Chat departure and socket closure.
+// SessionLifecycle bridges Game membership, Game departure and Gateway socket closure.
 // EndSession must be idempotent: a database commit may fail after the external call.
 // SessionRevoked receives the revocation cause (RevocationSessionRevoked or
 // RevocationAccountDeleted) so Gateways can tell account deletion apart.
@@ -105,7 +105,7 @@ type RevocationRepository interface {
 
 type Option func(*AuthService)
 
-// WithSessionLifecycle connects the live Game/Chat owner to session HTTP operations.
+// WithSessionLifecycle connects the live Game and Gateway owners to session HTTP operations.
 func WithSessionLifecycle(lifecycle SessionLifecycle) Option {
 	return func(s *AuthService) { s.lifecycle = lifecycle }
 }
