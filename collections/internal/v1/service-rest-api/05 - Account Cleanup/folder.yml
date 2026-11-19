@@ -5,4 +5,4 @@ info:
 docs: |-
   # Account cleanup
 
-  Each account-deletion participant removes its own data when User Service's deletion coordinator calls it with one stable `operation_id`. Stats Service implements this route; other participants define theirs with their own services.
+  Each account-deletion participant removes its own data when User Service's deletion coordinator calls it with one stable `operation_id`. Stats Service and Game Session serve the same route shape on their own private listeners: `PUT /internal/v1/account-cleanups/{operation_id}` with `{ "user_id": integer }`, answering a `COMPLETED` receipt. The coordinator calls Game Session before Stats.
