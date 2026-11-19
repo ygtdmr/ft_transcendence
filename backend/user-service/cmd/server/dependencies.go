@@ -2,10 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/client/authclient"
+	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/client/gameclient"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/client/gatewayclient"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/client/statsclient"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/config"
@@ -114,9 +117,18 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 				return nil, nil, err
 			}
 			profiles := service.NewPublicProfiles(userpostgres.NewPublicProfiles(pool), publicStats{stats}, presence, avatars)
-			public = append(public, controller.NewPublicProfile(profiles, sessions))
+			memberships, err := newMemberships(cfg)
+			if err != nil {
+				cleanup()
+				return nil, nil, err
+			}
+			if cfg.GameInternalURL == "" {
+				logger.WarnContext(ctx, "GAME_INTERNAL_URL is not set; the own profile reports no active room")
+			}
+			own := service.NewOwnProfiles(profileReads, accounts{sessions}, ownStats{stats}, memberships)
+			public = append(public, controller.NewPublicProfile(profiles, sessions), controller.NewOwnProfile(own, sessions))
 		} else {
-			logger.WarnContext(ctx, "STATS_INTERNAL_URL is not set; the public profile route is not served")
+			logger.WarnContext(ctx, "STATS_INTERNAL_URL is not set; the public and own profile routes are not served")
 		}
 		if avatarStorage != nil {
 			logCleanup := func(key string, err error) {
@@ -171,4 +183,51 @@ func (p publicStats) PublicStats(ctx context.Context, userID int64) (service.Pub
 
 	return service.PublicStats{Level: stats.Level, Wins: stats.Wins, Losses: stats.Losses,
 		MatchesPlayed: stats.MatchesPlayed}, nil
+}
+
+// ownStats adapts the Stats client to the counters an own profile shows.
+type ownStats struct{ client *statsclient.Client }
+
+// OwnStats implements service.OwnStatsReader, keeping penalty points.
+func (o ownStats) OwnStats(ctx context.Context, userID int64) (service.OwnStats, error) {
+	stats, err := o.client.UserStats(ctx, userID)
+	if err != nil {
+		return service.OwnStats{}, err
+	}
+
+	return service.OwnStats{PublicStats: service.PublicStats{Level: stats.Level, Wins: stats.Wins, Losses: stats.Losses,
+		MatchesPlayed: stats.MatchesPlayed}, PenaltyPoints: stats.PenaltyPoints}, nil
+}
+
+// accounts adapts the Auth client to the account metadata an own profile shows.
+type accounts struct{ client *authclient.Client }
+
+// Account implements service.AccountReader.
+func (a accounts) Account(ctx context.Context, userID int64) (service.Account, error) {
+	account, err := a.client.AccountMetadata(ctx, userID)
+	switch {
+	case errors.Is(err, authclient.ErrAccountNotFound):
+		return service.Account{}, service.ErrAccountNotFound
+	case errors.Is(err, authclient.ErrUnavailable):
+		return service.Account{}, fmt.Errorf("%w: auth: %w", service.ErrUnavailable, err)
+	case err != nil:
+		return service.Account{}, err
+	}
+
+	return service.Account{Email: account.Email, Status: account.Status, CreatedAt: account.CreatedAt}, nil
+}
+
+// newMemberships returns the Game Session membership reader, or NoMembership
+// when cfg has no Game Session settings, which Load allows only outside
+// production.
+//
+// Errors:
+//
+//   - The Game client cannot be created; see gameclient.New.
+func newMemberships(cfg config.Config) (service.MembershipReader, error) {
+	if cfg.GameInternalURL == "" {
+		return service.NoMembership{}, nil
+	}
+
+	return gameclient.New(cfg.GameInternalURL, cfg.GameServiceCredential, cfg.GameInternalTimeout)
 }
