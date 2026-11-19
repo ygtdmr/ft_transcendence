@@ -42,9 +42,9 @@ func (s *instanceStub) Connected(_ context.Context, userIDs []int64) ([]int64, e
 func TestPresenceStates(t *testing.T) {
 	outage := errors.New("registry down")
 	game := &instanceStub{connected: map[int64]bool{1: true}}
-	chat := &instanceStub{connected: map[int64]bool{2: true}}
+	notification := &instanceStub{connected: map[int64]bool{2: true}}
 
-	online, err := service.NewPresence(game, chat).Online(context.Background(), []int64{3, 2, 1, 2})
+	online, err := service.NewPresence(game, notification).Online(context.Background(), []int64{3, 2, 1, 2})
 	if err != nil || !maps.Equal(online, map[int64]bool{1: true, 2: true, 3: false}) {
 		t.Fatalf("all answer = %v, %v", online, err)
 	}

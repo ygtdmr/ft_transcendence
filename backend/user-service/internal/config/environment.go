@@ -38,7 +38,7 @@ type Config struct {
 	AuthInternalURL       string
 	AuthServiceCredential string `json:"-"`
 	AuthInternalTimeout   time.Duration
-	// Gateways lists the Game Gateway and Chat Gateway instances queried for
+	// Gateways lists the Game Gateway and Notification Gateway instances queried for
 	// presence, or nil outside production when none is configured.
 	Gateways               []Gateway
 	GatewayInternalTimeout time.Duration

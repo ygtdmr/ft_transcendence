@@ -46,7 +46,7 @@ type Presence struct {
 }
 
 // NewPresence returns presence over instances, which must list every running
-// Game Gateway and Chat Gateway instance.
+// Game Gateway and Notification Gateway instance.
 func NewPresence(instances ...ConnectionReader) *Presence {
 	return &Presence{instances: instances}
 }

@@ -36,7 +36,7 @@ func TestInternalListenerConfig(t *testing.T) {
 		"JWT_SECRET": testutil.TestSigningKey, "ACCESS_TOKEN_TTL": "", "REFRESH_TOKEN_TTL": "",
 		"LOG_FORMAT": "", "LOG_LEVEL": "",
 	}
-	for _, caller := range []string{"WEB_BFF", "GAME_GATEWAY", "CHAT_GATEWAY", "USER_SERVICE"} {
+	for _, caller := range []string{"WEB_BFF", "GAME_GATEWAY", "NOTIFICATION_GATEWAY", "USER_SERVICE"} {
 		base[caller+"_CREDENTIAL_FILE"], base[caller+"_PREVIOUS_CREDENTIAL_FILE"] = "", ""
 	}
 	set := func(values map[string]string) {
@@ -103,7 +103,7 @@ func TestUserServiceConfig(t *testing.T) {
 		"LOG_FORMAT": "", "LOG_LEVEL": "", "USER_INTERNAL_URL": "", "USER_SERVICE_OUTBOUND_CREDENTIAL_FILE": "",
 		"USER_INTERNAL_TIMEOUT": "",
 	}
-	for _, caller := range []string{"WEB_BFF", "GAME_GATEWAY", "CHAT_GATEWAY", "USER_SERVICE"} {
+	for _, caller := range []string{"WEB_BFF", "GAME_GATEWAY", "NOTIFICATION_GATEWAY", "USER_SERVICE"} {
 		base[caller+"_CREDENTIAL_FILE"], base[caller+"_PREVIOUS_CREDENTIAL_FILE"] = "", ""
 	}
 	set := func(values map[string]string) {

@@ -21,17 +21,21 @@ import (
 )
 
 var (
-	channelCredential = strings.Repeat("h", 40)
+	verdictCredential = strings.Repeat("h", 40)
 	gameCredential    = strings.Repeat("g", 40)
 )
 
 func verdictHandler(reader service.FriendshipVerdictReader) http.Handler {
 	gin.SetMode(gin.TestMode)
+	// No production caller holds friend.verdict, so the handler tests use a
+	// test-only caller granted that scope on top of the default matrix.
+	matrix := serviceauth.DefaultMatrix()
+	matrix["verdict-caller"] = []string{serviceauth.ScopeFriendVerdict}
 	auth := serviceauth.New(map[string][]string{
-		"auth-service":    {authCredential},
-		"channel-service": {channelCredential},
-		"game-session":    {gameCredential},
-	}, serviceauth.DefaultMatrix())
+		"auth-service":   {authCredential},
+		"verdict-caller": {verdictCredential},
+		"game-session":   {gameCredential},
+	}, matrix)
 	return server.NewInternal("0", slog.New(slog.NewTextHandler(io.Discard, nil)),
 		controller.NewInternalFriendshipVerdict(service.NewFriendshipVerdicts(reader), auth)).Handler
 }
@@ -42,7 +46,7 @@ func verdictPath(actor, target int64) string {
 
 func verdictBody(t *testing.T, handler http.Handler, actor, target int64) string {
 	t.Helper()
-	recorder := call(handler, http.MethodGet, verdictPath(actor, target), channelCredential, "")
+	recorder := call(handler, http.MethodGet, verdictPath(actor, target), verdictCredential, "")
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("verdict %d/%d = %d %s", actor, target, recorder.Code, recorder.Body)
 	}
@@ -123,8 +127,8 @@ func TestFriendshipVerdictChecksBlocksDirectly(t *testing.T) {
 //
 // Expected output:
 //
-//   - Channel Service and Game Session are allowed.
-//   - Auth Service is 403; a missing or unknown credential is 401.
+//   - A caller holding friend.verdict is allowed.
+//   - Game Session and Auth Service hold no friend.verdict scope and get 403; a missing or unknown credential is 401.
 //   - The public listener does not serve the route.
 func TestFriendshipVerdictAccessPostgres(t *testing.T) {
 	pool := schemaPool(t)
@@ -137,8 +141,8 @@ func TestFriendshipVerdictAccessPostgres(t *testing.T) {
 		status           int
 		code             string
 	}{
-		{"channel service", channelCredential, http.StatusOK, ""},
-		{"game session", gameCredential, http.StatusOK, ""},
+		{"caller with scope", verdictCredential, http.StatusOK, ""},
+		{"game session", gameCredential, http.StatusForbidden, "SERVICE_FORBIDDEN"},
 		{"caller without scope", authCredential, http.StatusForbidden, "SERVICE_FORBIDDEN"},
 		{"unknown credential", strings.Repeat("z", 40), http.StatusUnauthorized, "SERVICE_UNAUTHENTICATED"},
 		{"missing credential", "", http.StatusUnauthorized, "SERVICE_UNAUTHENTICATED"},
@@ -153,7 +157,7 @@ func TestFriendshipVerdictAccessPostgres(t *testing.T) {
 
 	public := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, path, nil)
-	request.Header.Set("Authorization", "Bearer "+channelCredential)
+	request.Header.Set("Authorization", "Bearer "+verdictCredential)
 	blockHandler(t, pool).ServeHTTP(public, request)
 	if public.Code != http.StatusNotFound {
 		t.Fatalf("public listener = %d %s, want 404", public.Code, public.Body)
@@ -176,7 +180,7 @@ func TestFriendshipVerdictDatabaseOutage(t *testing.T) {
 	}
 	defer pool.Close()
 
-	recorder := call(verdictHandler(userpostgres.NewFriendshipVerdicts(pool)), http.MethodGet, verdictPath(1, 2), channelCredential, "")
+	recorder := call(verdictHandler(userpostgres.NewFriendshipVerdicts(pool)), http.MethodGet, verdictPath(1, 2), verdictCredential, "")
 	if recorder.Code != http.StatusServiceUnavailable || !strings.Contains(recorder.Body.String(), "SERVICE_UNAVAILABLE") ||
 		strings.Contains(recorder.Body.String(), "active_friendship") {
 		t.Fatalf("outage = %d %s", recorder.Code, recorder.Body)

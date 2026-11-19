@@ -29,7 +29,8 @@ func (s *verdictReaderStub) ActiveFriendship(context.Context, int64, int64) (boo
 func verdictRequest(reader *verdictReaderStub, query string) *httptest.ResponseRecorder {
 	gin.SetMode(gin.TestMode)
 	credential := strings.Repeat("v", 40)
-	auth := serviceauth.New(map[string][]string{"channel-service": {credential}}, serviceauth.DefaultMatrix())
+	auth := serviceauth.New(map[string][]string{"verdict-caller": {credential}},
+		serviceauth.Matrix{"verdict-caller": {serviceauth.ScopeFriendVerdict}})
 	engine := gin.New()
 	controller.NewInternalFriendshipVerdict(service.NewFriendshipVerdicts(reader), auth).RegisterRoutes(engine)
 	request := httptest.NewRequest(http.MethodGet, "/internal/v1/friendship-verdicts"+query, nil)

@@ -230,7 +230,7 @@ func friendRequestEvent(stored StoredFriendRequest, eventType string, payload ma
 	}
 }
 
-// receivedEvent carries the request exactly as the chat socket shows it.
+// receivedEvent carries the request exactly as the notification socket shows it.
 func (s *FriendRequests) receivedEvent(stored StoredFriendRequest) OutboxEvent {
 	view := s.view(stored)
 
