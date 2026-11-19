@@ -46,7 +46,7 @@ var errNotMember = errors.New("not a member")
 // accessServer wires the shared guards the way an adopter would.
 func accessServer(t *testing.T, limit int) (srv *httptest.Server, logs *lockedBuffer, service string, handlerRuns *atomic.Int32, validator *stubValidator) {
 	t.Helper()
-	service = "itest-" + strings.ToLower(strings.NewReplacer("/", "-", "_", "-").Replace(t.Name()))
+	service = uniqueService(t)
 	logs = newLockedBuffer()
 	logger, err := logging.New(logging.Config{Format: "json", Level: "debug", Service: service}, logs)
 	if err != nil {

@@ -43,7 +43,7 @@ type accountDTO struct {
 
 func responseServer(t *testing.T) (*httptest.Server, *lockedBuffer, string) {
 	t.Helper()
-	service := "itest-" + strings.ToLower(strings.NewReplacer("/", "-", "_", "-").Replace(t.Name()))
+	service := uniqueService(t)
 	logs := newLockedBuffer()
 	logger, err := logging.New(logging.Config{Format: "json", Level: "debug", Service: service}, logs)
 	if err != nil {
@@ -226,7 +226,7 @@ func TestAnUnexpectedErrorIsGenericInTheResponseAndLoggedByTypeOnly(t *testing.T
 func TestErrorCodesReachTheMetricsThroughHandle(t *testing.T) {
 	// Build a second server that also exposes /metrics, because Handle must feed
 	// the error-code counter without any handler-side code.
-	service := "itest-handle-metrics"
+	service := uniqueService(t)
 	logger, _ := logging.New(logging.Config{Format: "json", Service: service}, newLockedBuffer())
 	mapper := httpresponse.NewMapper().Map(errNameTaken, httpresponse.Error{Status: 409, Code: "USERNAME_TAKEN", Message: "That username is taken."})
 	gin.SetMode(gin.TestMode)
