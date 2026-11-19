@@ -23,7 +23,7 @@ docs:
 
     Connect to `{{wsUrl}}/ws/{{gameApiVersion}}/rooms/{{roomId}}` with `gameApiVersion=v2`. The session must be active and the user must already belong to the same v2 room through REST. Authentication is never placed in the URL.
 
-    This collection is additive. The original room socket remains unchanged in `WebSocket v1`; chat remains in its own v1/v2 contracts. A client must pair the v2 room REST contract with this v2 socket and must not mix room protocol versions in one session.
+    This collection is additive. The original room socket remains unchanged in `WebSocket v1`; A client must pair the v2 room REST contract with this v2 socket and must not mix room protocol versions in one session.
 
     ## Authentication
 

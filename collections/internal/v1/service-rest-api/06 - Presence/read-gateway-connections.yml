@@ -14,7 +14,7 @@ http:
 docs: |-
   # Read gateway connections
 
-  Returns which of the requested users hold at least one open authenticated socket on this Gateway instance. Scope `connections.read`. The caller is User Service. Game Gateway and Chat Gateway expose the same route, and each answers only from its own memory.
+  Returns which of the requested users hold at least one open authenticated socket on this Gateway instance. Scope `connections.read`. The caller is User Service. Game Gateway and Notification Gateway expose the same route, and each answers only from its own memory.
 
   ## Request parameters
 

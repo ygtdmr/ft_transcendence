@@ -23,7 +23,7 @@ docs: |-
 
   ## Success behavior
 
-  `204 No Content`. When the two users had a friendship suspended by blocks and neither user blocks the other any more, the friendship becomes active again: both users' Chat v2 sockets receive `friend.restored` with the other user as a `List friends` entry, and their DIRECT channel returns to `ACTIVE` with reason `FRIENDSHIP_ADDED`. Requests cancelled by the block stay cancelled, and no friendship is ever created by unblocking.
+  `204 No Content`. When the two users had a friendship suspended by blocks and neither user blocks the other any more, the friendship becomes active again: both users' notification sockets receive `friend.restored` with the other user as a `List friends` entry. Requests cancelled by the block stay cancelled, and no friendship is ever created by unblocking.
 
   ## Errors
 

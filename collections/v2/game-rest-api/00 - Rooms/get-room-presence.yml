@@ -16,7 +16,7 @@ docs: |-
 
   Returns global online state for the current members of a room. Web BFF reads the member list from Game Session, which also authorizes the caller, and then asks User Service for those users. The room snapshot and room events carry no presence, so a User Service outage never affects them.
 
-  `is_online` is global: any authenticated Game or Chat socket counts. It says nothing about a member's room connection or reconnect grace, and it grants no room right.
+  `is_online` is global: any authenticated room or notification socket counts. It says nothing about a member's room connection or reconnect grace, and it grants no room right.
 
   The frontend requests this route when the room view opens, after the room socket reconnects, and at a fixed client refresh interval. Membership events do not trigger a request. A member with no value yet is shown as Unknown until the next response. On `503`, the frontend shows Unknown for all members and retries at the next refresh.
 

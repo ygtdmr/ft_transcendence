@@ -22,7 +22,7 @@ docs: |-
 
   ## Purpose
 
-  Asks another user to become a friend. Friendship needs the recipient's acceptance (`Accept friend request`); until then the request is `PENDING` and the sender sees the relationship `REQUEST_SENT`. The relationship rules are in `workspace.yml`, Friends, Presence, and Chat Scope.
+  Asks another user to become a friend. Friendship needs the recipient's acceptance (`Accept friend request`); until then the request is `PENDING` and the sender sees the relationship `REQUEST_SENT`. The relationship rules are in `workspace.yml`, Friends and Presence.
 
   ## Request parameters
 
@@ -47,7 +47,7 @@ docs: |-
   | `data.status` | string enum | yes | no | `PENDING` | Always pending on creation |
   | `data.created_at` | `string<date-time>` | yes | no | ISO 8601 UTC | Creation time |
 
-  The recipient's Chat v2 sockets receive `friend.request.received` with the same request; the sender's other sockets receive it too, so every open tab shows Request Sent.
+  The recipient's notification sockets receive `friend.request.received` with the same request; the sender's other sockets receive it too, so every open tab shows Request Sent.
 
   ## Errors
 

@@ -58,18 +58,17 @@ docs:
     | `user-service` | `auth-service` | `profile.provision` | Provision profile | `PUT /internal/v1/provisioning-operations/{operation_id}` |
     | `user-service` | `auth-service` | `provisioning.read` | Read provisioning receipt | `GET /internal/v1/provisioning-operations/{operation_id}`, `GET /internal/v1/provisioning-operations?user_id=` |
     | `user-service` | `auth-service`, `game-session` | `profile.read` | Read canonical profile | `GET /internal/v1/profiles/{user_id}` |
-    | `user-service` | `channel-service`, `game-session` | `friend.verdict` | Active-friend verdict | `GET /internal/v1/friendship-verdicts?actor_user_id=&target_user_id=` |
-    | `auth-service` | `game-gateway`, `chat-gateway`, `web-bff`, `user-service`, `stats-service` | `session.validate` | Validate session | `GET /internal/v1/sessions/current` |
+    | `user-service` | none currently | `friend.verdict` | Active-friend verdict | `GET /internal/v1/friendship-verdicts?actor_user_id=&target_user_id=` |
+    | `auth-service` | `game-gateway`, `notification-gateway`, `web-bff`, `user-service`, `stats-service` | `session.validate` | Validate session | `GET /internal/v1/sessions/current` |
     | `auth-service` | `user-service` | `account.metadata.read` | Read account metadata | `GET /internal/v1/accounts/{user_id}` |
     | `auth-service` | `user-service` | `account.deletion.begin` | Begin account deletion | `PUT /internal/v1/account-deletions/{operation_id}` |
     | `auth-service` | `user-service` | `account.deletion.complete` | Complete account deletion | `PUT /internal/v1/account-deletions/{operation_id}/completion` |
     | `game-session` | `auth-service`, `user-service` | `membership.read` | Read current room membership | `GET /internal/v1/memberships/{user_id}` |
     | `game-session` | `auth-service` | `session.departure` | Record logout departure | `PUT /internal/v1/session-departures/{session_id}` |
-    | `game-session` | `channel-service` | `room.access.read` | Room access verdict | `GET /internal/v1/rooms/{room_id}/access-verdicts?user_id=` |
-    | `game-session`, `chat-service`, `stats-service` | `user-service` | `account.cleanup` | Remove the user's local data | `PUT /internal/v1/account-cleanups/{operation_id}` |
+    | `game-session`, `stats-service` | `user-service` | `account.cleanup` | Remove the user's local data | `PUT /internal/v1/account-cleanups/{operation_id}` |
     | `stats-service` | `user-service` | `stats.read` | Read user counters | `GET /internal/v1/user-stats/{user_id}` |
-    | `game-gateway`, `chat-gateway` | `auth-service` | `session.revocation.notify` | Close a revoked session's sockets | `PUT /internal/v1/session-revocations/{session_id}` |
-    | `game-gateway`, `chat-gateway` | `user-service` | `connections.read` | Read the socket registry | `GET /internal/v1/connections?user_id=` |
+    | `game-gateway`, `notification-gateway` | `auth-service` | `session.revocation.notify` | Close a revoked session's sockets | `PUT /internal/v1/session-revocations/{session_id}` |
+    | `game-gateway`, `notification-gateway` | `user-service` | `connections.read` | Read the socket registry | `GET /internal/v1/connections?user_id=` |
     | `user-service` | `web-bff` | `presence.read` | Read users' presence | `GET /internal/v1/presence?user_id=` |
 
     A row without a request file in this collection fixes the receiver, caller, scope and route. The receiving service's owner adds the request file with its payloads and errors, following the common rules below. Each caller holds its own credential for each receiver. Board Generator is a package inside Game Session, so it has no private route or credential.

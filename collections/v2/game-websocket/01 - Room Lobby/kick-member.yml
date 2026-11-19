@@ -23,7 +23,7 @@ docs: |-
 
   Only the current host (the Room Owner) may remove another room member, seated or unseated, with no vote or consent. It is allowed in `WAITING`, `COUNTDOWN`, `IN_GAME`, and `POST_GAME`; only `CLOSED` rejects it. During `COUNTDOWN`, the server first cancels countdown with reason `PLAYER_KICKED`. During `IN_GAME`, removing a participant rechecks team staffing exactly like any other departure: if it leaves a team without a Spymaster or without an Operative, `game.staffing.required` follows with `departure.reason = KICKED_BY_HOST` (see `04 - Game/staffing-and-cancellation.yml`). A kicked member receives no leave penalty. The host cannot kick themself—Exit is the self-removal operation.
 
-  A successful kick clears the target's active room membership and Chat v2 `ROOM` channel access, emits `room.player.left` with reason `KICKED_BY_HOST`, and closes every target room socket with code `4403` (`KICKED_FROM_ROOM`). If that target was the final pending post-game member, `room.post_game.completed` follows; a new recipient-specific `room.state` is last. Chat Gateway separately emits `chat.channel.access_changed` with `access:INACTIVE`. The removed user may join again unless the implementation adds a separate ban feature; v2 defines no ban list.
+  A successful kick clears the target's active room membership, emits `room.player.left` with reason `KICKED_BY_HOST`, and closes every target room socket with code `4403` (`KICKED_FROM_ROOM`). If that target was the final pending post-game member, `room.post_game.completed` follows; a new recipient-specific `room.state` is last. The removed user may join again unless the implementation adds a separate ban feature; v2 defines no ban list.
 
   ```json
   {

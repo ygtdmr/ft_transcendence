@@ -74,10 +74,8 @@ docs: |-
   | `CARD_ALREADY_REVEALED` | card was already revealed | unchanged; open |
   | `NO_GUESSES_REMAINING` | stale guess/pass after zero | unchanged; open |
   | `GAME_ALREADY_FINISHED` | game command after terminal result | unchanged; open |
-  | `NOT_PERMITTED` | chat message when users are neither friends nor co-members of a shared room in `WAITING`, `COUNTDOWN`, or `IN_GAME` | unchanged; open |
-  | `USER_NOT_FOUND` | chat message `to_user_id` does not exist | unchanged; open |
 
-  Room/game codes apply on `/ws/v1/rooms/{roomId}`; `NOT_PERMITTED` and `USER_NOT_FOUND` apply only on the chat socket `/ws/v1/chat` (see `08 - Chat/send-message.yml`).
+  All codes apply on `/ws/v1/rooms/{roomId}`.
 
   ## Concrete examples
 

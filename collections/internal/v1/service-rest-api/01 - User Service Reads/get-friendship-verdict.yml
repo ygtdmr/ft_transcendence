@@ -8,13 +8,13 @@ http:
   url: "{{userInternalUrl}}/internal/v1/friendship-verdicts?actor_user_id=42&target_user_id=43"
   headers:
     - name: Authorization
-      value: "Bearer {{channelToUserServiceCredential}}"
+      value: "Bearer {{gameSessionToUserServiceCredential}}"
     - name: Accept
       value: application/json
 docs: |-
   # Get friendship verdict
 
-  Returns the current active-friendship verdict for one pair. Scope `friend.verdict`. Callers: `channel-service` for `DIRECT` channel access and `game-session` for friend-based room operations. The caller takes `actor_user_id` from the validated session of the user performing the action.
+  Returns the current active-friendship verdict for one pair. Scope `friend.verdict`. No service is currently authorized for `friend.verdict`, so the example request with the Game Session credential returns `403 SERVICE_FORBIDDEN`; the route stays defined for future friend-only operations. The caller takes `actor_user_id` from the validated session of the user performing the action.
 
   ## Request parameters
 

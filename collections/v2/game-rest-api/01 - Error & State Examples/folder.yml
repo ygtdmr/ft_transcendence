@@ -24,15 +24,11 @@ docs: |-
   | HTTP | Code | Concrete message example | Applicable operations |
   | ---: | --- | --- | --- |
   | `401` | `UNAUTHORIZED` | `A valid active session is required.` | every v2 room endpoint |
-  | `404` | `USER_NOT_FOUND` | `User 9999 was not found.` | invite friend |
-  | `404` | `NOT_FRIENDS` | `User 9999 is not a friend.` | invite friend |
-  | `404` | `ROOM_NOT_FOUND` | `Room 9999 was not found.` | join, get, leave, lookup, invite friend |
-  | `409` | `ROOM_NOT_JOINABLE` | `Room 1001 is not joinable while status is COUNTDOWN.` | join, invite friend |
-  | `409` | `ROOM_FULL` | `Room 1001 is full (8 of 8 players).` | join, invite friend |
-  | `409` | `USER_OFFLINE` | `User 43 has no active Chat Gateway v2 connection.` | invite friend |
-  | `409` | `USER_IN_ROOM` | `User 43 already belongs to an active room.` | invite friend |
+  | `404` | `ROOM_NOT_FOUND` | `Room 9999 was not found.` | join, get, leave, lookup |
+  | `409` | `ROOM_NOT_JOINABLE` | `Room 1001 is not joinable while status is COUNTDOWN.` | join |
+  | `409` | `ROOM_FULL` | `Room 1001 is full (8 of 8 players).` | join |
   | `409` | `ALREADY_IN_ROOM` | `User 46 already belongs to active room 1002.` | create, join |
-  | `403` | `NOT_ROOM_MEMBER` | `User 47 is not a member of room 1001.` | get, leave, invite friend |
+  | `403` | `NOT_ROOM_MEMBER` | `User 47 is not a member of room 1001.` | get, leave |
   | `400` or `422` | `VALIDATION_ERROR` | `user_id must be a positive integer.` | malformed JSON or field/path validation |
   | `429` | `RATE_LIMITED` | `Too many registration attempts; retry after 60 seconds.` | throttled operation |
 

@@ -1,14 +1,14 @@
 info:
   name: Social events
   type: websocket
-  seq: 6
+  seq: 2
   tags: [server-event, friends, blocking, profile]
 websocket:
-  url: "{{chatWsUrl}}/ws/{{chatApiVersion}}/channels"
+  url: "{{wsUrl}}/ws/{{notificationApiVersion}}/notifications"
 docs: |-
   # Social events
 
-  User Service commits friend request, friendship and profile changes with its own PostgreSQL transactional outbox, and its publisher sends the resulting events through RabbitMQ, and Chat Gateway delivers them to every active Chat v2 socket of each affected user, including the acting user's other tabs. They are live notifications only: nothing is replayed after a reconnect, so a client reads `GET /api/v1/friends` and `GET /api/v1/friends/requests` again after every `chat.ready` that follows a drop. Each event has a stable `event_id`; Chat Gateway deduplicates broker redelivery.
+  User Service commits friend request, friendship and profile changes with its own PostgreSQL transactional outbox, and its publisher sends the resulting events through RabbitMQ, and Notification Gateway delivers them to every active notification socket of each affected user, including the acting user's other tabs. They are live notifications only: nothing is replayed after a reconnect, so a client reads `GET /api/v1/friends` and `GET /api/v1/friends/requests` again after every `notifications.ready` that follows a drop. Each event has a stable `event_id`; Notification Gateway deduplicates broker redelivery.
 
   | Type | Sent to | When | Payload |
   | --- | --- | --- | --- |
@@ -23,7 +23,7 @@ docs: |-
   ```json
   {
     "type": "friend.request.received",
-    "event_id": "evt_c040",
+    "event_id": "evt_n040",
     "sent_at": "2026-09-10T08:41:00Z",
     "payload": {
       "request": {
@@ -40,7 +40,7 @@ docs: |-
   ```json
   {
     "type": "friend.request.resolved",
-    "event_id": "evt_c041",
+    "event_id": "evt_n041",
     "sent_at": "2026-09-10T08:42:00Z",
     "payload": {
       "request_id": 702,
@@ -54,12 +54,12 @@ docs: |-
 
   The event above is the copy user `46` receives: `friend` is the other user, `player_one`. User `42` receives the same event with `friend` set to `extra_red`.
 
-  A client applies `user.profile.updated` wherever it shows that user: the friend list, friend requests, direct-channel peers and chat sender names, and, for the user's own sessions, their own profile. A blocked user receives no `user.profile.updated` for the user who blocked them. Members of the user's active room learn the change from `room.player.updated` on the room socket instead.
+  A client applies `user.profile.updated` wherever it shows that user: the friend list, friend requests, open profiles and,  for the user's own sessions, their own profile. A blocked user receives no `user.profile.updated` for the user who blocked them. Members of the user's active room learn the change from `room.player.updated` on the room socket instead.
 
   ```json
   {
     "type": "user.profile.updated",
-    "event_id": "evt_c043",
+    "event_id": "evt_n043",
     "sent_at": "2026-09-10T08:45:00Z",
     "payload": {
       "user_id": 42,
@@ -72,7 +72,7 @@ docs: |-
   ```json
   {
     "type": "friend.removed",
-    "event_id": "evt_c042",
+    "event_id": "evt_n042",
     "sent_at": "2026-09-10T08:50:00Z",
     "payload": {
       "user_id": 45

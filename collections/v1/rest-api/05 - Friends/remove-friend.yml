@@ -12,7 +12,7 @@ docs: |-
 
   ## Purpose
 
-  Removes an active friendship both ways. The other user's Chat v2 sockets receive `friend.removed` with the remover's `user_id`, and the caller's other sockets receive it with the removed friend's `user_id`, so both friend lists update without a reload. A friendship suspended by a block cannot be removed until the block is lifted.
+  Removes an active friendship both ways. The other user's notification sockets receive `friend.removed` with the remover's `user_id`, and the caller's other sockets receive it with the removed friend's `user_id`, so both friend lists update without a reload. A friendship suspended by a block cannot be removed until the block is lifted.
 
   ## Request parameters
 

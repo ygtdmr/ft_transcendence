@@ -23,7 +23,7 @@ docs: |-
 
   ## Success behavior
 
-  `204 No Content`. Both users' Chat v2 sockets receive `friend.request.resolved` with `status: DECLINED`.
+  `204 No Content`. Both users' notification sockets receive `friend.request.resolved` with `status: DECLINED`.
 
   ## Errors
 

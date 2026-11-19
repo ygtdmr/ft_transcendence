@@ -5,7 +5,7 @@ info:
 docs: |-
   # Presence
 
-  User Service owns presence. It derives presence from the active socket registries of Game Gateway and Chat Gateway, and it stores no presence state.
+  User Service owns presence. It derives presence from the active socket registries of Game Gateway and Notification Gateway, and it stores no presence state.
 
   User Service holds the private URL of every running Gateway instance in its configuration and queries all of them. A user has one of three states:
 

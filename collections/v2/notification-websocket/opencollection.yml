@@ -1,0 +1,29 @@
+opencollection: 1.0.0
+
+info:
+  name: WebSocket v2 - Notifications
+  version: 2.0.0-dev
+config:
+  proxy:
+    inherit: true
+    config:
+      protocol: http
+      hostname: ""
+      port: ""
+      auth:
+        username: ""
+        password: ""
+      bypassProxy: ""
+
+docs:
+  content: |-
+    # ft_transcendence Notifications WebSocket v2
+
+    Connect through the same public origin at `{{wsUrl}}/ws/{{notificationApiVersion}}/notifications`. The reverse proxy routes this path directly to Notification Gateway; it does not pass through the Web BFF or Game Gateway.
+
+    Notification Gateway is a separate, server-push socket service. Every signed-in user keeps one notification socket open while the app is open, independent of room membership. The gateway validates the session, keeps an in-memory registry keyed by user/session, and consumes User Service social/profile events from RabbitMQ for multi-tab delivery. Its registry is one of the two sources of live presence (the other is Game Gateway), so a signed-in user in the Lobby is online without being in a room.
+
+    The socket accepts no client commands. Any client frame receives an `INVALID_EVENT` error and the socket stays open; repeated protocol abuse may close it after an error. Explicit session invalidation closes it with `4401`; handshake rejection happens before upgrade. Events are live notifications only and are never replayed; after every reconnect the client reloads friends and friend requests over REST.
+  type: text/markdown
+bundled: false
+extensions: {}
