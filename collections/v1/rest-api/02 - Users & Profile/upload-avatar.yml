@@ -27,13 +27,13 @@ docs: |-
   | Parameter | Location | Required | Type | Allowed values | Nullable | Description | Example |
   | --- | --- | ---: | --- | --- | ---: | --- | --- |
   | `ft_session` cookie | request cookie | yes | string | active JWT access credential | no | Authenticates the owner | set by Register/Login |
-  | `avatar` | multipart body | yes | file | `image/jpeg`, `image/png`, `image/webp`; `<= 2 MiB`; square recommended, server crops/resizes | no | New avatar image | `avatar.png` |
+  | `avatar` | multipart body | yes | file | `image/jpeg`, `image/png`, `image/webp`; `<= 2 MiB`; 32 to 4096 pixels per side and at most 16 megapixels; square recommended, server crops/resizes | no | New avatar image | `avatar.png` |
 
-  MIME type and size are validated server-side from the actual file bytes, never trusted from the client-declared `Content-Type` alone. A user with no uploaded avatar renders a deterministic default derived from `user_id` (no upload step required to have *an* avatar).
+  MIME type, size and dimensions are validated server-side from the actual file bytes, never trusted from the client-declared filename or `Content-Type`. The server stores a new 256x256 PNG cropped to the center square, so the stored avatar is always PNG whatever the uploaded format, and image metadata is dropped. A user with no uploaded avatar renders a deterministic default derived from `user_id` (no upload step required to have *an* avatar).
 
   ## Success behavior and response fields
 
-  `200 OK` replaces any previous uploaded avatar (the old file is deleted) and returns the new `avatar_url`, which then appears on own-profile, public-profile, friends-list, and room-member payloads.
+  `200 OK` replaces any previous uploaded avatar (the old file is deleted) and returns the new `avatar_url` under a new random file name, which then appears on own-profile, public-profile, friends-list, and room-member payloads.
 
   | Field | Type | Required | Nullable | Allowed values | Description |
   | --- | --- | ---: | ---: | --- | --- |
@@ -48,7 +48,7 @@ docs: |-
   | Status | Code | When |
   | --- | --- | --- |
   | `401` | `UNAUTHORIZED` | invalid session |
-  | `422` | `INVALID_IMAGE` | wrong MIME type, corrupt file, or over 2 MiB |
+  | `422` | `INVALID_IMAGE` | wrong MIME type, corrupt file, over 2 MiB, or dimensions outside the limits |
 examples:
   - name: Success - Avatar replaced
     request: {url: "{{baseUrl}}/api/{{apiVersion}}/users/me/avatar", method: POST, headers: [], params: [], body: {mode: none}}
@@ -60,7 +60,7 @@ examples:
         data: |-
           {
             "data": {
-              "avatar_url": "https://{{baseUrl}}/static/avatars/uploaded/42.webp"
+              "avatar_url": "https://{{baseUrl}}/static/avatars/uploaded/42-9f86d081884c7d659a2feaa0c55ad015.png"
             }
           }
   - name: Error - Invalid image

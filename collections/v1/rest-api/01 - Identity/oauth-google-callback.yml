@@ -49,7 +49,7 @@ docs: |-
   | `OAUTH_CANCELLED` | The user cancelled on Google (`error=access_denied`) |
   | `OAUTH_STATE_INVALID` | `state` is missing, does not match `ft_oauth`, was already used, or `ft_oauth` expired |
   | `OAUTH_EMAIL_UNVERIFIED` | Google reports the email as unverified |
-  | `OAUTH_PROVIDER_ERROR` | Google is unavailable or not configured, the code exchange fails, or the ID token is invalid |
+  | `OAUTH_PROVIDER_ERROR` | Google is unavailable or not configured, the code exchange fails, or the ID token is invalid. Also used when sign-in cannot finish on the server: User Service is unavailable (a later sign-in resumes the same account), the matching account is linked to another Google account, or the account is being deleted |
 examples:
   - name: Success - Signed in, redirect to Lobby
     request: {url: "{{baseUrl}}/api/{{apiVersion}}/auth/oauth/google/callback?code=<google_code>&state=<state>", method: GET, headers: [], params: [{name: code, value: <google_code>, enabled: true}, {name: state, value: <state>, enabled: true}], body: {mode: none}}
