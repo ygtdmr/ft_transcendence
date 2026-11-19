@@ -5,8 +5,10 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/melmut-42/ft_transcendence/backend/shared/rabbitmq"
 	"github.com/melmut-42/ft_transcendence/backend/stats-service/internal/client/authclient"
 	"github.com/melmut-42/ft_transcendence/backend/stats-service/internal/config"
+	"github.com/melmut-42/ft_transcendence/backend/stats-service/internal/consumer"
 	"github.com/melmut-42/ft_transcendence/backend/stats-service/internal/controller"
 	"github.com/melmut-42/ft_transcendence/backend/stats-service/internal/middleware/serviceauth"
 	statspostgres "github.com/melmut-42/ft_transcendence/backend/stats-service/internal/repository/postgres"
@@ -59,5 +61,33 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 		logger.WarnContext(ctx, "AUTH_INTERNAL_URL is not set; match history is not served")
 	}
 
-	return []*http.Server{server.New(cfg.Port, health, logger, public...), internal}, pool.Close, nil
+	cleanup := pool.Close
+	if cfg.BrokerURL != "" {
+		handler := consumer.NewHandler(service.NewMatchIngest(statspostgres.NewMatches(pool)),
+			service.NewPenaltyIngest(statspostgres.NewPenalties(pool)))
+		runner := consumer.NewRunner(rabbitmq.Config{URL: cfg.BrokerURL, Name: "stats-service"}, cfg.EventsQueue,
+			handler, logger)
+		cleanup = startConsumer(ctx, runner, cleanup)
+	} else {
+		logger.WarnContext(ctx, "RABBITMQ_URL is not set; finalized matches and penalties are not ingested")
+	}
+
+	return []*http.Server{server.New(cfg.Port, health, logger, public...), internal}, cleanup, nil
+}
+
+// startConsumer runs the event consumer until shutdown. The returned cleanup
+// stops the consumer, waits for the delivery in progress, then runs next.
+func startConsumer(ctx context.Context, runner *consumer.Runner, next func()) func() {
+	consumerCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		runner.Run(consumerCtx)
+	}()
+
+	return func() {
+		cancel()
+		<-done
+		next()
+	}
 }

@@ -7,6 +7,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.19.0
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/melmut-42/ft_transcendence/backend/shared v0.0.0
+	github.com/rabbitmq/amqp091-go v1.16.0
 )
 
 require (
