@@ -36,4 +36,26 @@ docs: |-
 examples:
   - name: Success - Preset catalog
     request: {url: "{{baseUrl}}/api/{{apiVersion}}/avatars/presets", method: GET, headers: [], params: [], body: {mode: none}}
-    response: {status: 200, headers: [{name: Content-Type, value: application/json}], body: {type: json, data: '{"data":{"presets":[{"preset_id":"alien astronaut aviator-fox blond-sunglasses brain-robot cyborg-cat glasses-boy headphones-girl orc punk scholar-owl","avatar_url":"/avatars/presets/alien astronaut aviator-fox blond-sunglasses brain-robot cyborg-cat glasses-boy headphones-girl orc punk scholar-owl.png"}]}}'}}
+    response:
+      status: 200
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "data": {
+              "presets": [
+                {"preset_id": "alien", "avatar_url": "/avatars/presets/alien.png"},
+                {"preset_id": "astronaut", "avatar_url": "/avatars/presets/astronaut.png"},
+                {"preset_id": "aviator-fox", "avatar_url": "/avatars/presets/aviator-fox.png"},
+                {"preset_id": "blond-sunglasses", "avatar_url": "/avatars/presets/blond-sunglasses.png"},
+                {"preset_id": "brain-robot", "avatar_url": "/avatars/presets/brain-robot.png"},
+                {"preset_id": "cyborg-cat", "avatar_url": "/avatars/presets/cyborg-cat.png"},
+                {"preset_id": "glasses-boy", "avatar_url": "/avatars/presets/glasses-boy.png"},
+                {"preset_id": "headphones-girl", "avatar_url": "/avatars/presets/headphones-girl.png"},
+                {"preset_id": "orc", "avatar_url": "/avatars/presets/orc.png"},
+                {"preset_id": "punk", "avatar_url": "/avatars/presets/punk.png"},
+                {"preset_id": "scholar-owl", "avatar_url": "/avatars/presets/scholar-owl.png"}
+              ]
+            }
+          }

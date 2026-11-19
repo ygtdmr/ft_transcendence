@@ -44,7 +44,7 @@ docs: |-
 
   ## State changes, events, and errors
 
-  Read-only; no event. Invalid sessions return `401 UNAUTHORIZED`. Team, role, ready, score, and board are intentionally absent because they are room state.
+  Read-only; no event. Invalid sessions return `401 UNAUTHORIZED`. The same `401` applies when the session's owner has no active account: account deletion is recorded, the profile or Auth account is missing, or the account is not `ACTIVE`. If Auth, Stats or Game Session cannot answer, the response is `503 SERVICE_UNAVAILABLE` with an empty details object; it never reports zero statistics or a missing room. Team, role, ready, score, and board are intentionally absent because they are room state.
 examples:
   - name: Success - Persistent stats with active room
     request: {url: "{{baseUrl}}/api/{{apiVersion}}/users/me", method: GET, headers: [], params: [], body: {mode: none}}
@@ -106,6 +106,21 @@ examples:
             "error": {
               "code": "UNAUTHORIZED",
               "message": "A valid active session is required.",
+              "details": {}
+            }
+          }
+  - name: Error - Dependency unavailable
+    request: {url: "{{baseUrl}}/api/{{apiVersion}}/users/me", method: GET, headers: [], params: [], body: {mode: none}}
+    response:
+      status: 503
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "SERVICE_UNAVAILABLE",
+              "message": "The service is temporarily unavailable. Try again later.",
               "details": {}
             }
           }

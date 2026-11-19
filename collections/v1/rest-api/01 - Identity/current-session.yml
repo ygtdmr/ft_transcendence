@@ -39,7 +39,7 @@ docs: |-
 
   ## State changes, events, and errors
 
-  Read-only; no event. Missing, invalid, revoked, or expired `ft_session` returns `401 UNAUTHORIZED` and an empty details object — the frontend should attempt `POST /api/v1/auth/refresh` before treating this as a full logout. If User Service cannot supply the current username, the response is `503 SERVICE_UNAVAILABLE`; a stored name is never returned.
+  Read-only; no event. Missing, invalid, revoked, or expired `ft_session` returns `401 UNAUTHORIZED` and an empty details object — the frontend should attempt `POST /api/v1/auth/refresh` before treating this as a full logout. If User Service cannot supply the current username or Game Session cannot supply the current membership, the response is `503 SERVICE_UNAVAILABLE` with an empty details object; a stored name or an empty membership is never returned. The frontend retries later and does not treat `503` as a logout.
 examples:
   - name: Success - No active room
     request: {url: "{{baseUrl}}/api/{{apiVersion}}/auth/session", method: GET, headers: [{name: Accept, value: application/json, enabled: true}], params: [], body: {mode: none}}
@@ -91,6 +91,21 @@ examples:
             "error": {
               "code": "UNAUTHORIZED",
               "message": "A valid active session is required.",
+              "details": {}
+            }
+          }
+  - name: Error - Dependency unavailable
+    request: {url: "{{baseUrl}}/api/{{apiVersion}}/auth/session", method: GET, headers: [{name: Accept, value: application/json, enabled: true}], params: [], body: {mode: none}}
+    response:
+      status: 503
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "SERVICE_UNAVAILABLE",
+              "message": "The service is temporarily unavailable. Try again later.",
               "details": {}
             }
           }
