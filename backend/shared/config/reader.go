@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"net/url"
 	"os"
@@ -69,6 +70,11 @@ func (r *Reader) value(name string) (string, bool) {
 func (r *Reader) fail(name, message string) {
 	r.problems = append(r.problems, Problem{Name: name, Message: message})
 }
+
+// Problem records a problem found by validation code outside this package (for
+// example a cross-variable rule). The message must name the variable and the
+// rule, never a value.
+func (r *Reader) Problem(name, message string) { r.fail(name, message) }
 
 // String returns the setting, or fallback when it is unset or blank.
 func (r *Reader) String(name, fallback string) string {
@@ -225,6 +231,78 @@ func (r *Reader) Secret(name string, minBytes int) Secret {
 		return Secret{}
 	}
 	return NewSecret(v)
+}
+
+// List returns a comma-separated setting as trimmed, non-empty items, or nil
+// when it is unset. Each item is checked with validate; a problem names the
+// variable and the rule, never the offending item.
+func (r *Reader) List(name string, validate func(item string) bool, rule string) []string {
+	raw, ok := r.value(name)
+	if !ok {
+		return nil
+	}
+	var items []string
+	for _, item := range strings.Split(raw, ",") {
+		item = strings.TrimSpace(item)
+		if item == "" {
+			continue
+		}
+		if validate != nil && !validate(item) {
+			r.fail(name, rule)
+			return nil
+		}
+		items = append(items, item)
+	}
+	return items
+}
+
+// maxSecretFile caps how much of a secret file is read, so a wrong path (a log,
+// a device) cannot make startup read gigabytes.
+const maxSecretFile = 4 << 10
+
+// SecretFile reads a secret from the file whose path is in the variable name,
+// the way mounted deployment secrets arrive. Surrounding whitespace (the
+// trailing newline `openssl rand -hex 32 > file` writes) is trimmed. A problem
+// names the variable and the minimum length, never the path or the contents,
+// because a path is deployment detail. An unset variable is a problem.
+func (r *Reader) SecretFile(name string, minBytes int) Secret {
+	path, ok := r.value(name)
+	if !ok {
+		r.fail(name, "is required")
+		return Secret{}
+	}
+	return r.readSecretFile(name, path, minBytes)
+}
+
+// OptionalSecretFile is like SecretFile but returns an unset Secret, with no
+// problem, when the variable is unset. An unreadable or too-short file is still
+// a problem: a half-configured secret must not silently disable a feature.
+func (r *Reader) OptionalSecretFile(name string, minBytes int) Secret {
+	path, ok := r.value(name)
+	if !ok {
+		return Secret{}
+	}
+	return r.readSecretFile(name, path, minBytes)
+}
+
+func (r *Reader) readSecretFile(name, path string, minBytes int) Secret {
+	file, err := os.Open(path)
+	if err != nil {
+		r.fail(name, "must name a readable file")
+		return Secret{}
+	}
+	defer file.Close()
+	raw, err := io.ReadAll(io.LimitReader(file, maxSecretFile+1))
+	if err != nil || len(raw) > maxSecretFile {
+		r.fail(name, "must name a readable file of at most 4096 bytes")
+		return Secret{}
+	}
+	value := strings.TrimSpace(string(raw))
+	if len(value) < minBytes {
+		r.fail(name, fmt.Sprintf("file must contain at least %d bytes", minBytes))
+		return Secret{}
+	}
+	return NewSecret(value)
 }
 
 func contains(list []string, item string) bool {
