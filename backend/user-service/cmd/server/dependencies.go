@@ -126,7 +126,9 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 				logger.WarnContext(ctx, "GAME_INTERNAL_URL is not set; the own profile reports no active room")
 			}
 			own := service.NewOwnProfiles(profileReads, accounts{sessions}, ownStats{stats}, memberships)
-			public = append(public, controller.NewPublicProfile(profiles, sessions), controller.NewOwnProfile(own, sessions))
+			usernames := service.NewUsernames(userpostgres.NewUsernames(pool), avatars)
+			public = append(public, controller.NewPublicProfile(profiles, sessions), controller.NewOwnProfile(own, sessions),
+				controller.NewProfileUpdate(usernames, own, sessions))
 		} else {
 			logger.WarnContext(ctx, "STATS_INTERNAL_URL is not set; the public and own profile routes are not served")
 		}

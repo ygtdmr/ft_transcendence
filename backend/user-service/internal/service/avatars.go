@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"regexp"
 	"slices"
-	"strconv"
 )
 
 const maxConcurrentAvatarDecodes = 4
@@ -43,7 +42,7 @@ type AvatarPresetEntry struct {
 
 // AvatarEventBuilder builds the event recorded with an avatar change. profile
 // holds the new avatar. recipients are the users who see the change.
-type AvatarEventBuilder func(profile StoredProfile, recipients []int64) OutboxEvent
+type AvatarEventBuilder = ProfileEventBuilder
 
 // AvatarStore applies an avatar change and its event in one transaction.
 type AvatarStore interface {
@@ -177,20 +176,8 @@ func newAvatarKey(userID int64) (string, error) {
 	return fmt.Sprintf("%d-%s.png", userID, hex.EncodeToString(random[:])), nil
 }
 
-// profileEvent carries the socket fields plus who should receive them, which
-// only User Service knows.
 func (s *Avatars) profileEvent(profile StoredProfile, recipients []int64) OutboxEvent {
-	return OutboxEvent{
-		AggregateType: "profile",
-		AggregateID:   strconv.FormatInt(profile.UserID, 10),
-		EventType:     EventUserProfileUpdated,
-		Payload: map[string]any{
-			"user_id":            profile.UserID,
-			"username":           profile.Username,
-			"avatar_url":         s.urls.URL(profile.AvatarKind, profile.AvatarRef, profile.UserID),
-			"recipient_user_ids": recipients,
-		},
-	}
+	return profileUpdatedEvent(s.urls, profile, recipients)
 }
 
 // DefaultAvatarSVG returns the deterministic default image for userID. It is
