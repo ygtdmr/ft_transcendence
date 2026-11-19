@@ -22,16 +22,16 @@ func (fakeProfiles) ProfilesByUserIDs(userIDs []int64) (map[int64]room.Profile, 
 
 func TestConcurrentJoinsCannotExceedCapacity(t *testing.T) {
 	s := openTestStore(t)
-	svc := service.NewRoomService(s, fakeProfiles{}, nil)
+	svc := service.NewRoomService(fakeProfiles{}, nil)
 	now := time.Date(2026, 11, 6, 10, 0, 0, 0, time.UTC)
 
 	capacity := 4
-	snapshot, err := svc.Create(1, &capacity, now)
+	snapshot, err := svc.Create(s, 1, &capacity, now)
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
 	for _, id := range []int64{2, 3} {
-		if _, err := svc.Join(snapshot.RoomID, id, now); err != nil {
+		if _, err := svc.Join(s, snapshot.RoomID, id, now); err != nil {
 			t.Fatalf("join %d: %v", id, err)
 		}
 	}
@@ -42,7 +42,7 @@ func TestConcurrentJoinsCannotExceedCapacity(t *testing.T) {
 		wg.Add(1)
 		go func(slot int, userID int64) {
 			defer wg.Done()
-			_, results[slot] = svc.Join(snapshot.RoomID, userID, now)
+			_, results[slot] = svc.Join(s, snapshot.RoomID, userID, now)
 		}(i, id)
 	}
 	wg.Wait()

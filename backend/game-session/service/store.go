@@ -30,20 +30,28 @@ type RoomStore interface {
 	SaveGame(g *game.Game) error
 	SaveGameEnd(r *room.Room, members []room.RoomMember, g *game.Game, lastGame *room.LastGameView) error
 	SaveExpiredPostGame(r *room.Room, removedUserIDs []int64) error
+
+	NextEventSequence(roomID int64) (int64, error)
+	SaveRecipientEvent(r *room.Room, recipientUserID int64, sequence int64, eventType string, payload any) error
+
+	LookupCommandResult(roomID int64, sessionID string, requestID string) (commandText string, response []byte, found bool, err error)
+	SaveCommandResult(roomID int64, sessionID string, requestID string, commandText string, response []byte) error
+	DeleteCommandResults(roomID int64) error
 }
+
+var ErrProfileSourceUnavailable = errors.New("user-service unavailable")
 
 type ProfileSource interface {
 	ProfilesByUserIDs(userIDs []int64) (map[int64]room.Profile, error)
 }
 
 type RoomService struct {
-	store    RoomStore
 	profiles ProfileSource
 	penalty  *room.PenaltyConfig
 }
 
-func NewRoomService(store RoomStore, profiles ProfileSource, penalty *room.PenaltyConfig) *RoomService {
-	return &RoomService{store: store, profiles: profiles, penalty: penalty}
+func NewRoomService(profiles ProfileSource, penalty *room.PenaltyConfig) *RoomService {
+	return &RoomService{profiles: profiles, penalty: penalty}
 }
 
 func loadRoom(tx RoomStore, roomID int64) (*room.Room, []room.RoomMember, *game.Game, error) {

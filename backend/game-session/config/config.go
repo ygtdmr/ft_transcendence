@@ -11,12 +11,14 @@ import (
 )
 
 type Config struct {
-	DatabaseURL   string
-	Port          int
-	InternalPort  int
-	TickInterval  time.Duration
-	Penalty       *room.PenaltyConfig
-	ServiceTokens map[string]string
+	DatabaseURL           string
+	Port                  int
+	InternalPort          int
+	TickInterval          time.Duration
+	Penalty               *room.PenaltyConfig
+	ServiceTokens         map[string]string
+	UserServiceURL        string
+	UserServiceCredential string
 }
 
 func loadServiceTokens() (map[string]string, error) {
@@ -36,6 +38,26 @@ func loadServiceTokens() (map[string]string, error) {
 		tokens[serviceName] = strings.TrimSpace(string(content))
 	}
 	return tokens, nil
+}
+
+func loadUserServiceConfig(cfg *Config) error {
+	cfg.UserServiceURL = strings.TrimRight(os.Getenv("USER_SERVICE_INTERNAL_URL"), "/")
+	if cfg.UserServiceURL == "" {
+		return errors.New("USER_SERVICE_INTERNAL_URL is required")
+	}
+	credentialPath := os.Getenv("GAME_TO_USER_SERVICE_CREDENTIAL_FILE")
+	if credentialPath == "" {
+		return errors.New("GAME_TO_USER_SERVICE_CREDENTIAL_FILE is required")
+	}
+	credential, err := os.ReadFile(credentialPath)
+	if err != nil {
+		return errors.New("GAME_TO_USER_SERVICE_CREDENTIAL_FILE could not be read: " + err.Error())
+	}
+	cfg.UserServiceCredential = strings.TrimSpace(string(credential))
+	if cfg.UserServiceCredential == "" {
+		return errors.New("GAME_TO_USER_SERVICE_CREDENTIAL_FILE is empty")
+	}
+	return nil
 }
 
 // env isimleri Furkan'ın shared/config paketi merge olunca ona göre güncellenecek
@@ -70,6 +92,9 @@ func Load() (Config, error) {
 			return Config{}, errors.New("TICK_INTERVAL must be a positive duration like 1s")
 		}
 		cfg.TickInterval = interval
+	}
+	if err := loadUserServiceConfig(&cfg); err != nil {
+		return Config{}, err
 	}
 	serviceTokens, err := loadServiceTokens()
 	if err != nil {

@@ -11,13 +11,15 @@ import (
 )
 
 type outboxRow struct {
-	EventID       string `gorm:"primaryKey;default:gen_random_uuid()"`
-	RoomID        int64
-	EventType     string
-	OutboxContent jsonb
-	CreatedAt     time.Time `gorm:"autoCreateTime"`
-	PublishedAt   *time.Time
-	RoomVersion   int64
+	EventID         string `gorm:"primaryKey;default:gen_random_uuid()"`
+	RoomID          int64
+	EventType       string
+	OutboxContent   jsonb
+	CreatedAt       time.Time `gorm:"autoCreateTime"`
+	PublishedAt     *time.Time
+	RoomVersion     int64
+	RecipientUserID *int64
+	EventSequence   *int64
 }
 
 func (outboxRow) TableName() string { return "outbox_events" }
@@ -66,4 +68,55 @@ func insertOutbox(tx *gorm.DB, r *room.Room, eventType string, payload any) erro
 	}
 	row := outboxRow{RoomID: r.RoomID, EventType: eventType, OutboxContent: jsonb(content), RoomVersion: int64(r.RoomVersion)}
 	return tx.Omit("event_id", "created_at").Create(&row).Error
+}
+
+// INSERT INTO outbox_events (room_id, event_type, outbox_content, room_version, recipient_user_id, event_sequence) VALUES (1, 'room.player.left', '{...}', 12, 43, 7);
+func (s *Store) SaveRecipientEvent(r *room.Room, recipientUserID int64, sequence int64, eventType string, payload any) error {
+	content, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	row := outboxRow{
+		RoomID:          r.RoomID,
+		EventType:       eventType,
+		OutboxContent:   jsonb(content),
+		RoomVersion:     int64(r.RoomVersion),
+		RecipientUserID: &recipientUserID,
+		EventSequence:   &sequence,
+	}
+	return s.db.Omit("event_id", "created_at").Create(&row).Error
+}
+
+// UPDATE rooms SET event_sequence = event_sequence + 1 WHERE room_id = 1 RETURNING event_sequence;
+// The increment runs inside Postgres, so concurrent callers never get the same number; it survives restarts.
+func (s *Store) NextEventSequence(roomID int64) (int64, error) {
+	var sequence int64
+	err := s.db.Raw("UPDATE rooms SET event_sequence = event_sequence + 1 WHERE room_id = ? RETURNING event_sequence", roomID).Scan(&sequence).Error
+	return sequence, err
+}
+
+type OutboxEvent struct {
+	RecipientUserID int64
+	Sequence        int64
+	EventType       string
+	Payload         json.RawMessage
+}
+
+// SELECT recipient_user_id, event_sequence, event_type, outbox_content FROM outbox_events WHERE room_id = 1 AND recipient_user_id IS NOT NULL AND published_at IS NULL ORDER BY event_sequence;
+func (s *Store) PendingRecipientEvents(roomID int64) ([]OutboxEvent, error) {
+	var rows []outboxRow
+	err := s.db.Where("room_id = ? AND recipient_user_id IS NOT NULL AND published_at IS NULL", roomID).Order("event_sequence").Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	events := make([]OutboxEvent, 0, len(rows))
+	for _, row := range rows {
+		events = append(events, OutboxEvent{
+			RecipientUserID: *row.RecipientUserID,
+			Sequence:        *row.EventSequence,
+			EventType:       row.EventType,
+			Payload:         json.RawMessage(row.OutboxContent),
+		})
+	}
+	return events, nil
 }

@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"game-session/service"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -19,7 +21,13 @@ func (h *Handler) membership(c *gin.Context) {
 		writeError(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "user_id must be a positive integer.", map[string]any{"field": "user_id"})
 		return
 	}
-	roomID, ok, err := h.svc.ActiveRoom(userID)
+	var roomID int64
+	var ok bool
+	err = h.store.ReadTransaction(func(tx service.RoomStore) error {
+		var err error
+		roomID, ok, err = h.svc.ActiveRoom(tx, userID)
+		return err
+	})
 	if err != nil {
 		writeError(c, http.StatusServiceUnavailable, "SERVICE_UNAVAILABLE", "Database unavailable.", nil)
 		return

@@ -10,11 +10,12 @@ const emptyRoomTimeout = 300 * time.Second
 type DepartureReason string
 
 const (
-	DepartureExited         DepartureReason = "EXITED"
-	DepartureSessionEnded   DepartureReason = "SESSION_ENDED"
-	DepartureDisconnected   DepartureReason = "DISCONNECTED"
-	DepartureKickedByHost   DepartureReason = "KICKED_BY_HOST"
-	DepartureAccountDeleted DepartureReason = "ACCOUNT_DELETED"
+	DepartureExited          DepartureReason = "EXITED"
+	DepartureSessionEnded    DepartureReason = "SESSION_ENDED"
+	DepartureDisconnected    DepartureReason = "DISCONNECTED"
+	DepartureKickedByHost    DepartureReason = "KICKED_BY_HOST"
+	DepartureAccountDeleted  DepartureReason = "ACCOUNT_DELETED"
+	DeparturePostGameTimeout DepartureReason = "POST_GAME_TIMEOUT"
 )
 
 type Penalty struct {

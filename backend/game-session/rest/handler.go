@@ -5,25 +5,29 @@ import (
 	"time"
 
 	"game-session/room"
+	"game-session/roomaction"
 	"game-session/service"
 
 	"github.com/gin-gonic/gin"
 )
 
-type Pinger interface {
+type Store interface {
+	service.RoomStore
 	Ping() error
 }
 
 type Handler struct {
-	svc *service.RoomService
-	db  Pinger
-	now func() time.Time
+	svc     *service.RoomService
+	actions *roomaction.Handler
+	store   Store
+	now     func() time.Time
 }
 
-func NewHandler(svc *service.RoomService, db Pinger) *Handler {
+func NewHandler(svc *service.RoomService, actions *roomaction.Handler, store Store) *Handler {
 	return &Handler{
-		svc: svc,
-		db:  db,
+		svc:     svc,
+		actions: actions,
+		store:   store,
 		now: func() time.Time {
 			return time.Now().UTC()
 		},
@@ -55,7 +59,7 @@ func (h *Handler) health(c *gin.Context) {
 }
 
 func (h *Handler) ready(c *gin.Context) {
-	if err := h.db.Ping(); err != nil {
+	if err := h.store.Ping(); err != nil {
 		writeError(c, http.StatusServiceUnavailable, "SERVICE_UNAVAILABLE", "Database unavailable.", nil)
 		return
 	}
@@ -72,7 +76,12 @@ func (h *Handler) createRoom(c *gin.Context) {
 		return
 	}
 
-	snapshot, err := h.svc.Create(userID, req.MaxPlayers, h.now())
+	var snapshot room.RoomSnapshot
+	err := h.store.Transaction(func(tx service.RoomStore) error {
+		var err error
+		snapshot, err = h.svc.Create(tx, userID, req.MaxPlayers, h.now())
+		return err
+	})
 	if err != nil {
 		writeDomainError(c, err)
 		return
@@ -89,7 +98,12 @@ func (h *Handler) lookupRoom(c *gin.Context) {
 		return
 	}
 
-	summary, err := h.svc.FindRoomByCode(code)
+	var summary service.RoomSummary
+	err := h.store.ReadTransaction(func(tx service.RoomStore) error {
+		var err error
+		summary, err = h.svc.FindRoomByCode(tx, code)
+		return err
+	})
 	if err != nil {
 		writeDomainError(c, err)
 		return
@@ -106,7 +120,12 @@ func (h *Handler) roomSnapshot(c *gin.Context) {
 	if !ok {
 		return
 	}
-	snapshot, err := h.svc.Snapshot(roomID, userID, h.now())
+	var snapshot room.RoomSnapshot
+	err := h.store.ReadTransaction(func(tx service.RoomStore) error {
+		var err error
+		snapshot, err = h.svc.Snapshot(tx, roomID, userID, h.now())
+		return err
+	})
 	if err != nil {
 		writeDomainError(c, err)
 		return
@@ -123,12 +142,17 @@ func (h *Handler) joinRoom(c *gin.Context) {
 	if !ok {
 		return
 	}
-	snapshot, err := h.svc.Join(roomID, userID, h.now())
+	var outcome roomaction.Outcome
+	err := h.store.Transaction(func(tx service.RoomStore) error {
+		var err error
+		outcome, err = h.actions.Join(tx, roomID, userID, h.now())
+		return err
+	})
 	if err != nil {
 		writeDomainError(c, err)
 		return
 	}
-	writeData(c, http.StatusCreated, snapshot)
+	writeData(c, http.StatusCreated, outcome.ActorReply)
 }
 
 func (h *Handler) leaveRoom(c *gin.Context) {
@@ -140,7 +164,11 @@ func (h *Handler) leaveRoom(c *gin.Context) {
 	if !ok {
 		return
 	}
-	if _, err := h.svc.Leave(roomID, userID, room.DepartureExited, h.now()); err != nil {
+	err := h.store.Transaction(func(tx service.RoomStore) error {
+		_, err := h.actions.Leave(tx, roomID, userID, room.DepartureExited, h.now())
+		return err
+	})
+	if err != nil {
 		writeDomainError(c, err)
 		return
 	}

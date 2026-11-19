@@ -24,19 +24,15 @@ type dataEnvelope struct {
 	Data any `json:"data"`
 }
 
-func writeJSON(c *gin.Context, status int, body any) {
-	c.JSON(status, body)
-}
-
 func writeData(c *gin.Context, status int, data any) {
-	writeJSON(c, status, dataEnvelope{Data: data})
+	c.JSON(status, dataEnvelope{Data: data})
 }
 
 func writeError(c *gin.Context, status int, code string, message string, details map[string]any) {
 	if details == nil {
 		details = map[string]any{}
 	}
-	writeJSON(c, status, errorEnvelope{Error: apiError{Code: code, Message: message, Details: details}})
+	c.JSON(status, errorEnvelope{Error: apiError{Code: code, Message: message, Details: details}})
 }
 
 func writeDomainError(c *gin.Context, err error) {
@@ -55,6 +51,8 @@ func writeDomainError(c *gin.Context, err error) {
 		writeError(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "The request payload is invalid.", nil)
 	case errors.Is(err, service.ErrRoomCodeTaken):
 		writeError(c, http.StatusServiceUnavailable, "ROOM_CODE_UNAVAILABLE", "Could not allocate a room code, retry.", nil)
+	case errors.Is(err, service.ErrProfileSourceUnavailable):
+		writeError(c, http.StatusServiceUnavailable, "SERVICE_UNAVAILABLE", "User Service is unavailable, retry.", nil)
 	default:
 		writeError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Unexpected server error.", nil)
 	}

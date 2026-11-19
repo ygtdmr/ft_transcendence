@@ -18,9 +18,11 @@ type Store struct {
 	locking bool
 }
 
+var errTransactionAlreadyOpen = errors.New("transaction already open: pass the tx you were given instead of opening another")
+
 func (s *Store) Transaction(fn func(tx service.RoomStore) error) error {
 	if s.locking {
-		return fn(s)
+		return errTransactionAlreadyOpen
 	}
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		return fn(&Store{db: tx, locking: true})
