@@ -1,0 +1,77 @@
+info:
+  name: Clean up Game Session account data
+  type: http
+  seq: 2
+  tags: [internal, deletion, game-session]
+http:
+  method: PUT
+  url: "{{gameInternalUrl}}/internal/v1/account-cleanups/6b1f0c2e-9a4d-4c7e-8f3b-2d5e7a9c1b40"
+  headers:
+    - name: Authorization
+      value: "Bearer {{userToGameServiceCredential}}"
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "user_id": 42
+      }
+docs: |-
+  # Clean up Game Session account data
+
+  Scope `account.cleanup`. Caller: User Service's deletion coordinator, after Auth has begun the deletion and before Stats cleanup. Game Session removes the user from their current room as a departure with reason `ACCOUNT_DELETED` and records the cleanup in the same transaction.
+
+  In a Game v2 room the departure emits `room.player.left` and, during `IN_GAME`, rechecks staffing (possibly `game.staffing.required`). It never records a leave penalty, and a later socket close caused by Auth's revocation does not turn the same departure into a second `SESSION_ENDED` or abandonment penalty. A user in no room is cleaned up without a departure. Game Session never reads or writes another service's tables.
+
+  A membership or room action for the user that arrives after cleanup is refused, so the deleted user cannot rejoin a room.
+
+  ## Request parameters
+
+  | Parameter | Location | Required | Type | Allowed values | Nullable | Description | Example |
+  | --- | --- | ---: | --- | --- | ---: | --- | --- |
+  | `operation_id` | path | yes | string | UUID, normalized to lowercase | no | Deletion operation of record | `6b1f0c2e-9a4d-4c7e-8f3b-2d5e7a9c1b40` |
+  | `user_id` | body | yes | integer | positive | no | Account being deleted | `42` |
+
+  ## Response fields
+
+  | Field | Type | Required | Nullable | Allowed values | Description |
+  | --- | --- | ---: | ---: | --- | --- |
+  | `data.operation_id` | string | yes | no | lowercase UUID | Operation of record |
+  | `data.user_id` | integer | yes | no | positive | Deleted account |
+  | `data.state` | string enum | yes | no | `COMPLETED` | Game Session cleanup is done |
+  | `data.completed_at` | string | yes | no | ISO 8601 UTC | When cleanup committed |
+
+  ## Status and errors
+
+  | Status | Code | Condition | `details` |
+  | --- | --- | --- | --- |
+  | `201` | none | Cleanup applied now | none |
+  | `200` | none | Same operation and user replayed; returns the stored receipt | none |
+  | `400` | `VALIDATION_ERROR` | Malformed JSON, more than one JSON value, or unknown or missing body fields | `{ "field": "body" }` |
+  | `401` | `SERVICE_UNAUTHENTICATED` | Missing or unknown service credential | `{}` |
+  | `403` | `SERVICE_FORBIDDEN` | Caller lacks `account.cleanup` | `{}` |
+  | `409` | `OPERATION_CONFLICT` | `operation_id` already belongs to another user | `{}` |
+  | `409` | `DELETION_CONFLICT` | User already cleaned up by another operation | `{}` |
+  | `422` | `VALIDATION_ERROR` | `operation_id` is not a UUID, or `user_id` is not a positive integer | `{ "field": string }` |
+  | `500` | `INTERNAL_ERROR` | Unexpected failure | `{}` |
+  | `503` | `SERVICE_UNAVAILABLE` | Database unavailable; retry the identical request | `{}` |
+
+  The coordinator retries the identical request after a network error, a timeout, `500` or `503`. Any other error stops the deletion for investigation.
+examples:
+  - name: Success
+    request: {url: "{{gameInternalUrl}}/internal/v1/account-cleanups/6b1f0c2e-9a4d-4c7e-8f3b-2d5e7a9c1b40", method: PUT, headers: [], params: [], body: {mode: none}}
+    response:
+      status: 201
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "data": {
+              "operation_id": "6b1f0c2e-9a4d-4c7e-8f3b-2d5e7a9c1b40",
+              "user_id": 42,
+              "state": "COMPLETED",
+              "completed_at": "2026-11-05T09:30:00.123456Z"
+            }
+          }
