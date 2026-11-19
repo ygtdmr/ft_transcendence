@@ -33,6 +33,10 @@ type Config struct {
 	AuthInternalURL       string
 	AuthServiceCredential string `json:"-"`
 	AuthInternalTimeout   time.Duration
+	// BrokerURL and EventsQueue name the broker and the queue this service
+	// consumes Game Session's events from.
+	BrokerURL   string `json:"-"`
+	EventsQueue string
 }
 
 // Load reads and validates settings from the process environment. It does not
@@ -79,6 +83,9 @@ func Load() (Config, error) {
 	}
 	cfg.CallerCredentials = credentials
 	if err := cfg.loadAuthService(); err != nil {
+		return Config{}, err
+	}
+	if err := cfg.loadBroker(); err != nil {
 		return Config{}, err
 	}
 
