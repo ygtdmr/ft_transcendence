@@ -133,8 +133,9 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 				cleanup()
 				return nil, nil, err
 			}
+			usernames := service.NewUsernames(userpostgres.NewUsernames(pool), avatars)
 			public = append(public, controller.NewPublicProfile(profiles, sessions), controller.NewOwnProfile(own, sessions),
-				controller.NewAccountDeletion(deletions, sessions))
+				controller.NewProfileUpdate(usernames, own, sessions), controller.NewAccountDeletion(deletions, sessions))
 			cleanup = startDeletionWorker(ctx, deletions, cleanup, logger)
 		} else {
 			logger.WarnContext(ctx, "STATS_INTERNAL_URL is not set; the public and own profile routes are not served")
