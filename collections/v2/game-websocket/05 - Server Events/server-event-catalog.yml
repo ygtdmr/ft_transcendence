@@ -52,7 +52,7 @@ docs: |-
   | `game.card.revealed` | game/card/actor/team/score/turn/result | accepted guess | role-safe board delta |
   | `game.score.updated` | `game_id`, `score`, `changed_color` | RED or BLUE reveal | common |
   | `game.turn.changed` | game ID, previous team, reason, current turn, score | non-terminal turn end, including a turn timer deadline (`TURN_TIMER_EXPIRED`) | common |
-  | `game.ended` | winner, loser, reason, revealed card, score, `room_status=POST_GAME`, `game_status=GAME_FINISHED`, phase, post-game deadline, time | terminal reveal | this existing terminal-card payload does not yet specify the required full finished-board delivery |
+  | `game.ended` | winner, loser, reason, revealed card, score, `room_status=POST_GAME`, `game_status=GAME_FINISHED`, phase, post-game deadline, time | terminal reveal | the recipient-specific `room.state` that follows carries the finished board (`workspace.yml`, Data Visibility) |
   | `game.staffing.required` | missing roles and `deadline_at` per deficient team, `departure` | live composition becomes invalid | common |
   | `game.staffing.restored` | restored teams and resumed turn/phase | both teams become valid before deadlines | role-safe state |
   | `game.cancelled` | null winner/loser, `INSUFFICIENT_PLAYERS`, deficient team, score, `room_status=CLOSED`, time | a staffing deadline expires | no match/stat update |
@@ -206,7 +206,7 @@ docs: |-
 
   ## Invariants
 
-  A terminal `game.ended` is final for the match and no `game.turn.changed` follows it. The same atomic terminal transition appends an internal `match.finalized` outbox record containing the complete pre-departure roster and timestamps; that integration record is not sent to clients and Stats deduplicates it by `game_id`. During active gameplay, Operative events never expose unrelated unrevealed affiliations. On competitive completion, all card affiliations must be visible to users already in the room. The finished-board delivery contract and precise result-access rules remain to be finalized; do not infer a new event or payload from this requirement. Cancelled-game disclosure is unresolved, and later joiners must not automatically receive historical hidden information. Duplicate request IDs do not duplicate domain events.
+  A terminal `game.ended` is final for the match and no `game.turn.changed` follows it. The same atomic terminal transition appends an internal `match.finalized` outbox record containing the complete pre-departure roster and timestamps; that integration record is not sent to clients and Stats deduplicates it by `game_id`. During active gameplay, Operative events never expose unrelated unrevealed affiliations. On competitive completion the `room.state` that follows `game.ended` delivers the full board to every member in the room at that moment; there is no separate finished-board event. A cancelled game delivers it in `game.cancelled`. Later joiners never receive historical hidden information, and events of a previous game are told apart by `game_id` (`workspace.yml`, Data Visibility). Duplicate request IDs do not duplicate domain events.
 
   ## Insufficient-player cancellation example
 

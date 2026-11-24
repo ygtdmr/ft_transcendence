@@ -82,7 +82,7 @@ docs: |-
   | `data.game.board[].card_id` | integer | yes | no | `1..25` unique | Slot identifier; carries zero affiliation information (`workspace.yml`, Card ID invariant) — the fixture example's `card_id`↔color pattern is illustrative only, not a rule |
   | `data.game.board[].word` | string | yes | no | fixture word | Visible to both roles |
   | `data.game.board[].revealed` | boolean | yes | no | `true`, `false` | Reveal state |
-  | `data.game.board[].color` | enum or null | yes | yes | `RED`, `BLUE`, `NEUTRAL`, `ASSASSIN`, `null` | During active gameplay, unrevealed colors are hidden from Operatives; finished visibility follows the documented completion requirement |
+  | `data.game.board[].color` | enum or null | yes | yes | `RED`, `BLUE`, `NEUTRAL`, `ASSASSIN`, `null` | During active gameplay, unrevealed colors are hidden from Operatives; once the game is `GAME_FINISHED` or `CANCELLED`, every card carries its color for every recipient |
   | `data.game.winner` | enum or null | yes | yes | `RED`, `BLUE`, `null` | Non-null only after terminal result |
   | `data.game.end_reason` | enum or null | yes | yes | `ALL_TEAM_CARDS_REVEALED`, `ASSASSIN_REVEALED`, `INSUFFICIENT_PLAYERS`, `null` | Terminal cause; cancellation has no winner |
   | `data.game.staffing` | object | conditional | no | per-team missing roles/deadlines | Present in `PAUSED_FOR_PLAYERS`; the same shape as `game.staffing.required.payload.staffing`, so a reconnect restores the shutdown countdown |
@@ -111,7 +111,7 @@ docs: |-
 
   ## Errors and privacy invariant
 
-  `401 UNAUTHORIZED`, `404 ROOM_NOT_FOUND`, `403 NOT_ROOM_MEMBER`, `422 VALIDATION_ERROR`. Errors reveal no room state. During active gameplay, the server projects every card for the authenticated viewer and never sends an Operative an unrevealed affiliation. Competitive completion must disclose all affiliations to users already in the room; exact result delivery/access needs contract review. Cancellation discloses all affiliations to the users still in the room, exactly like competitive completion.
+  `401 UNAUTHORIZED`, `404 ROOM_NOT_FOUND`, `403 NOT_ROOM_MEMBER`, `422 VALIDATION_ERROR`. Errors reveal no room state. During active gameplay, the server projects every card for the authenticated viewer and never sends an Operative an unrevealed affiliation. Competitive completion discloses all affiliations to the members in the room at game end: a `POST_GAME` recipient's `data.game.board[].color` is set on every card while `revealed` still marks only actual guesses, an `IN_LOBBY` recipient gets `last_game` without a board, and a user who joins later never receives it (`workspace.yml`, Data Visibility). Cancellation discloses all affiliations to the users still in the room, exactly like competitive completion.
 examples:
   - name: Newly created room
     request: {url: "{{baseUrl}}/api/{{gameApiVersion}}/rooms/1001", method: GET, headers: [], params: [], body: {mode: none}}
