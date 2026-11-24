@@ -1,6 +1,8 @@
 package unit_test
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -13,7 +15,7 @@ func setEnvironment(t *testing.T, values map[string]string) {
 	t.Helper()
 	for _, name := range []string{"APP_ENV", "LOG_FORMAT", "LOG_LEVEL", "PORT", "DATABASE_URL", "MIGRATE_ON_START", "INTERNAL_PORT",
 		"USER_SERVICE_CREDENTIAL_FILE", "USER_SERVICE_PREVIOUS_CREDENTIAL_FILE", "AUTH_INTERNAL_URL",
-		"AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE", "AUTH_INTERNAL_TIMEOUT"} {
+		"AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE", "AUTH_INTERNAL_TIMEOUT", "RABBITMQ_URL", "STATS_EVENTS_QUEUE"} {
 		t.Setenv(name, values[name])
 	}
 }
@@ -54,5 +56,43 @@ func TestLoadRejectsInvalidSettings(t *testing.T) {
 				t.Fatalf("Load error = %v, want it to mention %s", err, tt.want)
 			}
 		})
+	}
+}
+
+// TestLoadBroker checks the event consumer settings.
+//
+// Expected output: unset is allowed outside production and refused in
+// production; a full pair is kept; a partial pair, a non-AMQP URL and a queue
+// name with whitespace are refused without echoing the URL.
+func TestLoadBroker(t *testing.T) {
+	const brokerURL = "amqp://stats:secret@rabbitmq:5672/"
+	setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL})
+	if cfg, err := config.Load(); err != nil || cfg.BrokerURL != "" {
+		t.Fatalf("unset = %q, %v", cfg.EventsQueue, err)
+	}
+	setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL, "RABBITMQ_URL": brokerURL, "STATS_EVENTS_QUEUE": "stats.game-events"})
+	if cfg, err := config.Load(); err != nil || cfg.BrokerURL != brokerURL || cfg.EventsQueue != "stats.game-events" {
+		t.Fatalf("full = %q, %v", cfg.EventsQueue, err)
+	}
+	auth := filepath.Join(t.TempDir(), "auth-credential")
+	if err := os.WriteFile(auth, []byte(strings.Repeat("a", 40)), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL, "APP_ENV": "production",
+		"AUTH_INTERNAL_URL": "http://auth-service:8090", "AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE": auth})
+	if _, err := config.Load(); err == nil || !strings.Contains(err.Error(), "RABBITMQ_URL") {
+		t.Fatalf("production without broker = %v", err)
+	}
+	for name, values := range map[string]map[string]string{
+		"queue only":       {"STATS_EVENTS_QUEUE": "stats.game-events"},
+		"url only":         {"RABBITMQ_URL": brokerURL},
+		"http url":         {"RABBITMQ_URL": "http://stats:secret@rabbitmq/", "STATS_EVENTS_QUEUE": "q"},
+		"queue with space": {"RABBITMQ_URL": brokerURL, "STATS_EVENTS_QUEUE": "stats events"},
+	} {
+		values["DATABASE_URL"] = validDatabaseURL
+		setEnvironment(t, values)
+		if _, err := config.Load(); err == nil || strings.Contains(err.Error(), "secret") {
+			t.Fatalf("%s error = %v", name, err)
+		}
 	}
 }

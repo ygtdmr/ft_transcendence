@@ -14,7 +14,7 @@ import (
 )
 
 // latestMigration is the highest migration number in migrations/.
-const latestMigration = 7
+const latestMigration = 8
 
 // Postgres error codes the schema tests expect.
 const (

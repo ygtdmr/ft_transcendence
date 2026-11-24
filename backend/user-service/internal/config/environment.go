@@ -47,6 +47,11 @@ type Config struct {
 	StatsInternalURL       string
 	StatsServiceCredential string `json:"-"`
 	StatsInternalTimeout   time.Duration
+	// GameInternalURL, GameServiceCredential and GameInternalTimeout reach
+	// Game Session's private listener for the owner's live room membership.
+	GameInternalURL       string
+	GameServiceCredential string `json:"-"`
+	GameInternalTimeout   time.Duration
 	// ReportWindow is how long a reporter must wait before reporting the same
 	// user again.
 	ReportWindow   time.Duration
@@ -74,6 +79,7 @@ type Config struct {
 //   - Auth settings: see loadAuthService.
 //   - Gateway settings: see loadGateways.
 //   - Stats settings: see loadStatsService.
+//   - Game Session settings: see loadGameService.
 func Load() (Config, error) {
 	cfg := Config{
 		Environment:      strings.TrimSpace(os.Getenv("APP_ENV")),
@@ -121,6 +127,9 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 	if err := cfg.loadStatsService(); err != nil {
+		return Config{}, err
+	}
+	if err := cfg.loadGameService(); err != nil {
 		return Config{}, err
 	}
 

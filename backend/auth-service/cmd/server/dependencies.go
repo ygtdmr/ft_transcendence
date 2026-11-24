@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/client/gameclient"
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/client/googleclient"
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/client/userclient"
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/config"
@@ -58,6 +59,16 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 		options = append(options, service.WithProfileProvisioner(provisioner), service.WithProfileReader(provisioner))
 	} else {
 		logger.WarnContext(ctx, "USER_INTERNAL_URL is not set; accounts are created without User Service profiles or username uniqueness")
+	}
+	if cfg.GameInternalURL != "" {
+		memberships, err := gameclient.New(cfg.GameInternalURL, cfg.GameServiceCredential, cfg.GameInternalTimeout)
+		if err != nil {
+			pool.Close()
+			return nil, nil, err
+		}
+		options = append(options, service.WithMembershipReader(memberships))
+	} else {
+		logger.WarnContext(ctx, "GAME_INTERNAL_URL is not set; current-session reports no active room")
 	}
 	authService := service.NewAuth(authRepository, issuer, options...)
 	sealer, err := security.NewOAuthStateSealer([]byte(cfg.JWTSecret))
