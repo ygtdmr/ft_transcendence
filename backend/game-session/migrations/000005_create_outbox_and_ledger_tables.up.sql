@@ -33,4 +33,10 @@ CREATE TABLE command_ledger (
     CONSTRAINT chk_command_ledger_request_id CHECK (request_id ~ '^[!-~]{1,64}$')
 );
 
+CREATE TABLE account_cleanups (
+    operation_id UUID PRIMARY KEY,
+    user_id BIGINT NOT NULL UNIQUE,
+    completed_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 COMMIT;

@@ -147,6 +147,14 @@ func (s *RoomService) CloseIfEmpty(tx RoomStore, roomID int64, now time.Time) (b
 }
 
 func (s *RoomService) Join(tx RoomStore, roomID int64, userID int64, now time.Time) (room.RoomSnapshot, error) {
+	_, cleanedUp, err := tx.LookupAccountCleanup(userID)
+	if err != nil {
+		return room.RoomSnapshot{}, err
+	}
+	if cleanedUp {
+		return room.RoomSnapshot{}, ErrAccountCleanedUp
+	}
+
 	profiles, err := s.profiles.ProfilesByUserIDs([]int64{userID})
 	if err != nil {
 		return room.RoomSnapshot{}, err

@@ -51,6 +51,7 @@ func (h *Handler) InternalRoutes(access *ServiceAccessCheck) http.Handler {
 	router := gin.New()
 	router.Use(gin.Recovery())
 	router.GET("/internal/v1/memberships/:user_id", access.RequireScope("membership.read"), h.membership)
+	router.PUT("/internal/v1/account-cleanups/:operation_id", access.RequireScope("account.cleanup"), h.accountCleanup)
 	return router
 }
 

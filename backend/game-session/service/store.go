@@ -2,12 +2,18 @@ package service
 
 import (
 	"errors"
-
 	"game-session/game"
 	"game-session/room"
+	"time"
 )
 
 var ErrRoomCodeTaken = errors.New("room code already in use")
+
+type AccountCleanup struct {
+	OperationID string
+	UserID      int64
+	CompletedAt time.Time
+}
 
 type RoomStore interface {
 	Transaction(fn func(tx RoomStore) error) error
@@ -31,15 +37,24 @@ type RoomStore interface {
 	SaveGameEnd(r *room.Room, members []room.RoomMember, g *game.Game, lastGame *room.LastGameView) error
 	SaveExpiredPostGame(r *room.Room, removedUserIDs []int64) error
 
+	//outbox events
 	NextEventSequence(roomID int64) (int64, error)
 	SaveRecipientEvent(r *room.Room, recipientUserID int64, sequence int64, eventType string, payload any) error
 
+	//command ledger
 	LookupCommandResult(roomID int64, sessionID string, requestID string) (commandText string, response []byte, found bool, err error)
 	SaveCommandResult(roomID int64, sessionID string, requestID string, commandText string, response []byte) error
 	DeleteCommandResults(roomID int64) error
+
+	//account cleanup
+	LookupAccountCleanup(userID int64) (AccountCleanup, bool, error)
+	SaveAccountCleanup(cleanup AccountCleanup) error
 }
 
 var ErrProfileSourceUnavailable = errors.New("user-service unavailable")
+var ErrAccountCleanupOperationConflict = errors.New("operation_id belongs to another user")
+var ErrAccountCleanupUserConflict = errors.New("user already cleaned up by another operation")
+var ErrAccountCleanedUp = errors.New("account cleaned up, user cannot act in rooms")
 
 type ProfileSource interface {
 	ProfilesByUserIDs(userIDs []int64) (map[int64]room.Profile, error)
