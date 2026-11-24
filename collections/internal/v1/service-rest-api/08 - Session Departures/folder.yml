@@ -1,0 +1,8 @@
+info:
+  name: 08 - Session Departures
+  type: folder
+  seq: 8
+docs: |-
+  # Session departures
+
+  Auth Service records a logout here before it revokes the session. Game Session applies the Game v2 leave rules for reason `SESSION_ENDED` and keeps a receipt per session, so a retried call never removes a membership the user created later with a new session.
