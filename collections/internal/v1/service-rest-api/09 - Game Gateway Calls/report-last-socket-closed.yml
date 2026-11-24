@@ -1,0 +1,44 @@
+info:
+  name: Report last socket closed
+  type: http
+  seq: 2
+  tags: [internal, game-session, socket]
+http:
+  method: DELETE
+  url: "{{gameInternalUrl}}/internal/v1/rooms/1001/connections/42"
+  headers:
+    - name: Authorization
+      value: "Bearer {{gatewayToGameServiceCredential}}"
+docs: |-
+  # Report last socket closed
+
+  Scope `room.socket`. Caller: Game Gateway, when the last open socket of `user_id` for `room_id` closed. The Gateway counts sockets; it does not call this while another socket of the same user for the same room is still open (multi-tab, `workspace.yml`). Game Session marks the member disconnected and starts the reconnect grace that applies to the room status; the post-game decision deadline is not extended. A member who is already disconnected is left as is: a repeated call does not restart the grace deadline. No body.
+
+  ## Request parameters
+
+  | Parameter | Location | Required | Type | Allowed values | Nullable | Description | Example |
+  | --- | --- | ---: | --- | --- | ---: | --- | --- |
+  | `room_id` | path | yes | integer | positive | no | Room of the socket | `1001` |
+  | `user_id` | path | yes | integer | positive | no | Owner of the validated session | `42` |
+
+  ## Status and errors
+
+  | Status | Code | Condition | `details` |
+  | --- | --- | --- | --- |
+  | `204` | none | Member marked disconnected, grace running, or already disconnected | none |
+  | `401` | `SERVICE_UNAUTHENTICATED` | Missing or unknown service credential | `{}` |
+  | `403` | `SERVICE_FORBIDDEN` | Caller lacks `room.socket` | `{}` |
+  | `403` | `NOT_ROOM_MEMBER` | The user is not a member of this room; nothing to do | `{}` |
+  | `404` | `ROOM_NOT_FOUND` | No active room matches this id; nothing to do | `{}` |
+  | `422` | `VALIDATION_ERROR` | `room_id` or `user_id` is not a positive integer | `{ "field": string }` |
+  | `500` | `INTERNAL_ERROR` | Unexpected failure | `{}` |
+  | `503` | `SERVICE_UNAVAILABLE` | Database unavailable; retry the identical request | `{}` |
+examples:
+  - name: Success - Last socket closed
+    request: {url: "{{gameInternalUrl}}/internal/v1/rooms/1001/connections/42", method: DELETE, headers: [], params: [], body: {mode: none}}
+    response:
+      status: 204
+      headers: []
+      body:
+        type: json
+        data: ""

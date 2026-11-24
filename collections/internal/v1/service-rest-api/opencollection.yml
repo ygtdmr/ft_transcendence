@@ -65,6 +65,7 @@ docs:
     | `auth-service` | `user-service` | `account.deletion.complete` | Complete account deletion | `PUT /internal/v1/account-deletions/{operation_id}/completion` |
     | `game-session` | `auth-service`, `user-service` | `membership.read` | Read current room membership | `GET /internal/v1/memberships/{user_id}` |
     | `game-session` | `auth-service` | `session.departure` | Record logout departure | `PUT /internal/v1/session-departures/{session_id}` |
+    | `game-session` | `game-gateway` | `room.socket` | Report socket opened / last socket closed / gateway started, forward a room command | `PUT /internal/v1/rooms/{room_id}/connections/{user_id}`, `DELETE /internal/v1/rooms/{room_id}/connections/{user_id}`, `DELETE /internal/v1/room-connections`, `POST /internal/v1/rooms/{room_id}/commands` |
     | `game-session`, `stats-service` | `user-service` | `account.cleanup` | Remove the user's local data | `PUT /internal/v1/account-cleanups/{operation_id}` |
     | `stats-service` | `user-service` | `stats.read` | Read user counters | `GET /internal/v1/user-stats/{user_id}` |
     | `game-gateway`, `notification-gateway` | `auth-service` | `session.revocation.notify` | Close a revoked session's sockets | `PUT /internal/v1/session-revocations/{session_id}` |
