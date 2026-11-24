@@ -34,6 +34,12 @@ type Config struct {
 	// UserServiceCredential is Auth's own credential for User Service.
 	UserServiceCredential string `json:"-"`
 	UserInternalTimeout   time.Duration
+	// GameInternalURL is Game Session's private listener. When set,
+	// current-session reads the live room membership there.
+	GameInternalURL string
+	// GameServiceCredential is Auth's own credential for Game Session.
+	GameServiceCredential string `json:"-"`
+	GameInternalTimeout   time.Duration
 	// Google sign-in client settings; empty when Google sign-in is disabled.
 	GoogleClientID     string
 	GoogleClientSecret string `json:"-"`
@@ -87,6 +93,9 @@ func Load() (Config, error) {
 	}
 	cfg.CallerCredentials = credentials
 	if err := cfg.loadUserService(); err != nil {
+		return Config{}, err
+	}
+	if err := cfg.loadGameService(); err != nil {
 		return Config{}, err
 	}
 	if err := cfg.loadGoogleOAuth(); err != nil {
