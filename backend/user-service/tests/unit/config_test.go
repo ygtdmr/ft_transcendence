@@ -29,7 +29,8 @@ func setEnvironment(t *testing.T, values map[string]string) {
 		"WEB_BFF_CREDENTIAL_FILE", "WEB_BFF_PREVIOUS_CREDENTIAL_FILE",
 		"GAME_GATEWAY_INTERNAL_URLS", "GAME_GATEWAY_OUTBOUND_CREDENTIAL_FILE",
 		"NOTIFICATION_GATEWAY_INTERNAL_URLS", "NOTIFICATION_GATEWAY_OUTBOUND_CREDENTIAL_FILE", "GATEWAY_INTERNAL_TIMEOUT",
-		"STATS_INTERNAL_URL", "STATS_SERVICE_OUTBOUND_CREDENTIAL_FILE", "STATS_INTERNAL_TIMEOUT"} {
+		"STATS_INTERNAL_URL", "STATS_SERVICE_OUTBOUND_CREDENTIAL_FILE", "STATS_INTERNAL_TIMEOUT",
+		"GAME_INTERNAL_URL", "GAME_SERVICE_OUTBOUND_CREDENTIAL_FILE", "GAME_INTERNAL_TIMEOUT"} {
 		t.Setenv(name, values[name])
 	}
 }
@@ -86,6 +87,8 @@ func TestLoadEnvironmentDefaults(t *testing.T) {
 				"NOTIFICATION_GATEWAY_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, strings.Repeat("c", 40)),
 				"STATS_INTERNAL_URL":                            "http://stats-service:8090",
 				"STATS_SERVICE_OUTBOUND_CREDENTIAL_FILE":        writeSecret(t, strings.Repeat("t", 40)),
+				"GAME_INTERNAL_URL":                             "http://game-session:8093",
+				"GAME_SERVICE_OUTBOUND_CREDENTIAL_FILE":         writeSecret(t, strings.Repeat("m", 40)),
 			})
 
 			cfg, err := config.Load()
@@ -434,6 +437,53 @@ func TestLoadStatsService(t *testing.T) {
 		setEnvironment(t, values)
 		if _, err := config.Load(); err == nil {
 			t.Fatalf("%s accepted", name)
+		}
+	}
+}
+
+// TestLoadGameService checks the Game Session settings.
+//
+// Expected output: unset is allowed outside production with a 5s timeout and
+// refused in production; a full pair is kept; a partial pair, a URL with a
+// path, an invalid timeout and a credential shared with an inbound caller or
+// Stats are refused.
+func TestLoadGameService(t *testing.T) {
+	game := writeSecret(t, strings.Repeat("m", 40))
+	setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL})
+	if cfg, err := config.Load(); err != nil || cfg.GameInternalURL != "" || cfg.GameInternalTimeout != 5*time.Second {
+		t.Fatalf("unset = %q, %v", cfg.GameInternalURL, err)
+	}
+	setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL, "APP_ENV": "production", "AVATAR_STORAGE_DIR": "/data",
+		"AUTH_INTERNAL_URL": "http://auth-service:8090", "AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, strings.Repeat("o", 40)),
+		"GAME_GATEWAY_INTERNAL_URLS": "http://game-gateway:8090", "GAME_GATEWAY_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, strings.Repeat("g", 40)),
+		"NOTIFICATION_GATEWAY_INTERNAL_URLS":            "http://notification-gateway:8090",
+		"NOTIFICATION_GATEWAY_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, strings.Repeat("c", 40)),
+		"STATS_INTERNAL_URL":                            "http://stats-service:8090", "STATS_SERVICE_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, strings.Repeat("t", 40))})
+	if _, err := config.Load(); err == nil || !strings.Contains(err.Error(), "GAME_INTERNAL_URL") {
+		t.Fatalf("production without Game Session = %v", err)
+	}
+
+	full := map[string]string{"DATABASE_URL": validDatabaseURL, "GAME_INTERNAL_URL": "http://game-session:8093/",
+		"GAME_SERVICE_OUTBOUND_CREDENTIAL_FILE": game}
+	setEnvironment(t, full)
+	cfg, err := config.Load()
+	if err != nil || cfg.GameInternalURL != "http://game-session:8093" || cfg.GameServiceCredential != strings.Repeat("m", 40) ||
+		cfg.GameInternalTimeout != 5*time.Second {
+		t.Fatalf("game = %q %v, %v", cfg.GameInternalURL, cfg.GameInternalTimeout, err)
+	}
+
+	for name, change := range map[string]map[string]string{
+		"partial":        {"GAME_SERVICE_OUTBOUND_CREDENTIAL_FILE": ""},
+		"path":           {"GAME_INTERNAL_URL": "http://game-session:8093/x"},
+		"inbound reused": {"GAME_SESSION_CREDENTIAL_FILE": game},
+		"stats reused":   {"STATS_INTERNAL_URL": "http://stats-service:8090", "STATS_SERVICE_OUTBOUND_CREDENTIAL_FILE": game},
+		"timeout":        {"GAME_INTERNAL_TIMEOUT": "0s"},
+	} {
+		values := maps.Clone(full)
+		maps.Copy(values, change)
+		setEnvironment(t, values)
+		if _, err := config.Load(); err == nil || strings.Contains(err.Error(), strings.Repeat("m", 40)) {
+			t.Fatalf("%s error = %v", name, err)
 		}
 	}
 }
