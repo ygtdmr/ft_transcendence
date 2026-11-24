@@ -30,6 +30,10 @@ docs: |-
 
   A client-level failure (`INVALID_EVENT`, `INVALID_PAYLOAD`, `NOT_YOUR_TURN`, ...) is a `200` with an `error` reply: it belongs to the player, not to the Gateway. Only a fault of the call itself (credentials, headers, dependency) produces an error envelope.
 
+  The Gateway forwards the messages of one socket one at a time, in the order received: it sends the next only after the previous call answered, retries included. Messages of different sockets may be forwarded concurrently.
+
+  The Gateway never forwards an empty message (it ignores it) or one larger than 64 KB (it closes the socket with `1009`), so a `400` means a Gateway fault.
+
   ## Request parameters
 
   | Parameter | Location | Required | Type | Allowed values | Nullable | Description | Example |

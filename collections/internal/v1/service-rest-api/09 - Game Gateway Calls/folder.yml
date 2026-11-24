@@ -5,6 +5,10 @@ info:
 docs: |-
   # Game Gateway calls
 
-  Game Gateway owns the room sockets; Game Session owns rooms, membership and the command protocol. The Gateway reports what it sees on a socket (opened, last one closed) and hands over every client command unchanged. Game Session answers from its authoritative records and never trusts identity inside a client message: `user_id` and `session_id` come from the session the Gateway validated with Auth Service.
+  Game Gateway owns the room sockets; Game Session owns rooms, membership and the command protocol. The Gateway reports what it sees on a socket (opened, last one closed), reports that it started without sockets, and hands over every client command unchanged. Game Session answers from its authoritative records and never trusts identity inside a client message: `user_id` and `session_id` come from the session the Gateway validated with Auth Service.
 
-  All three calls use scope `room.socket`. A dependency failure returns `503 SERVICE_UNAVAILABLE`; the Gateway retries the identical request.
+  All four calls use scope `room.socket`. A dependency failure returns `503 SERVICE_UNAVAILABLE`; the Gateway retries the identical request.
+
+  This revision assumes one Game Gateway instance. Game Session keeps one connection state per member, so reports from a second instance would overwrite each other; running several instances needs a contract revision that reports per instance.
+
+  A Gateway restart removes its live connections (`workspace.yml`, State Ownership). Because the Gateway that held them can no longer report them closed, a starting Gateway calls Report gateway started before it accepts a room socket, and Game Session starts the reconnect grace of every member who was still connected.

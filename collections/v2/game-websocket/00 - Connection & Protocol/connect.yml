@@ -53,6 +53,7 @@ docs: |-
   | `404` | `ROOM_NOT_FOUND` | path room does not exist | no |
   | `403` | `NOT_ROOM_MEMBER` | authenticated user is not a member | no |
   | `409` | `INVALID_ROOM_STATE` | room is `CLOSED` | no |
+  | `503` | `SERVICE_UNAVAILABLE` | Auth Service or Game Session cannot answer; an availability failure, never a membership verdict | no |
 
   A transport disconnect starts reconnect grace: 30s in `WAITING`/`COUNTDOWN`, 60s in `IN_GAME`. Post-game is different: its shared 60s decision deadline continues while disconnected and is never extended by reconnect. A pending member reconnecting before `deadline_at` gets the result snapshot; after timeout the membership is gone and the handshake returns `403 NOT_ROOM_MEMBER`.
 

@@ -1,0 +1,42 @@
+info:
+  name: Report gateway started
+  type: http
+  seq: 4
+  tags: [internal, game-session, socket]
+http:
+  method: DELETE
+  url: "{{gameInternalUrl}}/internal/v1/room-connections"
+  headers:
+    - name: Authorization
+      value: "Bearer {{gatewayToGameServiceCredential}}"
+docs: |-
+  # Report gateway started
+
+  Scope `room.socket`. Caller: Game Gateway, once at startup, before it accepts any room socket. A starting Gateway holds no room sockets, and the sockets of the instance it replaces were dropped without Report last socket closed (`workspace.yml`, State Ownership: a Gateway restart removes its live connections).
+
+  Game Session marks every member of every active room who is still connected as disconnected and starts the reconnect grace that applies to the room status, exactly as Report last socket closed does for one member: a member already disconnected keeps the grace deadline already running, and the post-game decision deadline is not extended. Clients reconnect within the grace and Report socket opened clears it. No body.
+
+  The Gateway retries a `503`, a network error or a timeout with the identical request and accepts no room socket until it receives `204`. A repeated call changes nothing more.
+
+  ## Request parameters
+
+  None.
+
+  ## Status and errors
+
+  | Status | Code | Condition | `details` |
+  | --- | --- | --- | --- |
+  | `204` | none | Every connected member is marked disconnected, or none was connected | none |
+  | `401` | `SERVICE_UNAUTHENTICATED` | Missing or unknown service credential | `{}` |
+  | `403` | `SERVICE_FORBIDDEN` | Caller lacks `room.socket` | `{}` |
+  | `500` | `INTERNAL_ERROR` | Unexpected failure | `{}` |
+  | `503` | `SERVICE_UNAVAILABLE` | Database unavailable; retry the identical request | `{}` |
+examples:
+  - name: Success - Gateway started
+    request: {url: "{{gameInternalUrl}}/internal/v1/room-connections", method: DELETE, headers: [], params: [], body: {mode: none}}
+    response:
+      status: 204
+      headers: []
+      body:
+        type: json
+        data: ""

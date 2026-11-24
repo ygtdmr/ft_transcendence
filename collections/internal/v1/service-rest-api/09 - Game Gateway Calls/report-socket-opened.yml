@@ -12,7 +12,11 @@ http:
 docs: |-
   # Report socket opened
 
-  Scope `room.socket`. Caller: Game Gateway, right after it accepted an authenticated socket for `room_id` from `user_id`. Game Session clears a running reconnect grace for that member and queues a recipient-specific `room.state` for the user through the outbox, so every socket of that user receives the current snapshot. Calling it for a second tab repeats the snapshot; nothing else changes. No body.
+  Scope `room.socket`. Caller: Game Gateway, during the room socket handshake (`collections/v2/game-websocket`, Connect): after the `Origin` check and the session validation with Auth Service, before it answers `101`. Game Session clears a running reconnect grace for that member and queues a recipient-specific `room.state` for the user through the outbox, so every socket of that user receives the current snapshot. Calling it for a second tab repeats the snapshot; nothing else changes. No body.
+
+  The handshake answer follows this call. `403 NOT_ROOM_MEMBER`, `404 ROOM_NOT_FOUND` and `409 INVALID_ROOM_STATE` refuse the handshake with the same status and code, and no socket opens. Any other failure (`500`, `503` after the Gateway's retries, a service credential error, a network error or a timeout) is an availability failure, never a membership verdict: the Gateway refuses the handshake with `503 SERVICE_UNAVAILABLE`.
+
+  Before the call, the Gateway registers the pending socket for `room_id` and `user_id` and holds the room events addressed to that user until the upgrade completes, so the queued `room.state` is not lost. If the upgrade fails after a `204` and the user has no other open socket for the room, the Gateway calls Report last socket closed.
 
   ## Request parameters
 
@@ -28,8 +32,9 @@ docs: |-
   | `204` | none | Member marked connected, `room.state` queued | none |
   | `401` | `SERVICE_UNAUTHENTICATED` | Missing or unknown service credential | `{}` |
   | `403` | `SERVICE_FORBIDDEN` | Caller lacks `room.socket` | `{}` |
-  | `403` | `NOT_ROOM_MEMBER` | The user is not a member of this room; the Gateway closes the socket with `4403` | `{}` |
-  | `404` | `ROOM_NOT_FOUND` | No active room matches this id; the Gateway closes the socket with `4404` | `{}` |
+  | `403` | `NOT_ROOM_MEMBER` | The user is not a member of this room; the Gateway refuses the handshake with `403 NOT_ROOM_MEMBER` | `{}` |
+  | `404` | `ROOM_NOT_FOUND` | No room matches this id; the Gateway refuses the handshake with `404 ROOM_NOT_FOUND` | `{}` |
+  | `409` | `INVALID_ROOM_STATE` | The room is `CLOSED`; the Gateway refuses the handshake with `409 INVALID_ROOM_STATE` | `{}` |
   | `422` | `VALIDATION_ERROR` | `room_id` or `user_id` is not a positive integer | `{ "field": string }` |
   | `500` | `INTERNAL_ERROR` | Unexpected failure | `{}` |
   | `503` | `SERVICE_UNAVAILABLE` | Database unavailable; retry the identical request | `{}` |
