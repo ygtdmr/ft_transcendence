@@ -239,8 +239,12 @@ cropped to the center square, so metadata and hidden data are dropped. Client
 filenames and types are never used.
 
 Each upload gets a random key, and the file is written before the profile changes.
-The replaced file is removed after the commit. A crash between those steps leaves
-an unused file behind; nothing removes it yet.
+The replaced file is removed after the commit. A crash between those steps, a
+failed removal or an upload whose profile change failed leaves an unused file. A
+sweep runs at startup and then hourly: it removes upload files that no profile
+references and abandoned temporary files, once they are older than one hour, so
+an upload that is still committing is never removed. Other files in the
+directory are left alone.
 
 `GET /static/avatars/uploaded/{key}` and `GET /static/avatars/default/{user_id}.svg`
 serve the images without a session. Preset images are served by the frontend at

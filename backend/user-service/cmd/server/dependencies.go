@@ -95,6 +95,11 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 			_ = avatarStorage.Close()
 			pool.Close()
 		}
+		sweep := service.NewAvatarSweep(avatarStorage, userpostgres.NewAvatars(pool))
+		sweep.OnError = func(name string, err error) {
+			logger.Warn("unreferenced avatar file could not be removed", "name", name, "error", err)
+		}
+		cleanup = startAvatarSweep(ctx, sweep, cleanup, logger)
 	}
 
 	public := []server.RouteRegistrar{controller.NewAvatarFiles(avatarReader)}
@@ -334,5 +339,41 @@ func participantError(err, unavailable error) error {
 		return fmt.Errorf("%w: %w", service.ErrUnavailable, err)
 	default:
 		return fmt.Errorf("%w: %w", service.ErrParticipantRejected, err)
+	}
+}
+
+// avatarSweepInterval is how often unreferenced avatar files are removed.
+const avatarSweepInterval = time.Hour
+
+// startAvatarSweep removes unreferenced avatar files at startup and then every
+// avatarSweepInterval until shutdown. The returned cleanup stops the sweep,
+// waits for it, then runs next.
+func startAvatarSweep(ctx context.Context, sweep *service.AvatarSweep, next func(), logger *slog.Logger) func() {
+	sweepCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		ticker := time.NewTicker(avatarSweepInterval)
+		defer ticker.Stop()
+		for {
+			removed, err := sweep.Sweep(sweepCtx, time.Now())
+			switch {
+			case err != nil && sweepCtx.Err() == nil:
+				logger.ErrorContext(sweepCtx, "avatar_sweep_failed", "error", err)
+			case removed > 0:
+				logger.InfoContext(sweepCtx, "unreferenced avatar files removed", "count", removed)
+			}
+			select {
+			case <-sweepCtx.Done():
+				return
+			case <-ticker.C:
+			}
+		}
+	}()
+
+	return func() {
+		cancel()
+		<-done
+		next()
 	}
 }
