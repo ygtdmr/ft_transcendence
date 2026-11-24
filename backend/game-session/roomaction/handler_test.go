@@ -475,6 +475,37 @@ func TestExpirePostGameDeadlineRemovesUndecidedMembers(t *testing.T) {
 	}
 }
 
+func TestFinishedSnapshotJSONShowsEveryColor(t *testing.T) {
+	h := newHarness(t)
+	roomID := readyRoom(t, h, nil)
+	startAt := now.Add(5 * time.Second)
+	if _, err := h.svc.StartGame(h.store, roomID, startAt); err != nil {
+		t.Fatalf("start: %v", err)
+	}
+	finishGame(t, h, roomID, startAt)
+
+	for _, userID := range []int64{1, 2, 3, 4} {
+		snapshot, err := h.svc.Snapshot(h.store, roomID, userID, startAt)
+		if err != nil {
+			t.Fatalf("snapshot %d: %v", userID, err)
+		}
+		raw, err := json.Marshal(snapshot)
+		if err != nil {
+			t.Fatalf("marshal %d: %v", userID, err)
+		}
+		var payload map[string]any
+		if err := json.Unmarshal(raw, &payload); err != nil {
+			t.Fatalf("unmarshal %d: %v", userID, err)
+		}
+		if hidden := hiddenCards(t, map[string]any{"room": payload}); hidden != 0 {
+			t.Fatalf("user %d: %d cards hidden after finish", userID, hidden)
+		}
+	}
+	if _, err := h.svc.Join(h.store, roomID, 5, startAt); !errors.Is(err, room.ErrRoomNotJoinable) {
+		t.Fatalf("late joiner must be refused, got %v", err)
+	}
+}
+
 // A clue sent after the timer ran out: the turn switches for everyone, the sender gets the rejection, nothing is lost.
 func TestLateClueSwitchesTurnAndRejectsSender(t *testing.T) {
 	h := newHarness(t)
