@@ -1,0 +1,10 @@
+info:
+  name: 09 - Game Gateway Calls
+  type: folder
+  seq: 9
+docs: |-
+  # Game Gateway calls
+
+  Game Gateway owns the room sockets; Game Session owns rooms, membership and the command protocol. The Gateway reports what it sees on a socket (opened, last one closed) and hands over every client command unchanged. Game Session answers from its authoritative records and never trusts identity inside a client message: `user_id` and `session_id` come from the session the Gateway validated with Auth Service.
+
+  All three calls use scope `room.socket`. A dependency failure returns `503 SERVICE_UNAVAILABLE`; the Gateway retries the identical request.

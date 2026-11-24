@@ -1,0 +1,100 @@
+info:
+  name: Forward room command
+  type: http
+  seq: 3
+  tags: [internal, game-session, socket]
+http:
+  method: POST
+  url: "{{gameInternalUrl}}/internal/v1/rooms/1001/commands"
+  headers:
+    - name: Authorization
+      value: "Bearer {{gatewayToGameServiceCredential}}"
+    - name: Content-Type
+      value: application/json
+    - name: X-User-Id
+      value: "42"
+    - name: X-Session-Id
+      value: "3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53"
+  body:
+    type: json
+    data: |-
+      {
+        "type": "room.role.select",
+        "request_id": "req_0007",
+        "payload": { "team": "RED", "role": "OPERATIVE" }
+      }
+docs: |-
+  # Forward room command
+
+  Scope `room.socket`. Caller: Game Gateway, for every text message a client sends on a room socket. The body is the client message exactly as received, bytes unchanged; the Gateway does not parse or validate it. Game Session parses the envelope (`type`, `request_id`, `payload`; `collections/v2/game-websocket`), applies the command idempotency ledger keyed by `(session_id, request_id)` and runs the command. The reply is the `ack` or `error` message the Gateway writes back to that socket, unchanged. Events produced by the command reach the Gateway through the outbox, not through this response.
+
+  A client-level failure (`INVALID_EVENT`, `INVALID_PAYLOAD`, `NOT_YOUR_TURN`, ...) is a `200` with an `error` reply: it belongs to the player, not to the Gateway. Only a fault of the call itself (credentials, headers, dependency) produces an error envelope.
+
+  ## Request parameters
+
+  | Parameter | Location | Required | Type | Allowed values | Nullable | Description | Example |
+  | --- | --- | ---: | --- | --- | ---: | --- | --- |
+  | `room_id` | path | yes | integer | positive | no | Room of the socket | `1001` |
+  | `X-User-Id` | header | yes | integer | positive | no | Owner of the validated session; never read from the body | `42` |
+  | `X-Session-Id` | header | yes | string | UUID, normalized to lowercase | no | Validated session id, the idempotency scope of `request_id` | `3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53` |
+  | body | body | yes | JSON text | client message as received | no | Forwarded unchanged | see above |
+
+  ## Response fields
+
+  | Field | Type | Required | Nullable | Allowed values | Description |
+  | --- | --- | ---: | ---: | --- | --- |
+  | `data.reply` | object | yes | no | `ack` or `error` message | Written to the sending socket unchanged |
+  | `data.closures[]` | array<object> | yes | no | possibly empty | Sockets the Gateway closes after writing the reply; present only with an `error` reply whose cause ends the connection (`ROOM_NOT_FOUND`, `NOT_ROOM_MEMBER`, `POST_GAME_DEADLINE_EXPIRED`). Closures caused by a successful action (leave, kick) arrive as `socket.close` outbox events instead, never both ways |
+  | `data.closures[].user_id` | integer | yes | no | positive | Every socket of this user for this room |
+  | `data.closures[].code` | integer | yes | no | `4403`, `4404` | WebSocket close code |
+  | `data.closures[].reason` | string | yes | no | departure reason or `KICKED_FROM_ROOM` | Close reason text |
+
+  ## Status and errors
+
+  | Status | Code | Condition | `details` |
+  | --- | --- | --- | --- |
+  | `200` | none | Command handled; `data.reply` is `ack` or `error` | none |
+  | `400` | `VALIDATION_ERROR` | Body is empty or exceeds 64 KB | `{ "field": "body" }` |
+  | `401` | `SERVICE_UNAUTHENTICATED` | Missing or unknown service credential | `{}` |
+  | `403` | `SERVICE_FORBIDDEN` | Caller lacks `room.socket` | `{}` |
+  | `422` | `VALIDATION_ERROR` | `room_id`, `X-User-Id` or `X-Session-Id` missing or invalid | `{ "field": string }` |
+  | `500` | `INTERNAL_ERROR` | Unexpected failure | `{}` |
+  | `503` | `SERVICE_UNAVAILABLE` | Database unavailable; retry with the same `X-Session-Id`, `request_id` and body, the ledger then answers once | `{}` |
+examples:
+  - name: Success - Ack
+    request: {url: "{{gameInternalUrl}}/internal/v1/rooms/1001/commands", method: POST, headers: [], params: [], body: {mode: none}}
+    response:
+      status: 200
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "data": {
+              "reply": {
+                "type": "ack",
+                "request_id": "req_0007",
+                "ok": true,
+                "payload": { "user_id": 42, "team": "RED", "role": "OPERATIVE", "ready": false }
+              },
+              "closures": []
+            }
+          }
+  - name: Success - Error reply for the player
+    request: {url: "{{gameInternalUrl}}/internal/v1/rooms/1001/commands", method: POST, headers: [], params: [], body: {mode: none}}
+    response:
+      status: 200
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "data": {
+              "reply": {
+                "type": "error",
+                "request_id": "req_0007",
+                "error": { "code": "INVALID_PAYLOAD", "message": "The payload has an invalid value.", "details": { "field": "team", "reason": "must be RED or BLUE" } }
+              },
+              "closures": []
+            }
+          }

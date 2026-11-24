@@ -1,0 +1,44 @@
+info:
+  name: Report socket opened
+  type: http
+  seq: 1
+  tags: [internal, game-session, socket]
+http:
+  method: PUT
+  url: "{{gameInternalUrl}}/internal/v1/rooms/1001/connections/42"
+  headers:
+    - name: Authorization
+      value: "Bearer {{gatewayToGameServiceCredential}}"
+docs: |-
+  # Report socket opened
+
+  Scope `room.socket`. Caller: Game Gateway, right after it accepted an authenticated socket for `room_id` from `user_id`. Game Session clears a running reconnect grace for that member and queues a recipient-specific `room.state` for the user through the outbox, so every socket of that user receives the current snapshot. Calling it for a second tab repeats the snapshot; nothing else changes. No body.
+
+  ## Request parameters
+
+  | Parameter | Location | Required | Type | Allowed values | Nullable | Description | Example |
+  | --- | --- | ---: | --- | --- | ---: | --- | --- |
+  | `room_id` | path | yes | integer | positive | no | Room of the socket | `1001` |
+  | `user_id` | path | yes | integer | positive | no | Owner of the validated session | `42` |
+
+  ## Status and errors
+
+  | Status | Code | Condition | `details` |
+  | --- | --- | --- | --- |
+  | `204` | none | Member marked connected, `room.state` queued | none |
+  | `401` | `SERVICE_UNAUTHENTICATED` | Missing or unknown service credential | `{}` |
+  | `403` | `SERVICE_FORBIDDEN` | Caller lacks `room.socket` | `{}` |
+  | `403` | `NOT_ROOM_MEMBER` | The user is not a member of this room; the Gateway closes the socket with `4403` | `{}` |
+  | `404` | `ROOM_NOT_FOUND` | No active room matches this id; the Gateway closes the socket with `4404` | `{}` |
+  | `422` | `VALIDATION_ERROR` | `room_id` or `user_id` is not a positive integer | `{ "field": string }` |
+  | `500` | `INTERNAL_ERROR` | Unexpected failure | `{}` |
+  | `503` | `SERVICE_UNAVAILABLE` | Database unavailable; retry the identical request | `{}` |
+examples:
+  - name: Success - Socket opened
+    request: {url: "{{gameInternalUrl}}/internal/v1/rooms/1001/connections/42", method: PUT, headers: [], params: [], body: {mode: none}}
+    response:
+      status: 204
+      headers: []
+      body:
+        type: json
+        data: ""

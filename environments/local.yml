@@ -68,3 +68,7 @@ variables:
     value: ""
     type: string
     description: "Local User-to-Game Session service credential; set only in uncommitted local configuration"
+  - name: gatewayToGameServiceCredential
+    value: ""
+    type: string
+    description: "Local Game Gateway-to-Game Session service credential; set only in uncommitted local configuration"
