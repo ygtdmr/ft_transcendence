@@ -5,7 +5,7 @@ CREATE TABLE outbox_events (
     room_id BIGINT NOT NULL,
     event_type TEXT NOT NULL,
     outbox_content JSONB NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    occurred_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     published_at TIMESTAMPTZ,
     room_version BIGINT NOT NULL,
     recipient_user_id BIGINT,

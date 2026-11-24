@@ -15,7 +15,7 @@ type outboxRow struct {
 	RoomID          int64
 	EventType       string
 	OutboxContent   jsonb
-	CreatedAt       time.Time `gorm:"autoCreateTime"`
+	OccurredAt      time.Time `gorm:"autoCreateTime"`
 	PublishedAt     *time.Time
 	RoomVersion     int64
 	RecipientUserID *int64
@@ -67,7 +67,7 @@ func insertOutbox(tx *gorm.DB, r *room.Room, eventType string, payload any) erro
 		return err
 	}
 	row := outboxRow{RoomID: r.RoomID, EventType: eventType, OutboxContent: jsonb(content), RoomVersion: int64(r.RoomVersion)}
-	return tx.Omit("event_id", "created_at").Create(&row).Error
+	return tx.Omit("event_id", "occurred_at").Create(&row).Error
 }
 
 // INSERT INTO outbox_events (room_id, event_type, outbox_content, room_version, recipient_user_id, event_sequence) VALUES (1, 'room.player.left', '{...}', 12, 43, 7);
@@ -84,7 +84,7 @@ func (s *Store) SaveRecipientEvent(r *room.Room, recipientUserID int64, sequence
 		RecipientUserID: &recipientUserID,
 		EventSequence:   &sequence,
 	}
-	return s.db.Omit("event_id", "created_at").Create(&row).Error
+	return s.db.Omit("event_id", "occurred_at").Create(&row).Error
 }
 
 // UPDATE rooms SET event_sequence = event_sequence + 1 WHERE room_id = 1 RETURNING event_sequence;
