@@ -72,6 +72,14 @@ func saveRoomWithUniqueCode(tx RoomStore, r *room.Room, host room.RoomMember) er
 }
 
 func (s *RoomService) Create(tx RoomStore, userID int64, maxPlayers *int, now time.Time) (room.RoomSnapshot, error) {
+	_, cleanedUp, err := tx.LookupAccountCleanup(userID)
+	if err != nil {
+		return room.RoomSnapshot{}, err
+	}
+	if cleanedUp {
+		return room.RoomSnapshot{}, ErrAccountCleanedUp
+	}
+
 	capacity, err := s.validateRoomCreation(tx, userID, maxPlayers)
 	if err != nil {
 		return room.RoomSnapshot{}, err

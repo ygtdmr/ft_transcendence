@@ -88,6 +88,7 @@ func (s *Store) ResetForTests() error {
 		"TRUNCATE outbox_events",
 		"TRUNCATE command_ledger",
 		"TRUNCATE account_cleanups",
+		"TRUNCATE session_departures",
 	} {
 		if err := s.db.Exec(statement).Error; err != nil {
 			return err

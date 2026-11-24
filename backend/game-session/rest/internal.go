@@ -3,6 +3,7 @@ package rest
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -47,9 +48,9 @@ func (h *Handler) membership(c *gin.Context) {
 	writeData(c, http.StatusOK, view)
 }
 
-var operationIDPattern = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
+var uuidPattern = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 
-type accountCleanupRequest struct {
+type internalUserRequest struct {
 	UserID *int64 `json:"user_id"`
 }
 
@@ -60,15 +61,16 @@ type accountCleanupView struct {
 	CompletedAt time.Time `json:"completed_at"`
 }
 
-func readAccountCleanupRequest(c *gin.Context) (string, int64, bool) {
-	operationID := strings.ToLower(c.Param("operation_id"))
-	if !operationIDPattern.MatchString(operationID) {
-		writeError(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "operation_id must be a UUID.", map[string]any{"field": "operation_id"})
+func readInternalUserRequest(c *gin.Context, idParamName string) (string, int64, bool) {
+	id := strings.ToLower(c.Param(idParamName))
+	if !uuidPattern.MatchString(id) {
+		writeError(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", idParamName+" must be a UUID.", map[string]any{"field": idParamName})
 		return "", 0, false
 	}
 
-	var req accountCleanupRequest
-	decoder := json.NewDecoder(c.Request.Body)
+	const maxBodyBytes = 64 * 1024 //64kb
+	var req internalUserRequest
+	decoder := json.NewDecoder(io.LimitReader(c.Request.Body, maxBodyBytes))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&req); err != nil {
 		writeError(c, http.StatusBadRequest, "VALIDATION_ERROR", "Body must be a JSON object with user_id.", map[string]any{"field": "body"})
@@ -88,7 +90,7 @@ func readAccountCleanupRequest(c *gin.Context) (string, int64, bool) {
 		return "", 0, false
 	}
 
-	return operationID, userID, true
+	return id, userID, true
 }
 
 func (h *Handler) performAccountCleanup(operationID string, userID int64) (service.AccountCleanup, bool, error) {
@@ -126,7 +128,7 @@ func (h *Handler) performAccountCleanup(operationID string, userID int64) (servi
 }
 
 func (h *Handler) accountCleanup(c *gin.Context) {
-	operationID, userID, valid := readAccountCleanupRequest(c)
+	operationID, userID, valid := readInternalUserRequest(c, "operation_id")
 	if !valid {
 		return
 	}
@@ -145,6 +147,71 @@ func (h *Handler) accountCleanup(c *gin.Context) {
 	}
 
 	view := accountCleanupView{OperationID: receipt.OperationID, UserID: receipt.UserID, State: "COMPLETED", CompletedAt: receipt.CompletedAt}
+	status := http.StatusCreated
+	if replayed {
+		status = http.StatusOK
+	}
+	writeData(c, status, view)
+}
+
+type sessionDepartureView struct {
+	SessionID   string    `json:"session_id"`
+	UserID      int64     `json:"user_id"`
+	State       string    `json:"state"`
+	CompletedAt time.Time `json:"completed_at"`
+}
+
+func (h *Handler) performSessionDeparture(sessionID string, userID int64) (service.SessionDeparture, bool, error) {
+	now := h.now()
+	var receipt service.SessionDeparture
+	var replayed bool
+	err := h.store.Transaction(func(tx service.RoomStore) error {
+		existing, found, err := tx.LookupSessionDeparture(sessionID)
+		if err != nil {
+			return err
+		}
+		if found {
+			if existing.UserID != userID {
+				return service.ErrSessionDepartureConflict
+			}
+			receipt = existing
+			replayed = true
+			return nil
+		}
+
+		roomID, inRoom, err := tx.ActiveRoomOf(userID)
+		if err != nil {
+			return err
+		}
+		if inRoom {
+			if _, err := h.actions.Leave(tx, roomID, userID, room.DepartureSessionEnded, now); err != nil {
+				return err
+			}
+		}
+
+		receipt = service.SessionDeparture{SessionID: sessionID, UserID: userID, CompletedAt: now}
+		return tx.SaveSessionDeparture(receipt)
+	})
+	return receipt, replayed, err
+}
+
+func (h *Handler) sessionDeparture(c *gin.Context) {
+	sessionID, userID, valid := readInternalUserRequest(c, "session_id")
+	if !valid {
+		return
+	}
+
+	receipt, replayed, err := h.performSessionDeparture(sessionID, userID)
+	switch {
+	case errors.Is(err, service.ErrSessionDepartureConflict):
+		writeError(c, http.StatusConflict, "OPERATION_CONFLICT", "This session departure was recorded for another user.", nil)
+		return
+	case err != nil:
+		writeDomainError(c, err)
+		return
+	}
+
+	view := sessionDepartureView{SessionID: receipt.SessionID, UserID: receipt.UserID, State: "COMPLETED", CompletedAt: receipt.CompletedAt}
 	status := http.StatusCreated
 	if replayed {
 		status = http.StatusOK
