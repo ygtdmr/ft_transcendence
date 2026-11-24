@@ -45,6 +45,7 @@ type AuthService struct {
 	tokens      SessionCredentialIssuer
 	verifier    AccessVerifier
 	lifecycle   SessionLifecycle
+	memberships MembershipReader
 	revocations RevocationRepository
 	provisioner ProfileProvisioner
 	profiles    ProfileReader

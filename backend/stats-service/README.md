@@ -5,8 +5,8 @@ not store passwords, sessions, profiles or live game state. The API contract is 
 Bruno collection on the `bruno` branch.
 
 This service records finalized matches through `service.MatchIngest` and leave
-penalties through `service.PenaltyIngest`. Nothing calls them at runtime yet: the
-RabbitMQ consumer is not implemented.
+penalties through `service.PenaltyIngest`. The event consumer in
+`internal/consumer` feeds both from RabbitMQ.
 
 ## Endpoints
 
@@ -36,6 +36,32 @@ environment only and does not load `.env` itself.
 | `USER_SERVICE_CREDENTIAL_FILE`, `USER_SERVICE_PREVIOUS_CREDENTIAL_FILE` | empty | User Service's credential files. Empty accepts no caller. |
 | `AUTH_INTERNAL_URL`, `AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE` | empty | Auth's private listener and this service's credential. Required in production. |
 | `AUTH_INTERNAL_TIMEOUT`   | `5s`            | Upper bound for one call to Auth.                       |
+| `RABBITMQ_URL`, `STATS_EVENTS_QUEUE` | empty | Broker URL and the queue this service consumes Game Session's events from. Required in production; without them events are not ingested. |
+
+## Event consumer
+
+The consumer reads one queue, `STATS_EVENTS_QUEUE`, with manual
+acknowledgements and a prefetch of 16. It never declares exchanges, queues or
+bindings: the broker topology owns them. It reconnects after a lost connection,
+with backoff from 1 to 30 seconds.
+
+Each message body is the outbox envelope the services publish:
+
+```json
+{ "event_id": "8d3c0f8e-…", "event_type": "match.finalized", "occurred_at": "2026-09-10T08:50:00Z", "payload": { } }
+```
+
+| Event | Result |
+| --- | --- |
+| `match.finalized` | `MatchIngest`, once per `game_id` |
+| `player.penalized` | `PenaltyIngest`, once per `event_id` |
+| `game.cancelled` and any other type | acknowledged and ignored |
+
+A message is acknowledged only after it is stored or recognised as a duplicate,
+so delivery is at least once. A malformed envelope or an invalid payload is
+rejected without requeue; it reaches the queue's dead-letter exchange if the
+topology configures one. A database failure holds the message for 5 seconds,
+then requeues it.
 
 ## Finalized matches
 

@@ -173,6 +173,30 @@ holds is `409 USERNAME_TAKEN`. The change takes the account lock and records
 of each pending request in the same transaction. An identical name records
 nothing. The response has the Get own profile shape.
 
+## Account deletion
+
+`DELETE /api/v1/users/me` takes `{"confirm_username": string}`, compared with
+the current username case-insensitively after trimming. A missing or different
+value is `422 CONFIRMATION_MISMATCH` and writes nothing. Otherwise the
+coordinator records one `deletion_operations` row with a new `operation_id`
+under the account lock, then runs the steps in order: Auth Begin, Game Session
+cleanup, Stats cleanup, User's own cleanup and Auth Complete. Each confirmed
+step is stored, so a retry or a restart resumes after it.
+
+User's own cleanup deletes the profile, friendships, friend requests, blocks
+and provisioning record in one transaction, records `friend.removed` for each
+active friend and a cancelled `friend.request.resolved` for each pending
+request, and removes an uploaded avatar file after commit. Reports are kept.
+
+The request answers `204` with both session cookies cleared once every step
+has finished. When a step fails after the operation is recorded, it answers
+`503 SERVICE_UNAVAILABLE`, also clearing both cookies, because Auth Begin
+revokes every session. A background worker resumes due operations every 10
+seconds with backoff from 5 seconds up to 5 minutes. A permanent participant
+answer, such as a conflict or a refused credential, sets the operation to
+`failed`; it is not retried and needs investigation. Without Game Session
+settings, which only development allows, the Game step is skipped.
+
 ## Presence
 
 Presence comes from the active socket registries of every configured Game

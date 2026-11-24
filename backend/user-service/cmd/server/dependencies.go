@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/client/authclient"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/client/gameclient"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/client/gatewayclient"
@@ -126,9 +128,15 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 				logger.WarnContext(ctx, "GAME_INTERNAL_URL is not set; the own profile reports no active room")
 			}
 			own := service.NewOwnProfiles(profileReads, accounts{sessions}, ownStats{stats}, memberships)
+			deletions, err := newAccountDeletions(cfg, pool, sessions, stats, avatarStorage, logger)
+			if err != nil {
+				cleanup()
+				return nil, nil, err
+			}
 			usernames := service.NewUsernames(userpostgres.NewUsernames(pool), avatars)
 			public = append(public, controller.NewPublicProfile(profiles, sessions), controller.NewOwnProfile(own, sessions),
-				controller.NewProfileUpdate(usernames, own, sessions))
+				controller.NewProfileUpdate(usernames, own, sessions), controller.NewAccountDeletion(deletions, sessions))
+			cleanup = startDeletionWorker(ctx, deletions, cleanup, logger)
 		} else {
 			logger.WarnContext(ctx, "STATS_INTERNAL_URL is not set; the public and own profile routes are not served")
 		}
@@ -232,4 +240,99 @@ func newMemberships(cfg config.Config) (service.MembershipReader, error) {
 	}
 
 	return gameclient.New(cfg.GameInternalURL, cfg.GameServiceCredential, cfg.GameInternalTimeout)
+}
+
+// newAccountDeletions returns the deletion coordinator. Without Game Session
+// settings, which Load allows only outside production, the Game step is
+// skipped.
+//
+// Errors:
+//
+//   - The Game client cannot be created; see gameclient.New.
+func newAccountDeletions(cfg config.Config, pool *pgxpool.Pool, auth *authclient.Client, stats *statsclient.Client,
+	files *avatarfiles.Store, logger *slog.Logger) (*service.AccountDeletions, error) {
+	var game service.AccountCleaner
+	if cfg.GameInternalURL != "" {
+		client, err := gameclient.New(cfg.GameInternalURL, cfg.GameServiceCredential, cfg.GameInternalTimeout)
+		if err != nil {
+			return nil, err
+		}
+		game = client
+	} else {
+		logger.Warn("GAME_INTERNAL_URL is not set; account deletion skips the Game Session step")
+	}
+	var remover service.FileRemover
+	if files != nil {
+		remover = files
+	}
+	deletions := service.NewAccountDeletions(userpostgres.NewDeletions(pool), userpostgres.NewProfile(pool),
+		deletionAuth{auth}, game, statsCleaner{stats}, remover)
+	deletions.OnFileError = func(key string, err error) {
+		logger.Warn("deleted account's avatar file could not be removed", "key", key, "error", err)
+	}
+
+	return deletions, nil
+}
+
+// deletionWorkerInterval is how often the worker looks for due operations.
+const deletionWorkerInterval = 10 * time.Second
+
+// startDeletionWorker resumes unfinished deletions until shutdown. The
+// returned cleanup stops the worker, waits for it, then runs next.
+func startDeletionWorker(ctx context.Context, deletions *service.AccountDeletions, next func(),
+	logger *slog.Logger) func() {
+	workerCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		ticker := time.NewTicker(deletionWorkerInterval)
+		defer ticker.Stop()
+		for {
+			if _, err := deletions.ResumeDue(workerCtx, 20); err != nil && workerCtx.Err() == nil {
+				logger.ErrorContext(workerCtx, "account_deletion_resume_failed", "error", err)
+			}
+			select {
+			case <-workerCtx.Done():
+				return
+			case <-ticker.C:
+			}
+		}
+	}()
+
+	return func() {
+		cancel()
+		<-done
+		next()
+	}
+}
+
+// deletionAuth maps Auth client errors to the coordinator's error classes.
+type deletionAuth struct{ client *authclient.Client }
+
+func (d deletionAuth) BeginDeletion(ctx context.Context, operationID string, userID int64) error {
+	return participantError(d.client.BeginDeletion(ctx, operationID, userID), authclient.ErrUnavailable)
+}
+
+func (d deletionAuth) CompleteDeletion(ctx context.Context, operationID string) error {
+	return participantError(d.client.CompleteDeletion(ctx, operationID), authclient.ErrUnavailable)
+}
+
+// statsCleaner maps Stats client errors to the coordinator's error classes.
+type statsCleaner struct{ client *statsclient.Client }
+
+func (s statsCleaner) CleanUpAccount(ctx context.Context, operationID string, userID int64) error {
+	return participantError(s.client.CleanUpAccount(ctx, operationID, userID), statsclient.ErrUnavailable)
+}
+
+// participantError keeps an outage retryable and turns every other failure
+// into a permanent rejection.
+func participantError(err, unavailable error) error {
+	switch {
+	case err == nil:
+		return nil
+	case errors.Is(err, unavailable):
+		return fmt.Errorf("%w: %w", service.ErrUnavailable, err)
+	default:
+		return fmt.Errorf("%w: %w", service.ErrParticipantRejected, err)
+	}
 }

@@ -101,7 +101,7 @@ func TestUserServiceConfig(t *testing.T) {
 		"APP_ENV": "development", "PORT": "", "INTERNAL_PORT": "", "DATABASE_URL": "postgres://test@localhost/test",
 		"JWT_SECRET": testutil.TestSigningKey, "ACCESS_TOKEN_TTL": "", "REFRESH_TOKEN_TTL": "",
 		"LOG_FORMAT": "", "LOG_LEVEL": "", "USER_INTERNAL_URL": "", "USER_SERVICE_OUTBOUND_CREDENTIAL_FILE": "",
-		"USER_INTERNAL_TIMEOUT": "",
+		"USER_INTERNAL_TIMEOUT": "", "GAME_INTERNAL_URL": "", "GAME_SERVICE_OUTBOUND_CREDENTIAL_FILE": "", "GAME_INTERNAL_TIMEOUT": "",
 	}
 	for _, caller := range []string{"WEB_BFF", "GAME_GATEWAY", "NOTIFICATION_GATEWAY", "USER_SERVICE"} {
 		base[caller+"_CREDENTIAL_FILE"], base[caller+"_PREVIOUS_CREDENTIAL_FILE"] = "", ""
@@ -119,7 +119,8 @@ func TestUserServiceConfig(t *testing.T) {
 	if cfg, err := config.Load(); err != nil || cfg.UserInternalURL != "" {
 		t.Fatalf("development without User Service = %q, %v", cfg.UserInternalURL, err)
 	}
-	set(map[string]string{"APP_ENV": "production"})
+	set(map[string]string{"APP_ENV": "production", "GAME_INTERNAL_URL": "http://game-session:8093",
+		"GAME_SERVICE_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, strings.Repeat("g", 40))})
 	if _, err := config.Load(); err == nil {
 		t.Fatal("production without User Service settings accepted")
 	}
@@ -139,5 +140,68 @@ func TestUserServiceConfig(t *testing.T) {
 	})
 	if _, err := config.Load(); err == nil || strings.Contains(err.Error(), outbound) {
 		t.Fatalf("reused credential error = %v", err)
+	}
+}
+
+// TestGameServiceConfig checks the Game Session membership settings.
+//
+// Expected output:
+//
+//   - Development without the settings loads with no Game URL; production fails.
+//   - Valid settings load the URL without a trailing slash, the credential and
+//     the default 5s timeout.
+//   - Only one setting, an inbound credential or the User Service credential
+//     reused as the Game credential is rejected without echoing the value.
+func TestGameServiceConfig(t *testing.T) {
+	base := map[string]string{
+		"APP_ENV": "development", "PORT": "", "INTERNAL_PORT": "", "DATABASE_URL": "postgres://test@localhost/test",
+		"JWT_SECRET": testutil.TestSigningKey, "ACCESS_TOKEN_TTL": "", "REFRESH_TOKEN_TTL": "",
+		"LOG_FORMAT": "", "LOG_LEVEL": "", "USER_INTERNAL_URL": "", "USER_SERVICE_OUTBOUND_CREDENTIAL_FILE": "",
+		"USER_INTERNAL_TIMEOUT": "", "GAME_INTERNAL_URL": "", "GAME_SERVICE_OUTBOUND_CREDENTIAL_FILE": "", "GAME_INTERNAL_TIMEOUT": "",
+	}
+	for _, caller := range []string{"WEB_BFF", "GAME_GATEWAY", "NOTIFICATION_GATEWAY", "USER_SERVICE"} {
+		base[caller+"_CREDENTIAL_FILE"], base[caller+"_PREVIOUS_CREDENTIAL_FILE"] = "", ""
+	}
+	set := func(values map[string]string) {
+		for key, value := range base {
+			t.Setenv(key, value)
+		}
+		for key, value := range values {
+			t.Setenv(key, value)
+		}
+	}
+
+	set(nil)
+	if cfg, err := config.Load(); err != nil || cfg.GameInternalURL != "" {
+		t.Fatalf("development without Game Session = %q, %v", cfg.GameInternalURL, err)
+	}
+	set(map[string]string{"APP_ENV": "production", "USER_INTERNAL_URL": "http://user-service:8090",
+		"USER_SERVICE_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, strings.Repeat("o", 40))})
+	if _, err := config.Load(); err == nil {
+		t.Fatal("production without Game Session settings accepted")
+	}
+
+	game := strings.Repeat("g", 40)
+	set(map[string]string{"GAME_INTERNAL_URL": "http://game-session:8093/", "GAME_SERVICE_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, game)})
+	cfg, err := config.Load()
+	if err != nil || cfg.GameInternalURL != "http://game-session:8093" || cfg.GameServiceCredential != game ||
+		cfg.GameInternalTimeout.String() != "5s" {
+		t.Fatalf("Game Session settings = %q %v, %v", cfg.GameInternalURL, cfg.GameInternalTimeout, err)
+	}
+
+	set(map[string]string{"GAME_INTERNAL_URL": "http://game-session:8093"})
+	if _, err := config.Load(); err == nil {
+		t.Fatal("Game URL without a credential file accepted")
+	}
+	for name, values := range map[string]map[string]string{
+		"inbound reuse": {"GAME_INTERNAL_URL": "http://game-session:8093", "GAME_SERVICE_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, game),
+			"USER_SERVICE_CREDENTIAL_FILE": writeSecret(t, game)},
+		"User credential reuse": {"GAME_INTERNAL_URL": "http://game-session:8093", "GAME_SERVICE_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, game),
+			"USER_INTERNAL_URL": "http://user-service:8090", "USER_SERVICE_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, game)},
+	} {
+		set(values)
+		if _, err := config.Load(); err == nil || strings.Contains(err.Error(), game) {
+			t.Fatalf("%s error = %v", name, err)
+		}
 	}
 }
