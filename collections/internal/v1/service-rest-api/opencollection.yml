@@ -91,7 +91,7 @@ docs:
 
     ## Environment
 
-    Select `local`. Set `userInternalUrl`, `authInternalUrl`, `statsInternalUrl` and `gameGatewayInternalUrl` to the private listeners, and each `<caller>To<Receiver>ServiceCredential` variable to the local credential for that pair. Keep real credential values only in local, uncommitted environment configuration.
+    Select `local`. Set `userInternalUrl`, `authInternalUrl`, `statsInternalUrl`, `gameInternalUrl`, `gameGatewayInternalUrl` and `notificationGatewayInternalUrl` to the private listeners, and each `<caller>To<Receiver>ServiceCredential` variable to the local credential for that pair. Keep real credential values only in local, uncommitted environment configuration.
   type: text/markdown
 bundled: false
 extensions: {}

@@ -72,3 +72,23 @@ variables:
     value: ""
     type: string
     description: "Local Game Gateway-to-Game Session service credential; set only in uncommitted local configuration"
+  - name: gameGatewayInternalUrl
+    value: ""
+    type: string
+    description: "Game Gateway private listener origin (INTERNAL_PORT); never routed through the public reverse proxy"
+  - name: notificationGatewayInternalUrl
+    value: ""
+    type: string
+    description: "Notification Gateway private listener origin (INTERNAL_HOST:INTERNAL_PORT); never routed through the public reverse proxy"
+  - name: userToGameGatewayServiceCredential
+    value: ""
+    type: string
+    description: "Local User-to-Game Gateway service credential; set only in uncommitted local configuration"
+  - name: userToNotificationGatewayServiceCredential
+    value: ""
+    type: string
+    description: "Local User-to-Notification Gateway service credential; set only in uncommitted local configuration"
+  - name: authToNotificationGatewayServiceCredential
+    value: ""
+    type: string
+    description: "Local Auth-to-Notification Gateway service credential; set only in uncommitted local configuration"

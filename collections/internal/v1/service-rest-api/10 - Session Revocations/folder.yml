@@ -1,0 +1,10 @@
+info:
+  name: 10 - Session Revocations
+  type: folder
+  seq: 10
+docs: |-
+  # Session revocations
+
+  Auth Service owns session validity. When a session is revoked (logout, refresh-token reuse, account deletion), Auth keeps a durable revocation record and tells every running Game Gateway and Notification Gateway instance, retrying until each one answers. A gateway closes its own sockets of that session; it stores nothing else and never decides validity itself.
+
+  Later handshakes and REST requests do not depend on this notification: every handshake validates the session with Auth again (`02 - Auth Service Reads`), so a delayed or lost notification never keeps a revoked session usable for new connections.
