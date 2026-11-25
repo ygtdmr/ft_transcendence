@@ -125,8 +125,7 @@ func (g *Guard) WebSocket() func(http.Handler) http.Handler {
 				next.ServeHTTP(w, r)
 				return
 			}
-			origins := r.Header.Values("Origin")
-			if len(origins) != 1 || !g.matches(origins[0]) {
+			if !g.SameOrigin(r) {
 				w.Header().Set("Cache-Control", "no-store")
 				w.WriteHeader(http.StatusForbidden)
 				return
@@ -134,6 +133,17 @@ func (g *Guard) WebSocket() func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+// SameOrigin reports whether r carries exactly one Origin header equal to the
+// deployment's origin: the rule WebSocket applies. A handshake whose contract
+// refuses a foreign page with a coded body instead of a bare 403 (the
+// notification socket's 403 ORIGIN_NOT_ALLOWED) checks it directly, and it
+// suits a WebSocket library's own origin hook.
+func (g *Guard) SameOrigin(r *http.Request) bool {
+	origins := r.Header.Values("Origin")
+
+	return len(origins) == 1 && g.matches(origins[0])
 }
 
 func isWebSocketUpgrade(r *http.Request) bool {

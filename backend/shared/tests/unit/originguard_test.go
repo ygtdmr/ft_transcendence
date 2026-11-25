@@ -196,3 +196,27 @@ func TestWebSocketGuardRecognisesUpgradeRequestsCaseInsensitively(t *testing.T) 
 		t.Errorf("a non-WebSocket upgrade: %d reached=%d", rec.Code, reached)
 	}
 }
+
+func TestSameOriginAppliesTheWebSocketRuleWithoutWritingAResponse(t *testing.T) {
+	g := newGuard(t, publicOrigin)
+	for name, tc := range map[string]struct {
+		origins []string
+		want    bool
+	}{
+		"own origin":       {[]string{publicOrigin}, true},
+		"own origin, case": {[]string{"HTTPS://PLAY.EXAMPLE.COM"}, true},
+		"foreign":          {[]string{"https://evil.example"}, false},
+		"missing":          {nil, false},
+		"null":             {[]string{"null"}, false},
+		"repeated":         {[]string{publicOrigin, publicOrigin}, false},
+		"with path":        {[]string{publicOrigin + "/x"}, false},
+	} {
+		r := httptest.NewRequest(http.MethodGet, "/ws", nil)
+		for _, o := range tc.origins {
+			r.Header.Add("Origin", o)
+		}
+		if got := g.SameOrigin(r); got != tc.want {
+			t.Errorf("%s: SameOrigin = %v, want %v", name, got, tc.want)
+		}
+	}
+}
