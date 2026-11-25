@@ -76,11 +76,18 @@ type Options struct {
 type Registry struct {
 	opts Options
 
-	mu        sync.Mutex
-	byUser    map[int64]map[*Socket]struct{}
-	bySession map[string]map[*Socket]struct{}
-	revoked   map[string]time.Time
-	closed    bool
+	mu          sync.Mutex
+	byUser      map[int64]map[*Socket]struct{}
+	bySession   map[string]map[*Socket]struct{}
+	byScopeUser map[scopeUser]map[*Socket]struct{}
+	revoked     map[string]time.Time
+	closed      bool
+}
+
+// scopeUser keys a user's sockets within one scope, such as one room.
+type scopeUser struct {
+	scope  string
+	userID int64
 }
 
 // New returns an empty registry.
@@ -99,19 +106,28 @@ func New(opts Options) *Registry {
 	}
 
 	return &Registry{
-		opts:      opts,
-		byUser:    map[int64]map[*Socket]struct{}{},
-		bySession: map[string]map[*Socket]struct{}{},
-		revoked:   map[string]time.Time{},
+		opts:        opts,
+		byUser:      map[int64]map[*Socket]struct{}{},
+		bySession:   map[string]map[*Socket]struct{}{},
+		byScopeUser: map[scopeUser]map[*Socket]struct{}{},
+		revoked:     map[string]time.Time{},
 	}
 }
 
-// Add registers an open socket of userID's sessionID.
+// Add registers an open socket of userID's sessionID without a scope, as a
+// gateway with one socket kind (notifications) does.
 //
 // Errors: ErrInvalidSocket, ErrClosed after CloseAll, ErrRevoked for a session
 // closed by CloseSession within RevokedTTL. The caller then closes the
 // connection itself (for a revoked session with 4401).
 func (r *Registry) Add(userID int64, sessionID string) (*Socket, error) {
+	return r.AddIn("", userID, sessionID)
+}
+
+// AddIn registers an open socket of userID's sessionID within scope, such as
+// one room ("1001"), so SendToUserIn and CloseUserIn reach only that user's
+// sockets of that scope. Errors are those of Add.
+func (r *Registry) AddIn(scope string, userID int64, sessionID string) (*Socket, error) {
 	if userID <= 0 || sessionID == "" {
 		return nil, ErrInvalidSocket
 	}
@@ -125,6 +141,7 @@ func (r *Registry) Add(userID int64, sessionID string) (*Socket, error) {
 		return nil, ErrRevoked
 	}
 	s := &Socket{
+		scope:     scope,
 		userID:    userID,
 		sessionID: sessionID,
 		send:      make(chan []byte, r.opts.QueueSize),
@@ -133,6 +150,7 @@ func (r *Registry) Add(userID int64, sessionID string) (*Socket, error) {
 	}
 	insert(r.byUser, userID, s)
 	insert(r.bySession, sessionID, s)
+	insert(r.byScopeUser, scopeUser{scope, userID}, s)
 
 	return s, nil
 }
@@ -147,13 +165,41 @@ func (r *Registry) Remove(s *Socket) {
 	defer r.mu.Unlock()
 	remove(r.byUser, s.userID, s)
 	remove(r.bySession, s.sessionID, s)
+	remove(r.byScopeUser, scopeUser{s.scope, s.userID}, s)
+}
+
+// SendToUserIn queues msg on every open socket of userID within scope only,
+// like SendToUser, and returns how many sockets accepted it.
+func (r *Registry) SendToUserIn(scope string, userID int64, msg []byte) int {
+	sent := 0
+	for _, s := range snapshotOf(r, r.byScopeUser, scopeUser{scope, userID}) {
+		if s.Offer(msg) {
+			sent++
+		}
+	}
+
+	return sent
+}
+
+// CloseUserIn closes every socket of userID within scope with c, for example
+// every room socket of a kicked member, and returns how many it closed. The
+// user's sockets of other scopes and sessions stay open.
+func (r *Registry) CloseUserIn(scope string, userID int64, c Closure) int {
+	closed := 0
+	for _, s := range snapshotOf(r, r.byScopeUser, scopeUser{scope, userID}) {
+		if s.Close(c) {
+			closed++
+		}
+	}
+
+	return closed
 }
 
 // SendToUser queues msg on every open socket of userID and returns how many
 // sockets accepted it. A socket whose queue is full is closed as a slow client
 // instead of being waited on. msg must not be modified afterwards.
 func (r *Registry) SendToUser(userID int64, msg []byte) int {
-	sockets := r.snapshot(r.byUser, userID)
+	sockets := snapshotOf(r, r.byUser, userID)
 	sent := 0
 	for _, s := range sockets {
 		if s.Offer(msg) {
@@ -236,7 +282,7 @@ func (r *Registry) Len() int {
 	return n
 }
 
-func (r *Registry) snapshot(index map[int64]map[*Socket]struct{}, key int64) []*Socket {
+func snapshotOf[K comparable](r *Registry, index map[K]map[*Socket]struct{}, key K) []*Socket {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -281,6 +327,7 @@ func collect(set map[*Socket]struct{}) []*Socket {
 // Socket is one registered connection. Its writer goroutine reads Send until
 // Closing is closed, then writes Closure().Final (if any) and the close frame.
 type Socket struct {
+	scope     string
 	userID    int64
 	sessionID string
 	send      chan []byte
@@ -290,6 +337,9 @@ type Socket struct {
 	once    sync.Once
 	closure Closure
 }
+
+// Scope returns the scope given to AddIn ("" for Add).
+func (s *Socket) Scope() string { return s.scope }
 
 // UserID returns the authenticated user of the socket.
 func (s *Socket) UserID() int64 { return s.userID }

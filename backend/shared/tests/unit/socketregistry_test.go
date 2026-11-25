@@ -257,3 +257,58 @@ func equalIDs(a, b []int64) bool {
 
 	return true
 }
+
+func TestSocketRegistryScopesKeepRoomsApart(t *testing.T) {
+	r := socketregistry.New(socketregistry.Options{})
+	room1Tab1 := mustAddIn(t, r, "1001", 42, "a")
+	room1Tab2 := mustAddIn(t, r, "1001", 42, "b")
+	room2 := mustAddIn(t, r, "2002", 42, "a")
+	otherMember := mustAddIn(t, r, "1001", 43, "c")
+	unscoped := mustAdd(t, r, 42, "d")
+
+	if room1Tab1.Scope() != "1001" || unscoped.Scope() != "" {
+		t.Fatalf("scopes %q %q", room1Tab1.Scope(), unscoped.Scope())
+	}
+	if n := r.SendToUserIn("1001", 42, []byte("evt")); n != 2 {
+		t.Fatalf("SendToUserIn reached %d sockets, want 2", n)
+	}
+	for name, s := range map[string]*socketregistry.Socket{"room 2": room2, "other member": otherMember, "unscoped": unscoped} {
+		if got := received(t, s); len(got) != 0 {
+			t.Errorf("%s received %q", name, got)
+		}
+	}
+	received(t, room1Tab1)
+	received(t, room1Tab2)
+
+	kicked := socketregistry.Closure{Code: 4403, Reason: "KICKED_FROM_ROOM"}
+	if n := r.CloseUserIn("1001", 42, kicked); n != 2 {
+		t.Fatalf("CloseUserIn closed %d, want 2", n)
+	}
+	if !closingNow(room1Tab1) || !closingNow(room1Tab2) || room1Tab2.Closure().Code != 4403 {
+		t.Fatal("the member's sockets of that room were not closed with 4403")
+	}
+	for name, s := range map[string]*socketregistry.Socket{"room 2": room2, "other member": otherMember, "unscoped": unscoped} {
+		if closingNow(s) {
+			t.Errorf("%s was closed", name)
+		}
+	}
+	// The unscoped index and the user index still see every socket.
+	if n := r.SendToUser(42, []byte("all")); n != 2 {
+		t.Errorf("SendToUser after the room closure reached %d open sockets, want 2 (room 2 and unscoped)", n)
+	}
+	r.Remove(room1Tab1)
+	r.Remove(room1Tab2)
+	if n := r.CloseUserIn("1001", 42, kicked); n != 0 {
+		t.Errorf("removed sockets were closed again: %d", n)
+	}
+}
+
+func mustAddIn(t *testing.T, r *socketregistry.Registry, scope string, userID int64, sessionID string) *socketregistry.Socket {
+	t.Helper()
+	s, err := r.AddIn(scope, userID, sessionID)
+	if err != nil {
+		t.Fatalf("AddIn(%q, %d, %q): %v", scope, userID, sessionID, err)
+	}
+
+	return s
+}

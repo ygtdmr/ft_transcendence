@@ -162,6 +162,16 @@ type Request struct {
 	Query url.Values
 	// Body, if non-nil, is sent as JSON.
 	Body any
+	// RawBody, if non-nil, is sent unchanged as the JSON body: bytes the caller
+	// must forward as received, such as a client's WebSocket message, which may
+	// even be malformed (the receiver judges it). Body and RawBody are mutually
+	// exclusive.
+	RawBody []byte
+	// Header holds extra headers the receiver's contract defines, such as
+	// X-User-Id. Only X- names are accepted, never X-Request-ID (the transport
+	// sets it) or X-Forwarded-*/X-Real-IP (a receiver must not trust them), so a
+	// header here can never replace the credential or a cookie.
+	Header http.Header
 	// SessionCookie, if set, is forwarded as the ft_session cookie and nothing
 	// else. Never pass ft_refresh or any other browser cookie.
 	SessionCookie string
@@ -216,7 +226,12 @@ func (c *Client) build(ctx context.Context, req Request) (*http.Request, error) 
 	}
 
 	var body io.Reader
-	if req.Body != nil {
+	switch {
+	case req.Body != nil && req.RawBody != nil:
+		return nil, fmt.Errorf("%w: Body and RawBody are mutually exclusive", ErrInvalidRequest)
+	case req.RawBody != nil:
+		body = bytes.NewReader(req.RawBody)
+	case req.Body != nil:
 		encoded, err := json.Marshal(req.Body)
 		if err != nil {
 			return nil, fmt.Errorf("%w: body cannot be encoded", ErrInvalidRequest)
@@ -233,8 +248,20 @@ func (c *Client) build(ctx context.Context, req Request) (*http.Request, error) 
 	}
 	httpReq.Header.Set("Authorization", "Bearer "+c.credential.Reveal())
 	httpReq.Header.Set("Accept", "application/json")
-	if req.Body != nil {
+	if req.Body != nil || req.RawBody != nil {
 		httpReq.Header.Set("Content-Type", "application/json")
+	}
+	for name, values := range req.Header {
+		canonical := http.CanonicalHeaderKey(name)
+		if !allowedExtraHeader(canonical) {
+			return nil, fmt.Errorf("%w: header %q is not allowed", ErrInvalidRequest, canonical)
+		}
+		for _, v := range values {
+			if strings.ContainsAny(v, "\r\n\x00") {
+				return nil, fmt.Errorf("%w: header %q has an invalid value", ErrInvalidRequest, canonical)
+			}
+			httpReq.Header.Add(canonical, v)
+		}
 	}
 	if req.SessionCookie != "" {
 		if !validCookieValue(req.SessionCookie) {
@@ -243,6 +270,17 @@ func (c *Client) build(ctx context.Context, req Request) (*http.Request, error) 
 		httpReq.Header.Set("Cookie", sessionCookieName+"="+req.SessionCookie)
 	}
 	return httpReq, nil
+}
+
+// allowedExtraHeader accepts contract-defined X- headers only.
+func allowedExtraHeader(canonical string) bool {
+	switch {
+	case !strings.HasPrefix(canonical, "X-") || len(canonical) <= 2:
+		return false
+	case canonical == "X-Request-Id", canonical == "X-Real-Ip", strings.HasPrefix(canonical, "X-Forwarded-"):
+		return false
+	}
+	return true
 }
 
 func decodeSuccess(status int, raw []byte, out any) error {
