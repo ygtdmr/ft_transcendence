@@ -94,10 +94,10 @@ func Load(lookup sharedconfig.LookupFunc) (Config, error) {
 	}
 	cfg.InternalAddr = net.JoinHostPort(host, strconv.Itoa(r.Port("INTERNAL_PORT", 8081)))
 
-	cfg.PublicOrigin = r.Required("PUBLIC_ORIGIN")
+	cfg.PublicOrigin = r.Required("PUBLIC_BASE_URL")
 	if cfg.PublicOrigin != "" {
 		if _, err := originguard.New(cfg.PublicOrigin); err != nil {
-			r.Problem("PUBLIC_ORIGIN", "must be the public origin, such as https://host[:port], with no path")
+			r.Problem("PUBLIC_BASE_URL", "must be the public origin, such as https://host[:port], with no path")
 		}
 	}
 

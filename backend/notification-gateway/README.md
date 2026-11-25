@@ -9,7 +9,7 @@ no domain data and makes no authorization decision beyond session validity.
 
 The checks run in this order, before any upgrade:
 
-1. **Origin.** The request needs exactly one `Origin`, equal to `PUBLIC_ORIGIN`.
+1. **Origin.** The request needs exactly one `Origin`, equal to `PUBLIC_BASE_URL`.
    Anything else is `403 ORIGIN_NOT_ALLOWED`, and the cookie is never looked at.
 2. **Upgrade.** A request that isn't a WebSocket upgrade is `400 VALIDATION_ERROR`.
 3. **Session.** The credential is the `ft_session` cookie only (no query

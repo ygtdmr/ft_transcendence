@@ -131,7 +131,7 @@ func env(t *testing.T, authURL string, overrides map[string]string) map[string]s
 	}
 	values := map[string]string{
 		"APP_ENV":                               "test",
-		"PUBLIC_ORIGIN":                         publicOrigin,
+		"PUBLIC_BASE_URL":                       publicOrigin,
 		"AUTH_INTERNAL_URL":                     authURL,
 		"AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE": file("gateway-to-auth", gatewayToAuth),
 		"AUTH_INTERNAL_TIMEOUT":                 "2s",

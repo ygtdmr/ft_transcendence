@@ -465,7 +465,7 @@ func TestConfigReportsEveryProblemByNameWithoutValues(t *testing.T) {
 	values := env(t, "http://auth.internal:8081", nil)
 	shortSecret := values["USER_SERVICE_CREDENTIAL_FILE"] + ".short"
 	values["USER_SERVICE_CREDENTIAL_FILE"] = shortSecret
-	delete(values, "PUBLIC_ORIGIN")
+	delete(values, "PUBLIC_BASE_URL")
 	values["AUTH_INTERNAL_URL"] = "ftp://secret-host.example/path"
 	values["INTERNAL_HOST"] = "host:9999"
 	values["SOCKET_PING_INTERVAL"] = "30s"
@@ -476,7 +476,7 @@ func TestConfigReportsEveryProblemByNameWithoutValues(t *testing.T) {
 		t.Fatal("config.Load accepted an invalid configuration")
 	}
 	msg := err.Error()
-	for _, name := range []string{"PUBLIC_ORIGIN", "AUTH_INTERNAL_URL", "USER_SERVICE_CREDENTIAL_FILE", "INTERNAL_HOST", "SOCKET_PONG_WAIT"} {
+	for _, name := range []string{"PUBLIC_BASE_URL", "AUTH_INTERNAL_URL", "USER_SERVICE_CREDENTIAL_FILE", "INTERNAL_HOST", "SOCKET_PONG_WAIT"} {
 		if !strings.Contains(msg, name) {
 			t.Errorf("error does not name %s: %s", name, msg)
 		}
