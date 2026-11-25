@@ -72,3 +72,9 @@ REDIS_TEST_URL='redis://:itest-pass@127.0.0.1:26379/0' REDIS_TEST_URL_NO_AOF='re
 POSTGRES_TEST_DATABASE_URL='postgres://svc:itest-pass@127.0.0.1:25432/app?sslmode=disable' POSTGRES_TEST_CONTAINER=t-pg \
   go test -race -count=1 ./tests/integration
 ```
+
+The skeleton tests (`tests/unit/skeleton_test.go`) need no external services:
+they start the service template (`skeleton/`, see `SKELETON.md`) on local
+ports with a valid configuration, check both listeners, private-caller
+authentication and shutdown, refuse an invalid configuration by variable name
+only, and pin the `INTERNAL_HOST`/`INTERNAL_PORT` convention.
