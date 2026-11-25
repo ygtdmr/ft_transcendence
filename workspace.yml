@@ -294,6 +294,12 @@ docs: |-
 
   One public origin: `Browser → HTTPS/WSS reverse proxy → { SPA, /api/v1/*, /api/v2/*, /ws/v1/*, /ws/v2/rooms/*, /ws/v2/notifications }`. The proxy routes room sockets to Game Gateway and `/ws/v2/notifications` to Notification Gateway without passing through the BFF. This same-origin surface makes the host-only `ft_session` cookie attach automatically; production must not expose either gateway on a different browser hostname. Every browser-facing connection uses HTTPS/WSS. Local development mirrors this through `localhost:3000` for `baseUrl` and `wsUrl`; internal container connections may use their private ports. Secrets live in a gitignored `.env`, with a committed `.env.example` containing placeholders.
 
+  **Cross-site protection.** `SameSite=Lax` still lets a browser attach `ft_session` to some requests another site triggers, so every service with cookie-authenticated routes also checks where a request comes from (the shared `originguard`):
+
+  - A cookie-authenticated `POST`, `PUT`, `PATCH` or `DELETE` must come from this origin: exactly one `Origin` header equal to it. Without `Origin`, a `Sec-Fetch-Site` other than `same-origin` or `none` is refused; a request with neither header is not from a browser and passes. A refusal is `403 FORBIDDEN_ORIGIN` with empty `details`, answered before the session is checked. `GET`, `HEAD` and `OPTIONS` are not checked and never change state.
+  - A WebSocket handshake whose `Origin` is not exactly this origin is refused before the cookie is examined: a bare `403` on the room socket, `403 ORIGIN_NOT_ALLOWED` on the notification socket.
+  - No CORS: no response carries an `Access-Control-Allow-*` header, so other sites cannot read any response.
+
   ## Backend Framework
 
   Every service is written in Go and uses **Gin** (`gin-gonic/gin`) as its HTTP framework. Gin's routing, middleware chain and request binding/validation cover the layered request pipeline each service implements (context/request-ID middleware, access-control middleware, request handling, service layer, response handling). WebSocket upgrades use `gorilla/websocket` inside a Gin handler.
