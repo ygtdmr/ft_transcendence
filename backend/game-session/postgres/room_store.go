@@ -59,6 +59,16 @@ func (s *Store) ActiveRoomOf(userID int64) (int64, bool, error) {
 	return member.RoomID, true, nil
 }
 
+// SELECT room_id FROM rooms WHERE status <> 'CLOSED';
+func (s *Store) ActiveRoomIDs() ([]int64, error) {
+	var roomIDs []int64
+	err := s.db.Model(&room.Room{}).Where("status <> ?", room.StatusClosed).Pluck("room_id", &roomIDs).Error
+	if err != nil {
+		return nil, err
+	}
+	return roomIDs, nil
+}
+
 // INSERT INTO rooms (room_code, host_user_id, max_players) VALUES ('ABC123', 42, 8) RETURNING room_id;
 // INSERT INTO room_members (room_id, user_id) VALUES (1, 42);
 // Retry needs a savepoint: a unique violation would abort the outer transaction.

@@ -8,9 +8,9 @@ import (
 
 // 4401 invalid session, 4403 membership ended, 4404 room closed.
 type SocketClosure struct {
-	UserID int64
-	Code   int
-	Reason string
+	UserID int64  `json:"user_id"`
+	Code   int    `json:"code"`
+	Reason string `json:"reason"`
 }
 
 type Outcome struct {

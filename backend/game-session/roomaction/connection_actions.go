@@ -29,3 +29,22 @@ func (handler *Handler) HandleLastSocketClosed(tx service.RoomStore, roomID int6
 	_, err := handler.rooms.MarkDisconnected(tx, roomID, userID, now)
 	return err
 }
+
+func (handler *Handler) HandleGatewayStarted(tx service.RoomStore, now time.Time) error {
+	roomIDs, err := tx.ActiveRoomIDs()
+	if err != nil {
+		return err
+	}
+	for _, roomID := range roomIDs {
+		_, members, err := tx.RoomByID(roomID)
+		if err != nil {
+			return err
+		}
+		for _, member := range members {
+			if _, err := handler.rooms.MarkDisconnected(tx, roomID, member.UserID, now); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}

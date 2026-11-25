@@ -30,6 +30,7 @@ type RoomStore interface {
 	LoadCurrentGame(roomID int64) (*game.Game, error)
 	LoadLastGameResult(roomID int64) (*room.LastGameView, error)
 	ActiveRoomOf(userID int64) (int64, bool, error)
+	ActiveRoomIDs() ([]int64, error)
 	NextGameID() (int64, error)
 
 	SaveNewRoom(r *room.Room, host room.RoomMember) error

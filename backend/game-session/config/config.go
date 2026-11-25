@@ -26,6 +26,7 @@ func loadServiceTokens() (map[string]string, error) {
 	for serviceName, envName := range map[string]string{
 		"auth-service": "AUTH_SERVICE_CREDENTIAL_FILE",
 		"user-service": "USER_SERVICE_CREDENTIAL_FILE",
+		"game-gateway": "GAME_GATEWAY_CREDENTIAL_FILE",
 	} {
 		path := os.Getenv(envName)
 		if path == "" {
