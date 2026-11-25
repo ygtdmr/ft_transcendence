@@ -55,6 +55,15 @@ services: they start real HTTP servers, and `TestServeHandlesARealSIGTERM` build
 sends the process a real `SIGTERM`. Only `TestReadinessTracksARealPostgresOutage`
 needs `POSTGRES_TEST_DATABASE_URL` plus `POSTGRES_TEST_CONTAINER`.
 
+The message correlation tests (`tests/unit/rabbitmq_correlation_test.go`) need
+no external services: they check that `rabbitmq.CorrelationHeaders`/`Inject`
+carry the request id and a new span of the request's trace in message headers,
+and that `rabbitmq.ContextFrom` restores them on the consuming side, replacing
+missing or invalid values instead of copying them. The round trip through a
+real broker (`tests/integration/rabbitmq_correlation_test.go`) needs
+`RABBITMQ_TEST_URL`. If the broker container exits at start with
+`.erlang.cookie: eacces`, start it with `--user rabbitmq`.
+
 The dependency tests (`tests/integration/dependencies_test.go`) are skipped per
 variable: `RABBITMQ_TEST_URL`, `REDIS_TEST_URL` (AOF on, with a password),
 `REDIS_TEST_URL_NO_AOF`. The outage drills additionally need
