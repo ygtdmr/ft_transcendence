@@ -13,11 +13,13 @@ import (
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/config"
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/controller"
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/middleware/serviceauth"
+	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/middleware/throttle"
 	authpostgres "github.com/melmut-42/ft_transcendence/backend/auth-service/internal/repository/postgres"
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/security"
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/server"
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/service"
 	"github.com/melmut-42/ft_transcendence/backend/shared/postgres"
+	"github.com/melmut-42/ft_transcendence/backend/shared/ratelimit"
 )
 
 // setup initializes application dependencies and creates the HTTP server.
@@ -115,7 +117,12 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 		}
 		google.EnableCallback(identities, authService)
 	}
-	authController := controller.NewAuth(authService, controller.WithGoogleOAuth(google, logger))
+	limits, err := rateLimits(cfg)
+	if err != nil {
+		pool.Close()
+		return nil, nil, err
+	}
+	authController := controller.NewAuth(authService, controller.WithGoogleOAuth(google, logger), controller.WithRateLimits(limits))
 	cleanup := startSessionRevocations(ctx, authService, pool.Close, logger)
 
 	if len(cfg.CallerCredentials) == 0 {
@@ -126,4 +133,29 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 		controller.NewAccountDeletion(authService, serviceAuth))
 
 	return []*http.Server{server.New(cfg.Port, authController, logger), internal}, cleanup, nil
+}
+
+// rateLimits builds the login and registration limiters from validated settings.
+func rateLimits(cfg config.Config) (throttle.Limits, error) {
+	proxies, err := ratelimit.ParseTrustedProxies(cfg.TrustedProxies)
+	if err != nil {
+		return throttle.Limits{}, err
+	}
+	limits := throttle.Limits{Proxies: proxies}
+	for _, setting := range []struct {
+		limit  config.RateLimit
+		target **ratelimit.Limiter
+	}{
+		{cfg.LoginClientRateLimit, &limits.LoginClient},
+		{cfg.LoginEmailRateLimit, &limits.LoginEmail},
+		{cfg.RegisterClientRateLimit, &limits.RegisterClient},
+	} {
+		limiter, err := ratelimit.New(ratelimit.Config{Limit: setting.limit.Count, Window: setting.limit.Window})
+		if err != nil {
+			return throttle.Limits{}, err
+		}
+		*setting.target = limiter
+	}
+
+	return limits, nil
 }

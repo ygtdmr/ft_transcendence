@@ -33,6 +33,8 @@ environment only and does not load `.env` itself.
 | `AVATAR_BASE_URL`           | none            | Public `https://` origin for avatar URLs. Empty gives root-relative URLs. |
 | `AVATAR_STORAGE_DIR`        | none            | Absolute directory for uploaded avatars. Required in production; when empty, avatar changes are not served. |
 | `REPORT_WINDOW`             | `24h`           | How long a reporter waits before reporting the same user again, as a Go duration. |
+| `REPORT_RATE_LIMIT`         | `5/1m`          | Reports one user may file, as `<count>/<duration>`; more are `429 RATE_LIMITED`. |
+| `ACCOUNT_DELETION_RATE_LIMIT` | `3/1m`        | Account deletion requests one user may send, as `<count>/<duration>`; more are `429 RATE_LIMITED`. |
 | `AUTH_SERVICE_CREDENTIAL_FILE` | none, optional | File holding Auth Service's service credential (32+ characters).      |
 | `AUTH_SERVICE_PREVIOUS_CREDENTIAL_FILE` | none, optional | Previous Auth credential, accepted during a rotation.       |
 | `GAME_SESSION_CREDENTIAL_FILE` | none, optional | File holding Game Session's service credential (32+ characters). |
@@ -229,7 +231,8 @@ search has no substring index, so it scans `profiles`.
 `POST /api/v1/users/{user_id}/reports` stores a report for moderation. The reporter
 comes from the session, the reported user is not notified, and no route reads
 reports back. One reporter can report one user once per `REPORT_WINDOW`; a repeat
-is `409 ALREADY_REPORTED` with `retry_after_seconds`. No other throttling is applied.
+is `409 ALREADY_REPORTED` with `retry_after_seconds`. Across all users, one reporter may also file
+only as many reports as `REPORT_RATE_LIMIT` allows; more are `429 RATE_LIMITED` before the body is read.
 
 ## Avatars
 

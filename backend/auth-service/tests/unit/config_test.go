@@ -48,6 +48,7 @@ func TestAuthConfig(t *testing.T) {
 		"GAME_INTERNAL_URL": "", "GAME_SERVICE_OUTBOUND_CREDENTIAL_FILE": "", "GAME_INTERNAL_TIMEOUT": "",
 		"GAME_GATEWAY_INTERNAL_URLS": "", "GAME_GATEWAY_OUTBOUND_CREDENTIAL_FILE": "",
 		"NOTIFICATION_GATEWAY_INTERNAL_URLS": "", "NOTIFICATION_GATEWAY_OUTBOUND_CREDENTIAL_FILE": "", "GATEWAY_INTERNAL_TIMEOUT": "",
+		"LOGIN_CLIENT_RATE_LIMIT": "", "LOGIN_EMAIL_RATE_LIMIT": "", "REGISTER_CLIENT_RATE_LIMIT": "", "TRUSTED_PROXIES": "",
 	}
 
 	for key, value := range defaults {
@@ -68,6 +69,8 @@ func TestAuthConfig(t *testing.T) {
 		{"GAME_INTERNAL_URL", "http://game-session:8093"}, {"GAME_SERVICE_OUTBOUND_CREDENTIAL_FILE", "/nonexistent/credential"},
 		{"GAME_INTERNAL_TIMEOUT", "0s"},
 		{"GAME_GATEWAY_INTERNAL_URLS", "http://game-gateway:8091"}, {"GATEWAY_INTERNAL_TIMEOUT", "0s"},
+		{"LOGIN_CLIENT_RATE_LIMIT", "10"}, {"LOGIN_EMAIL_RATE_LIMIT", "0/1m"}, {"REGISTER_CLIENT_RATE_LIMIT", "5/0s"},
+		{"LOGIN_CLIENT_RATE_LIMIT", "x/1m"}, {"REGISTER_CLIENT_RATE_LIMIT", "5/ten"}, {"TRUSTED_PROXIES", "10.0.0.0/8,proxy"},
 	} {
 		t.Run(tt.key+"="+tt.value, func(t *testing.T) {
 			t.Setenv(tt.key, tt.value)
@@ -117,5 +120,38 @@ func checkConfigDefaults(t *testing.T) {
 	if err != nil || cfg.Port != "8080" || cfg.AccessTokenTTL != 30*time.Minute || cfg.RefreshTokenTTL != 30*24*time.Hour ||
 		cfg.Environment != "development" || cfg.LogFormat != "text" || cfg.LogLevel != "debug" {
 		t.Fatalf("defaults: %v", err)
+	}
+}
+
+// TestRateLimitConfig checks the login and registration limit defaults and overrides.
+//
+// Expected output:
+//
+//   - Defaults: login 10/1m per client and 5/1m per email, registration 5/10m
+//     per client, no trusted proxy.
+//   - "<count>/<duration>" overrides and a comma-separated TRUSTED_PROXIES list are read.
+func TestRateLimitConfig(t *testing.T) {
+	for key, value := range map[string]string{
+		"APP_ENV": "development", "DATABASE_URL": "postgres://test@localhost/test", "JWT_SECRET": testutil.TestSigningKey,
+		"LOGIN_CLIENT_RATE_LIMIT": "", "LOGIN_EMAIL_RATE_LIMIT": "", "REGISTER_CLIENT_RATE_LIMIT": "", "TRUSTED_PROXIES": "",
+	} {
+		t.Setenv(key, value)
+	}
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.LoginClientRateLimit != (config.RateLimit{Count: 10, Window: time.Minute}) ||
+		cfg.LoginEmailRateLimit != (config.RateLimit{Count: 5, Window: time.Minute}) ||
+		cfg.RegisterClientRateLimit != (config.RateLimit{Count: 5, Window: 10 * time.Minute}) || cfg.TrustedProxies != nil {
+		t.Fatalf("defaults = %+v %+v %+v %v", cfg.LoginClientRateLimit, cfg.LoginEmailRateLimit, cfg.RegisterClientRateLimit, cfg.TrustedProxies)
+	}
+
+	t.Setenv("LOGIN_CLIENT_RATE_LIMIT", " 20 / 30s ")
+	t.Setenv("TRUSTED_PROXIES", "10.0.0.0/8, 172.18.0.5")
+	cfg, err = config.Load()
+	if err != nil || cfg.LoginClientRateLimit != (config.RateLimit{Count: 20, Window: 30 * time.Second}) ||
+		strings.Join(cfg.TrustedProxies, ",") != "10.0.0.0/8,172.18.0.5" {
+		t.Fatalf("overrides = %+v %v, %v", cfg.LoginClientRateLimit, cfg.TrustedProxies, err)
 	}
 }

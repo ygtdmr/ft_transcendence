@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/melmut-42/ft_transcendence/backend/shared/ratelimit"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/client/authclient"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/client/gameclient"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/client/gatewayclient"
@@ -102,6 +103,16 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 		cleanup = startAvatarSweep(ctx, sweep, cleanup, logger)
 	}
 
+	reportLimiter, err := ratelimit.New(ratelimit.Config{Limit: cfg.ReportRateLimit.Count, Window: cfg.ReportRateLimit.Window})
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	deletionLimiter, err := ratelimit.New(ratelimit.Config{Limit: cfg.AccountDeletionRateLimit.Count, Window: cfg.AccountDeletionRateLimit.Window})
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
 	public := []server.RouteRegistrar{controller.NewAvatarFiles(avatarReader)}
 	if cfg.AuthInternalURL != "" {
 		sessions, err := authclient.New(cfg.AuthInternalURL, cfg.AuthServiceCredential, cfg.AuthInternalTimeout)
@@ -116,7 +127,8 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 		public = append(public, controller.NewFriendRequests(requests, sessions), controller.NewBlocks(blocks, sessions),
 			controller.NewFriends(friends, sessions),
 			controller.NewUserSearch(service.NewUserSearch(userpostgres.NewUserSearch(pool), avatars), sessions),
-			controller.NewReports(service.NewReports(userpostgres.NewReports(pool), cfg.ReportWindow), sessions))
+			controller.NewReports(service.NewReports(userpostgres.NewReports(pool), cfg.ReportWindow), sessions).
+				WithRateLimit(reportLimiter))
 		if cfg.StatsInternalURL != "" {
 			stats, err := statsclient.New(cfg.StatsInternalURL, cfg.StatsServiceCredential, cfg.StatsInternalTimeout)
 			if err != nil {
@@ -140,7 +152,7 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 			}
 			usernames := service.NewUsernames(userpostgres.NewUsernames(pool), avatars)
 			public = append(public, controller.NewPublicProfile(profiles, sessions), controller.NewOwnProfile(own, sessions),
-				controller.NewProfileUpdate(usernames, own, sessions), controller.NewAccountDeletion(deletions, sessions))
+				controller.NewProfileUpdate(usernames, own, sessions), controller.NewAccountDeletion(deletions, sessions).WithRateLimit(deletionLimiter))
 			cleanup = startDeletionWorker(ctx, deletions, cleanup, logger)
 		} else {
 			logger.WarnContext(ctx, "STATS_INTERNAL_URL is not set; the public and own profile routes are not served")

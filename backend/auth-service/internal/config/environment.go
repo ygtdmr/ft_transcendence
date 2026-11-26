@@ -44,6 +44,12 @@ type Config struct {
 	// about session revocations. Nil when revocations close no sockets.
 	Gateways               []Gateway
 	GatewayInternalTimeout time.Duration
+	// Public route limits per client address or email; see loadRateLimits.
+	LoginClientRateLimit    RateLimit
+	LoginEmailRateLimit     RateLimit
+	RegisterClientRateLimit RateLimit
+	// TrustedProxies lists the reverse proxies whose X-Forwarded-For is believed.
+	TrustedProxies []string
 	// Google sign-in client settings; empty when Google sign-in is disabled.
 	GoogleClientID     string
 	GoogleClientSecret string `json:"-"`
@@ -103,6 +109,9 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 	if err := cfg.loadGateways(); err != nil {
+		return Config{}, err
+	}
+	if err := cfg.loadRateLimits(); err != nil {
 		return Config{}, err
 	}
 	if err := cfg.loadGoogleOAuth(); err != nil {

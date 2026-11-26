@@ -11,7 +11,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/melmut-42/ft_transcendence/backend/shared/httpresponse"
+	"github.com/melmut-42/ft_transcendence/backend/shared/ratelimit"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/middleware/sessionauth"
+	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/middleware/throttle"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/router"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/service"
 )
@@ -28,6 +30,7 @@ type ReportService interface {
 type ReportsController struct {
 	reports  ReportService
 	sessions sessionauth.Validator
+	limiter  *ratelimit.Limiter
 }
 
 // NewReports returns the controller for /api/v1/users/{user_id}/reports.
@@ -35,9 +38,16 @@ func NewReports(reports ReportService, sessions sessionauth.Validator) *ReportsC
 	return &ReportsController{reports: reports, sessions: sessions}
 }
 
-// RegisterRoutes adds the report route behind session validation.
+// WithRateLimit limits how often one user may file reports.
+func (h *ReportsController) WithRateLimit(limiter *ratelimit.Limiter) *ReportsController {
+	h.limiter = limiter
+	return h
+}
+
+// RegisterRoutes adds the report route behind session validation and the per-user limit.
 func (h *ReportsController) RegisterRoutes(routes gin.IRoutes) {
-	routes.POST("/api/v1/users/:user_id/reports", sessionauth.Require(h.sessions), router.Wrap(h.file, mapFriendError))
+	routes.POST("/api/v1/users/:user_id/reports", sessionauth.Require(h.sessions),
+		throttle.PerUser(h.limiter, "Too many reports; try again later."), router.Wrap(h.file, mapFriendError))
 }
 
 // file takes the reporter only from the session, so a body cannot forge one.

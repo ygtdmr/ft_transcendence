@@ -10,7 +10,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/melmut-42/ft_transcendence/backend/shared/httpresponse"
+	"github.com/melmut-42/ft_transcendence/backend/shared/ratelimit"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/middleware/sessionauth"
+	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/middleware/throttle"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/router"
 	"github.com/melmut-42/ft_transcendence/backend/user-service/internal/service"
 )
@@ -31,6 +33,7 @@ type AccountDeletionService interface {
 type AccountDeletionController struct {
 	deletions AccountDeletionService
 	sessions  sessionauth.Validator
+	limiter   *ratelimit.Limiter
 }
 
 // NewAccountDeletion returns the account deletion controller.
@@ -38,9 +41,17 @@ func NewAccountDeletion(deletions AccountDeletionService, sessions sessionauth.V
 	return &AccountDeletionController{deletions: deletions, sessions: sessions}
 }
 
-// RegisterRoutes adds the account deletion route behind session validation.
+// WithRateLimit limits how often one user may request the deletion. A
+// limited request is refused before the body is read, so it has no effect.
+func (h *AccountDeletionController) WithRateLimit(limiter *ratelimit.Limiter) *AccountDeletionController {
+	h.limiter = limiter
+	return h
+}
+
+// RegisterRoutes adds the account deletion route behind session validation and the per-user limit.
 func (h *AccountDeletionController) RegisterRoutes(routes gin.IRoutes) {
-	routes.DELETE("/api/v1/users/me", sessionauth.Require(h.sessions), router.Wrap(h.remove, mapFriendError))
+	routes.DELETE("/api/v1/users/me", sessionauth.Require(h.sessions),
+		throttle.PerUser(h.limiter, "Too many account deletion attempts; try again later."), router.Wrap(h.remove, mapFriendError))
 }
 
 type deletionRequest struct {
