@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/middleware/throttle"
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/middleware/validation"
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/router"
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/service"
@@ -22,6 +23,7 @@ type AuthController struct {
 	sessions SessionService
 	google   GoogleStarter
 	logger   *slog.Logger
+	limits   throttle.Limits
 }
 
 // NewAuth returns a controller backed by an auth service.
@@ -37,8 +39,8 @@ func NewAuth(service RegistrationService, options ...Option) *AuthController {
 // RegisterRoutes installs auth routes on a group mounted at /api/v1/auth.
 func (authController *AuthController) RegisterRoutes(routes gin.IRoutes) {
 	routes.Use(disableAuthCaching)
-	routes.POST("/register", router.Wrap(validation.ValidateRegister, mapAuthError),
-		router.Wrap(authController.Register, mapAuthError))
+	routes.POST("/register", router.Wrap(authController.limits.RegisterByClient(), mapAuthError),
+		router.Wrap(validation.ValidateRegister, mapAuthError), router.Wrap(authController.Register, mapAuthError))
 	if authController.sessions != nil {
 		authController.registerSessionRoutes(routes)
 	}

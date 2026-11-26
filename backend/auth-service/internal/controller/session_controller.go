@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/middleware/authentication"
+	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/middleware/throttle"
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/middleware/validation"
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/router"
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/security"
@@ -32,9 +33,18 @@ func WithSessions(sessions SessionService) Option {
 	}
 }
 
+// WithRateLimits enforces the login and registration limits.
+func WithRateLimits(limits throttle.Limits) Option {
+	return func(controller *AuthController) {
+		controller.limits = limits
+	}
+}
+
 func (authController *AuthController) registerSessionRoutes(routes gin.IRoutes) {
 	guard := authentication.Middleware(authController.sessions)
-	routes.POST("/login", router.Wrap(validation.ValidateLogin, mapAuthError), router.Wrap(authController.Login, mapAuthError))
+	routes.POST("/login", router.Wrap(authController.limits.LoginByClient(), mapAuthError),
+		router.Wrap(validation.ValidateLogin, mapAuthError), router.Wrap(authController.limits.LoginByEmail(), mapAuthError),
+		router.Wrap(authController.Login, mapAuthError))
 	routes.POST("/refresh", router.Wrap(authController.Refresh, mapAuthError))
 	routes.GET("/session", guard, router.Wrap(authController.CurrentSession, mapAuthError))
 	routes.DELETE("/session", guard, router.Wrap(authController.Logout, mapAuthError))

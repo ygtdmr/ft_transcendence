@@ -54,8 +54,11 @@ type Config struct {
 	GameInternalTimeout   time.Duration
 	// ReportWindow is how long a reporter must wait before reporting the same
 	// user again.
-	ReportWindow   time.Duration
-	MigrateOnStart bool
+	ReportWindow time.Duration
+	// Per-user limits of account deletion and reports; see loadRateLimits.
+	AccountDeletionRateLimit RateLimit
+	ReportRateLimit          RateLimit
+	MigrateOnStart           bool
 }
 
 // Load reads and validates application settings from the process environment.
@@ -113,6 +116,9 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 	if err := cfg.loadReportWindow(); err != nil {
+		return Config{}, err
+	}
+	if err := cfg.loadRateLimits(); err != nil {
 		return Config{}, err
 	}
 	credentials, err := loadCallerCredentials()

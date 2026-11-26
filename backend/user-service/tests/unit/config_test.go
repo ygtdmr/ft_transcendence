@@ -30,7 +30,8 @@ func setEnvironment(t *testing.T, values map[string]string) {
 		"GAME_GATEWAY_INTERNAL_URLS", "GAME_GATEWAY_OUTBOUND_CREDENTIAL_FILE",
 		"NOTIFICATION_GATEWAY_INTERNAL_URLS", "NOTIFICATION_GATEWAY_OUTBOUND_CREDENTIAL_FILE", "GATEWAY_INTERNAL_TIMEOUT",
 		"STATS_INTERNAL_URL", "STATS_SERVICE_OUTBOUND_CREDENTIAL_FILE", "STATS_INTERNAL_TIMEOUT",
-		"GAME_INTERNAL_URL", "GAME_SERVICE_OUTBOUND_CREDENTIAL_FILE", "GAME_INTERNAL_TIMEOUT"} {
+		"GAME_INTERNAL_URL", "GAME_SERVICE_OUTBOUND_CREDENTIAL_FILE", "GAME_INTERNAL_TIMEOUT",
+		"ACCOUNT_DELETION_RATE_LIMIT", "REPORT_RATE_LIMIT"} {
 		t.Setenv(name, values[name])
 	}
 }
@@ -251,6 +252,36 @@ func TestLoadReportWindow(t *testing.T) {
 		setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL, "REPORT_WINDOW": bad})
 		if _, err := config.Load(); err == nil || !strings.Contains(err.Error(), "REPORT_WINDOW") {
 			t.Fatalf("%q: err = %v", bad, err)
+		}
+	}
+}
+
+// TestLoadRateLimits checks the per-user deletion and report limits.
+//
+// Expected output: the defaults are 3/1m and 5/1m, "<count>/<duration>"
+// overrides are read, and a malformed, zero or negative value is refused
+// with the variable's name.
+func TestLoadRateLimits(t *testing.T) {
+	setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL})
+	cfg, err := config.Load()
+	if err != nil || cfg.AccountDeletionRateLimit != (config.RateLimit{Count: 3, Window: time.Minute}) ||
+		cfg.ReportRateLimit != (config.RateLimit{Count: 5, Window: time.Minute}) {
+		t.Fatalf("defaults = %+v %+v, %v", cfg.AccountDeletionRateLimit, cfg.ReportRateLimit, err)
+	}
+
+	setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL, "ACCOUNT_DELETION_RATE_LIMIT": "1/30s", "REPORT_RATE_LIMIT": " 20 / 1h "})
+	cfg, err = config.Load()
+	if err != nil || cfg.AccountDeletionRateLimit != (config.RateLimit{Count: 1, Window: 30 * time.Second}) ||
+		cfg.ReportRateLimit != (config.RateLimit{Count: 20, Window: time.Hour}) {
+		t.Fatalf("configured = %+v %+v, %v", cfg.AccountDeletionRateLimit, cfg.ReportRateLimit, err)
+	}
+
+	for _, variable := range []string{"ACCOUNT_DELETION_RATE_LIMIT", "REPORT_RATE_LIMIT"} {
+		for _, bad := range []string{"3", "0/1m", "-1/1m", "x/1m", "3/0s", "3/soon"} {
+			setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL, variable: bad})
+			if _, err := config.Load(); err == nil || !strings.Contains(err.Error(), variable) {
+				t.Fatalf("%s=%q: err = %v", variable, bad, err)
+			}
 		}
 	}
 }
