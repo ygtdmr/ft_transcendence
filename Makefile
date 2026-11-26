@@ -3,7 +3,7 @@
 
 COMPOSE ?= docker compose
 
-.PHONY: up down restart build logs ps config secrets cert clean help
+.PHONY: up down restart build logs ps config secrets cert security-test clean help
 
 up: secrets cert ## Build and start the whole stack, then wait until it is ready
 	$(COMPOSE) up -d --build
@@ -34,6 +34,12 @@ secrets: ## Create any missing secret (never overwrites an existing one)
 
 cert: ## Create the local TLS certificate if none exists
 	@sh scripts/make-cert.sh
+
+security-test: ## Run the negative and least-privilege checks against the running stack
+	@# Rate-limit counters live in memory; start from empty ones so the suite can be repeated.
+	$(COMPOSE) restart auth-service
+	@COMPOSE="$(COMPOSE)" sh scripts/wait-ready.sh
+	@COMPOSE="$(COMPOSE)" bash tests/security/stack-security.sh
 
 clean: ## Stop the stack and DELETE its data volumes (destructive)
 	$(COMPOSE) down -v
