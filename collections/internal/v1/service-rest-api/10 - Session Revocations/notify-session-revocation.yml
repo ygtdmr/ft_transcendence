@@ -1,0 +1,56 @@
+info:
+  name: Notify session revocation
+  type: http
+  seq: 1
+  tags: [internal, gateway, session]
+http:
+  method: PUT
+  url: "{{notificationGatewayInternalUrl}}/internal/v1/session-revocations/3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53"
+  headers:
+    - name: Authorization
+      value: "Bearer {{authToNotificationGatewayServiceCredential}}"
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "user_id": 42,
+        "cause": "SESSION_REVOKED"
+      }
+docs: |-
+  # Notify session revocation
+
+  Scope `session.revocation.notify`. Caller: Auth Service, once per running instance of each gateway, after it recorded the revocation. Game Gateway and Notification Gateway expose the same route; each acts only on its own sockets.
+
+  The gateway sends the revoked session's sockets an `UNAUTHORIZED` event when it can, then closes every one of them with `4401` and the cause as the close reason. Sockets of the user's other sessions stay open. For a while afterwards the gateway also refuses to register a new socket of that session, which covers a handshake Auth validated just before the revocation.
+
+  The call is idempotent: an unknown session, a session without sockets on this instance and a repeat all answer `204`. Auth retries a `503`, a `500`, a network error or a timeout with the identical request.
+
+  ## Request parameters
+
+  | Parameter | Location | Required | Type | Allowed values | Nullable | Description | Example |
+  | --- | --- | ---: | --- | --- | ---: | --- | --- |
+  | `session_id` | path | yes | string | UUID | no | Revoked session | `3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53` |
+  | `user_id` | body | yes | integer | positive | no | Owner of the session | `42` |
+  | `cause` | body | yes | string enum | `SESSION_REVOKED`, `ACCOUNT_DELETED` | no | Why the session ended. `ACCOUNT_DELETED` lets Game Gateway tell a deletion apart from an ordinary disconnect, so it never leads to a leave penalty. | `SESSION_REVOKED` |
+
+  ## Status and errors
+
+  | Status | Code | Condition | `details` |
+  | --- | --- | --- | --- |
+  | `204` | none | The session's sockets on this instance are closed, or it had none | none |
+  | `400` | `VALIDATION_ERROR` | Malformed JSON, more than one JSON value, or unknown/missing body fields | `{}` |
+  | `401` | `SERVICE_UNAUTHENTICATED` | Missing or unknown service credential | `{}` |
+  | `403` | `SERVICE_FORBIDDEN` | Caller lacks `session.revocation.notify` | `{}` |
+  | `422` | `VALIDATION_ERROR` | `session_id` is not a UUID, `user_id` is not positive, or `cause` is not allowed | `{ "field": string }` |
+  | `500` | `INTERNAL_ERROR` | Unexpected failure | `{}` |
+examples:
+  - name: Success - Sockets closed
+    request: {url: "{{notificationGatewayInternalUrl}}/internal/v1/session-revocations/3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53", method: PUT, headers: [], params: [], body: {mode: json, json: '{"user_id": 42, "cause": "SESSION_REVOKED"}'}}
+    response:
+      status: 204
+      headers: []
+      body:
+        type: json
+        data: ""
