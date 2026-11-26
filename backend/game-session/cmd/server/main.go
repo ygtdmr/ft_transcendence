@@ -17,6 +17,7 @@ import (
 	"game-session/roomaction"
 	"game-session/service"
 	"game-session/userclient"
+	"game-session/websocketprotocol"
 	"game-session/worker"
 )
 
@@ -30,6 +31,7 @@ func createServers(cfg config.Config, handler *rest.Handler, log *slog.Logger) (
 	serviceScopes := map[string][]string{
 		"auth-service": {"membership.read", "session.departure"},
 		"user-service": {"membership.read", "account.cleanup"},
+		"game-gateway": {"room.socket"},
 	}
 	if len(cfg.ServiceTokens) == 0 {
 		log.Warn("no service credential files configured, internal API will reject every caller")
@@ -100,9 +102,9 @@ func main() {
 	}
 	svc := service.NewRoomService(profiles, cfg.Penalty)
 	actions := roomaction.New(svc, profiles)
-	handler := rest.NewHandler(svc, actions, store)
+	commands := websocketprotocol.NewCommandHandler(actions, store)
+	handler := rest.NewHandler(svc, actions, commands, store)
 	deadlines := worker.New(store, svc, actions, log)
-	//	commands := websocketprotocol.NewCommandHandler(actions, store)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()

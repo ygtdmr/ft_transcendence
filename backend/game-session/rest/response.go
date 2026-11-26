@@ -47,6 +47,8 @@ func writeDomainError(c *gin.Context, err error) {
 		writeError(c, http.StatusConflict, "ROOM_FULL", "The room has no free seat.", nil)
 	case errors.Is(err, room.ErrRoomNotJoinable):
 		writeError(c, http.StatusConflict, "ROOM_NOT_JOINABLE", "The room does not accept joins in its current state.", nil)
+	case errors.Is(err, room.ErrInvalidRoomState):
+		writeError(c, http.StatusConflict, "INVALID_ROOM_STATE", "The room does not allow this in its current state.", nil)
 	case errors.Is(err, room.ErrInvalidPayload), errors.Is(err, room.ErrValidationError):
 		writeError(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "The request payload is invalid.", nil)
 	case errors.Is(err, service.ErrRoomCodeTaken):

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"game-session/room"
+	"game-session/roomaction"
 	"game-session/service"
 
 	"github.com/gin-gonic/gin"
@@ -217,4 +218,107 @@ func (h *Handler) sessionDeparture(c *gin.Context) {
 		status = http.StatusOK
 	}
 	writeData(c, status, view)
+}
+
+func userIDPathParam(c *gin.Context) (int64, bool) {
+	userID, err := strconv.ParseInt(c.Param("user_id"), 10, 64)
+	if err != nil || userID <= 0 {
+		writeError(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "user_id must be a positive integer.", map[string]any{"field": "user_id"})
+		return 0, false
+	}
+	return userID, true
+}
+
+func (h *Handler) socketOpened(c *gin.Context) {
+	roomID, ok := roomIDParam(c)
+	if !ok {
+		return
+	}
+	userID, ok := userIDPathParam(c)
+	if !ok {
+		return
+	}
+	err := h.store.Transaction(func(tx service.RoomStore) error {
+		return h.actions.HandleConnected(tx, roomID, userID, h.now())
+	})
+	if err != nil {
+		writeDomainError(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+func (h *Handler) lastSocketClosed(c *gin.Context) {
+	roomID, ok := roomIDParam(c)
+	if !ok {
+		return
+	}
+	userID, ok := userIDPathParam(c)
+	if !ok {
+		return
+	}
+	err := h.store.Transaction(func(tx service.RoomStore) error {
+		return h.actions.HandleLastSocketClosed(tx, roomID, userID, h.now())
+	})
+	if err != nil {
+		writeDomainError(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+func (h *Handler) gatewayStarted(c *gin.Context) {
+	err := h.store.Transaction(func(tx service.RoomStore) error {
+		return h.actions.HandleGatewayStarted(tx, h.now())
+	})
+	if err != nil {
+		writeDomainError(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+type commandResultView struct {
+	Reply    any                        `json:"reply"`
+	Closures []roomaction.SocketClosure `json:"closures"`
+}
+
+func readGatewayCommand(c *gin.Context) (int64, string, []byte, bool) {
+	userID, err := strconv.ParseInt(c.GetHeader("X-User-Id"), 10, 64)
+	if err != nil || userID <= 0 {
+		writeError(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "X-User-Id must be a positive integer.", map[string]any{"field": "X-User-Id"})
+		return 0, "", nil, false
+	}
+	sessionID := strings.ToLower(c.GetHeader("X-Session-Id"))
+	if !uuidPattern.MatchString(sessionID) {
+		writeError(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "X-Session-Id must be a UUID.", map[string]any{"field": "X-Session-Id"})
+		return 0, "", nil, false
+	}
+	const maxBodyBytes = 64 * 1024 //64kb
+	body, err := io.ReadAll(io.LimitReader(c.Request.Body, maxBodyBytes+1))
+	if err != nil || len(body) == 0 || len(body) > maxBodyBytes {
+		writeError(c, http.StatusBadRequest, "VALIDATION_ERROR", "Body must be the client message, at most 64 KB.", map[string]any{"field": "body"})
+		return 0, "", nil, false
+	}
+	return userID, sessionID, body, true
+}
+
+func (h *Handler) forwardCommand(c *gin.Context) {
+	roomID, ok := roomIDParam(c)
+	if !ok {
+		return
+	}
+	userID, sessionID, body, ok := readGatewayCommand(c)
+	if !ok {
+		return
+	}
+	outcome := h.commands.HandleCommand(roomID, userID, sessionID, body, h.now())
+	result := commandResultView{Closures: []roomaction.SocketClosure{}}
+	if outcome.Ack != nil {
+		result.Reply = outcome.Ack
+	} else {
+		result.Reply = outcome.Error
+	}
+	result.Closures = append(result.Closures, outcome.Closures...)
+	writeData(c, http.StatusOK, result)
 }

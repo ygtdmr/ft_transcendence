@@ -33,7 +33,7 @@ func (r *Room) MarkDisconnected(input RoomInput, userID int64, now time.Time) (R
 
 func (r *Room) MarkReconnected(input RoomInput, userID int64, now time.Time) (RoomMember, error) {
 	if r.Status == StatusClosed {
-		return RoomMember{}, ErrRoomNotFound
+		return RoomMember{}, ErrInvalidRoomState
 	}
 	member := findMember(input.Members, userID)
 	if member == nil {

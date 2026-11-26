@@ -14,6 +14,7 @@ import (
 	"game-session/room"
 	"game-session/roomaction"
 	"game-session/service"
+	"game-session/websocketprotocol"
 )
 
 func newServer(t *testing.T) *httptest.Server {
@@ -30,7 +31,8 @@ func newServer(t *testing.T) *httptest.Server {
 		t.Fatalf("reset: %v", err)
 	}
 	svc := service.NewRoomService(placeholderProfiles{}, nil)
-	handler := rest.NewHandler(svc, roomaction.New(svc, placeholderProfiles{}), store)
+	actions := roomaction.New(svc, placeholderProfiles{})
+	handler := rest.NewHandler(svc, actions, websocketprotocol.NewCommandHandler(actions, store), store)
 	server := httptest.NewServer(handler.Routes())
 	t.Cleanup(server.Close)
 	return server

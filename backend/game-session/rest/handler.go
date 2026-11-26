@@ -7,6 +7,7 @@ import (
 	"game-session/room"
 	"game-session/roomaction"
 	"game-session/service"
+	"game-session/websocketprotocol"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,17 +18,19 @@ type Store interface {
 }
 
 type Handler struct {
-	svc     *service.RoomService
-	actions *roomaction.Handler
-	store   Store
-	now     func() time.Time
+	svc      *service.RoomService
+	actions  *roomaction.Handler
+	commands *websocketprotocol.CommandHandler
+	store    Store
+	now      func() time.Time
 }
 
-func NewHandler(svc *service.RoomService, actions *roomaction.Handler, store Store) *Handler {
+func NewHandler(svc *service.RoomService, actions *roomaction.Handler, commands *websocketprotocol.CommandHandler, store Store) *Handler {
 	return &Handler{
-		svc:     svc,
-		actions: actions,
-		store:   store,
+		svc:      svc,
+		actions:  actions,
+		commands: commands,
+		store:    store,
 		now: func() time.Time {
 			return time.Now().UTC()
 		},
@@ -53,6 +56,10 @@ func (h *Handler) InternalRoutes(access *ServiceAccessCheck) http.Handler {
 	router.GET("/internal/v1/memberships/:user_id", access.RequireScope("membership.read"), h.membership)
 	router.PUT("/internal/v1/account-cleanups/:operation_id", access.RequireScope("account.cleanup"), h.accountCleanup)
 	router.PUT("/internal/v1/session-departures/:session_id", access.RequireScope("session.departure"), h.sessionDeparture)
+	router.PUT("/internal/v1/rooms/:room_id/connections/:user_id", access.RequireScope("room.socket"), h.socketOpened)
+	router.DELETE("/internal/v1/rooms/:room_id/connections/:user_id", access.RequireScope("room.socket"), h.lastSocketClosed)
+	router.DELETE("/internal/v1/room-connections", access.RequireScope("room.socket"), h.gatewayStarted)
+	router.POST("/internal/v1/rooms/:room_id/commands", access.RequireScope("room.socket"), h.forwardCommand)
 	return router
 }
 
