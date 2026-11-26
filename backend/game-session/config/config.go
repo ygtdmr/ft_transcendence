@@ -2,7 +2,9 @@ package config
 
 import (
 	"errors"
+	"net"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -14,6 +16,7 @@ type Config struct {
 	DatabaseURL           string
 	Port                  int
 	InternalPort          int
+	InternalHost          string
 	TickInterval          time.Duration
 	Penalty               *room.PenaltyConfig
 	ServiceTokens         map[string]string
@@ -87,6 +90,10 @@ func Load() (Config, error) {
 		}
 		cfg.InternalPort = port
 	}
+	cfg.InternalHost = strings.TrimSpace(os.Getenv("INTERNAL_HOST"))
+	if cfg.InternalHost != "" && !validListenHost(cfg.InternalHost) {
+		return Config{}, errors.New("INTERNAL_HOST must be a host name or an IP address, without a port")
+	}
 	if raw := os.Getenv("TICK_INTERVAL"); raw != "" {
 		interval, err := time.ParseDuration(raw)
 		if err != nil || interval <= 0 {
@@ -109,4 +116,26 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 	return cfg, nil
+}
+
+// InternalAddress returns the address the private listener binds to,
+// INTERNAL_HOST joined with INTERNAL_PORT. A deployment sets INTERNAL_HOST to the
+// container's address on the private service network, so the reverse proxy's
+// network cannot reach the private routes. Empty listens on every interface, for
+// local runs only.
+func (cfg Config) InternalAddress() string {
+	return net.JoinHostPort(cfg.InternalHost, strconv.Itoa(cfg.InternalPort))
+}
+
+// hostLabels matches a DNS host name (underscores allowed: Compose service names).
+var hostLabels = regexp.MustCompile(`^(?i)[a-z0-9_]([a-z0-9_-]{0,61}[a-z0-9_])?(\.[a-z0-9_]([a-z0-9_-]{0,61}[a-z0-9_])?)*$`)
+
+// validListenHost reports whether host is an IP address or a DNS host name,
+// without a port. Game Session does not import backend/shared, so it carries the
+// same rule as the one shared/config applies to INTERNAL_HOST.
+func validListenHost(host string) bool {
+	if net.ParseIP(host) != nil {
+		return true
+	}
+	return len(host) <= 253 && hostLabels.MatchString(host)
 }
