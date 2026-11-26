@@ -51,6 +51,8 @@ func writeDomainError(c *gin.Context, err error) {
 		writeError(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "The request payload is invalid.", nil)
 	case errors.Is(err, service.ErrRoomCodeTaken):
 		writeError(c, http.StatusServiceUnavailable, "ROOM_CODE_UNAVAILABLE", "Could not allocate a room code, retry.", nil)
+	case errors.Is(err, service.ErrAccountCleanedUp):
+		writeError(c, http.StatusUnauthorized, "UNAUTHORIZED", "A valid active session is required.", nil)
 	case errors.Is(err, service.ErrProfileSourceUnavailable):
 		writeError(c, http.StatusServiceUnavailable, "SERVICE_UNAVAILABLE", "User Service is unavailable, retry.", nil)
 	default:

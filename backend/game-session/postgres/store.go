@@ -70,9 +70,10 @@ func isUniqueViolation(err error, constraint string) bool {
 }
 
 const (
-	constraintActiveRoomCode = "idx_rooms_active_room_code"
-	constraintOneActiveRoom  = "room_members_pkey"
-	constraintOneSpymaster   = "idx_room_members_spymaster"
+	constraintActiveRoomCode         = "idx_rooms_active_room_code"
+	constraintOneActiveRoom          = "room_members_pkey"
+	constraintOneSpymaster           = "idx_room_members_spymaster"
+	constraintOneCleanupPerOperation = "account_cleanups_pkey"
 )
 
 // SELECT 1;
@@ -86,6 +87,7 @@ func (s *Store) ResetForTests() error {
 		"TRUNCATE rooms RESTART IDENTITY CASCADE",
 		"TRUNCATE outbox_events",
 		"TRUNCATE command_ledger",
+		"TRUNCATE account_cleanups",
 	} {
 		if err := s.db.Exec(statement).Error; err != nil {
 			return err
