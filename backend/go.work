@@ -3,6 +3,7 @@ go 1.27.1
 use (
 	./auth-service
 	./game-gateway
+	./game-session
 	./notification-gateway
 	./shared
 	./stats-service
