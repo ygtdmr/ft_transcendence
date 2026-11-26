@@ -1,0 +1,107 @@
+info:
+  name: Record session departure
+  type: http
+  seq: 1
+  tags: [internal, game-session, session]
+http:
+  method: PUT
+  url: "{{gameInternalUrl}}/internal/v1/session-departures/3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53"
+  headers:
+    - name: Authorization
+      value: "Bearer {{authToGameServiceCredential}}"
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "user_id": 42
+      }
+docs: |-
+  # Record session departure
+
+  Scope `session.departure`. Caller: Auth Service, during `DELETE /api/v1/auth/session` (logout), before it revokes the session. Game Session removes the user from their current Game v2 room as a departure with reason `SESSION_ENDED` and records the receipt in the same transaction.
+
+  The departure follows the Game v2 leave rules (`workspace.yml`, Leave Penalty): `room.player.left` with `reason:"SESSION_ENDED"`, every room socket of the user closes with `4403`, a seated participant leaving during `IN_GAME` receives the leave penalty and team staffing is rechecked (possibly `game.staffing.required`). A user in no room is recorded without a departure. The socket close that Auth's revocation causes afterwards finds no membership and does nothing: no `DISCONNECTED` departure, no second penalty.
+
+  The receipt is keyed by `session_id`. A retried call for the same session returns the stored receipt and changes nothing, even when the user has since logged in again and joined a room with another session.
+
+  ## Request parameters
+
+  | Parameter | Location | Required | Type | Allowed values | Nullable | Description | Example |
+  | --- | --- | ---: | --- | --- | ---: | --- | --- |
+  | `session_id` | path | yes | string | UUID, normalized to lowercase | no | Session being logged out | `3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53` |
+  | `user_id` | body | yes | integer | positive | no | Owner of the session | `42` |
+
+  ## Response fields
+
+  | Field | Type | Required | Nullable | Allowed values | Description |
+  | --- | --- | ---: | ---: | --- | --- |
+  | `data.session_id` | string | yes | no | lowercase UUID | Session of record |
+  | `data.user_id` | integer | yes | no | positive | Session owner |
+  | `data.state` | string enum | yes | no | `COMPLETED` | Game Session departure is done |
+  | `data.completed_at` | string | yes | no | ISO 8601 UTC | When the receipt committed |
+
+  ## Status and errors
+
+  | Status | Code | Condition | `details` |
+  | --- | --- | --- | --- |
+  | `201` | none | Departure applied now, or user was in no room | none |
+  | `200` | none | Same session and user replayed; returns the stored receipt | none |
+  | `400` | `VALIDATION_ERROR` | Malformed JSON, more than one JSON value, or unknown or missing body fields | `{ "field": "body" }` |
+  | `401` | `SERVICE_UNAUTHENTICATED` | Missing or unknown service credential | `{}` |
+  | `403` | `SERVICE_FORBIDDEN` | Caller lacks `session.departure` | `{}` |
+  | `409` | `OPERATION_CONFLICT` | `session_id` already belongs to another user | `{}` |
+  | `422` | `VALIDATION_ERROR` | `session_id` is not a UUID, or `user_id` is not a positive integer | `{ "field": string }` |
+  | `500` | `INTERNAL_ERROR` | Unexpected failure | `{}` |
+  | `503` | `SERVICE_UNAVAILABLE` | Database unavailable; retry the identical request | `{}` |
+
+  Auth retries the identical request after a network error, a timeout, `500` or `503`, and only then revokes the session. Any other error stops the logout for investigation.
+examples:
+  - name: Success - Departure applied
+    request: {url: "{{gameInternalUrl}}/internal/v1/session-departures/3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53", method: PUT, headers: [], params: [], body: {mode: none}}
+    response:
+      status: 201
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "data": {
+              "session_id": "3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53",
+              "user_id": 42,
+              "state": "COMPLETED",
+              "completed_at": "2026-11-24T14:05:00.123456Z"
+            }
+          }
+  - name: Success - Replayed session
+    request: {url: "{{gameInternalUrl}}/internal/v1/session-departures/3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53", method: PUT, headers: [], params: [], body: {mode: none}}
+    response:
+      status: 200
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "data": {
+              "session_id": "3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53",
+              "user_id": 42,
+              "state": "COMPLETED",
+              "completed_at": "2026-11-24T14:05:00.123456Z"
+            }
+          }
+  - name: Error - Session belongs to another user
+    request: {url: "{{gameInternalUrl}}/internal/v1/session-departures/3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53", method: PUT, headers: [], params: [], body: {mode: none}}
+    response:
+      status: 409
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "OPERATION_CONFLICT",
+              "message": "This session departure was recorded for another user.",
+              "details": {}
+            }
+          }
