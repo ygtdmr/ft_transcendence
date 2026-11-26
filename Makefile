@@ -3,7 +3,7 @@
 
 COMPOSE ?= docker compose
 
-.PHONY: up down restart build logs ps config secrets cert security-test clean help
+.PHONY: up down restart build logs ps config secrets cert security-test rotation-drill clean help
 
 up: secrets cert ## Build and start the whole stack, then wait until it is ready
 	$(COMPOSE) up -d --build
@@ -40,6 +40,9 @@ security-test: ## Run the negative and least-privilege checks against the runnin
 	$(COMPOSE) restart auth-service
 	@COMPOSE="$(COMPOSE)" sh scripts/wait-ready.sh
 	@COMPOSE="$(COMPOSE)" bash tests/security/stack-security.sh
+
+rotation-drill: ## Prove a service credential rotates with no downtime (temporary files only)
+	@COMPOSE="$(COMPOSE)" sh scripts/rotation-drill.sh
 
 clean: ## Stop the stack and DELETE its data volumes (destructive)
 	$(COMPOSE) down -v
