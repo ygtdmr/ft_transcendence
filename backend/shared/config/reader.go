@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -216,6 +217,35 @@ func (r *Reader) Address(name, fallback string) string {
 		return fallback
 	}
 	return v
+}
+
+// InternalAddress returns the private listener address, INTERNAL_HOST joined
+// with INTERNAL_PORT (defaultPort when unset).
+//
+// INTERNAL_HOST is optional. Empty listens on every interface, which suits a
+// local run. A deployment sets it to the container's address on the private
+// service network, so the private listener is reachable there only and not
+// from the reverse proxy's network, as the private contract requires ("attached
+// only to the private service network").
+func (r *Reader) InternalAddress(defaultPort int) string {
+	port := r.Port("INTERNAL_PORT", defaultPort)
+	host, ok := r.value("INTERNAL_HOST")
+	if ok && !validListenHost(host) {
+		r.fail("INTERNAL_HOST", "must be a host name or an IP address, without a port")
+		host = ""
+	}
+	return net.JoinHostPort(host, strconv.Itoa(port))
+}
+
+// hostLabels matches a DNS host name. Underscores are accepted because Docker
+// Compose service names may contain them.
+var hostLabels = regexp.MustCompile(`^(?i)[a-z0-9_]([a-z0-9_-]{0,61}[a-z0-9_])?(\.[a-z0-9_]([a-z0-9_-]{0,61}[a-z0-9_])?)*$`)
+
+func validListenHost(host string) bool {
+	if net.ParseIP(host) != nil {
+		return true
+	}
+	return len(host) <= 253 && hostLabels.MatchString(host)
 }
 
 // Secret returns a required secret of at least minBytes bytes. A problem names
