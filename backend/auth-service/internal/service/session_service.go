@@ -99,6 +99,11 @@ func (s *AuthService) currentMembership(ctx context.Context, userID int64) (Memb
 }
 
 // Logout ends Game activity before committing credential revocation.
+//
+// The Game Session departure runs first; when it fails, nothing is revoked
+// and the error is returned, so the client may retry the logout. After the
+// revocation commits, a failed Gateway notification is retried in the
+// background and does not fail the logout.
 func (s *AuthService) Logout(ctx context.Context, identity Identity) error {
 	if err := s.checkIdentity(ctx, identity); err != nil {
 		return err
@@ -114,7 +119,13 @@ func (s *AuthService) Logout(ctx context.Context, identity Identity) error {
 	if err != nil {
 		return err
 	}
-	return s.notifySessionRevoked(ctx, identity.User.ID, identity.SessionID, RevocationSessionRevoked)
+	// The revocation and its notification record are committed. A Gateway
+	// outage leaves the record for DeliverPendingRevocations and the logout
+	// still succeeds; only missing revocation storage is reported.
+	if err := s.notifySessionRevoked(ctx, identity.User.ID, identity.SessionID, RevocationSessionRevoked); errors.Is(err, ErrSessionUnavailable) {
+		return err
+	}
+	return nil
 }
 
 // notifySessionRevoked closes sockets only after authoritative revocation commits.

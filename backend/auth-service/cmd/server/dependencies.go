@@ -6,7 +6,9 @@ import (
 	"net/http"
 
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/client/gameclient"
+	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/client/gatewayclient"
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/client/googleclient"
+	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/client/sessionlifecycle"
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/client/userclient"
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/config"
 	"github.com/melmut-42/ft_transcendence/backend/auth-service/internal/controller"
@@ -60,15 +62,36 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 	} else {
 		logger.WarnContext(ctx, "USER_INTERNAL_URL is not set; accounts are created without User Service profiles or username uniqueness")
 	}
+	var lifecycle sessionlifecycle.Lifecycle
 	if cfg.GameInternalURL != "" {
-		memberships, err := gameclient.New(cfg.GameInternalURL, cfg.GameServiceCredential, cfg.GameInternalTimeout)
+		game, err := gameclient.New(cfg.GameInternalURL, cfg.GameServiceCredential, cfg.GameInternalTimeout)
 		if err != nil {
 			pool.Close()
 			return nil, nil, err
 		}
-		options = append(options, service.WithMembershipReader(memberships))
+		options = append(options, service.WithMembershipReader(game))
+		lifecycle.Departures = game
 	} else {
-		logger.WarnContext(ctx, "GAME_INTERNAL_URL is not set; current-session reports no active room")
+		logger.WarnContext(ctx, "GAME_INTERNAL_URL is not set; current-session reports no active room and logout records no Game departure")
+	}
+	if len(cfg.Gateways) > 0 {
+		var instances []gatewayclient.Instance
+		for _, gateway := range cfg.Gateways {
+			for _, origin := range gateway.URLs {
+				instances = append(instances, gatewayclient.Instance{URL: origin, Credential: gateway.Credential})
+			}
+		}
+		gateways, err := gatewayclient.New(instances, cfg.GatewayInternalTimeout)
+		if err != nil {
+			pool.Close()
+			return nil, nil, err
+		}
+		lifecycle.Gateways = gateways
+	} else {
+		logger.WarnContext(ctx, "gateway revocation settings are not set; revoked sessions keep their open sockets")
+	}
+	if lifecycle.Configured() {
+		options = append(options, service.WithSessionLifecycle(lifecycle))
 	}
 	authService := service.NewAuth(authRepository, issuer, options...)
 	sealer, err := security.NewOAuthStateSealer([]byte(cfg.JWTSecret))

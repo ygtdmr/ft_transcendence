@@ -164,8 +164,9 @@ func TestRevocationNotificationRetry(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err := auth.Logout(context.Background(), identity); err == nil {
-				t.Fatal("delivery outage was hidden")
+			// The revocation is committed, so a Gateway outage does not fail the logout.
+			if err := auth.Logout(context.Background(), identity); err != nil {
+				t.Fatalf("committed logout failed on a Gateway outage: %v", err)
 			}
 			assertRejectedAccess(t, auth, registered.Credentials.AccessToken)
 			if len(repo.Revocations) != 1 || repo.DeliveredRevocations[identity.SessionID] {

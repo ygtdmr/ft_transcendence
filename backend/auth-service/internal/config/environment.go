@@ -40,6 +40,10 @@ type Config struct {
 	// GameServiceCredential is Auth's own credential for Game Session.
 	GameServiceCredential string `json:"-"`
 	GameInternalTimeout   time.Duration
+	// Gateways lists the Game Gateway and Notification Gateway instances told
+	// about session revocations. Nil when revocations close no sockets.
+	Gateways               []Gateway
+	GatewayInternalTimeout time.Duration
 	// Google sign-in client settings; empty when Google sign-in is disabled.
 	GoogleClientID     string
 	GoogleClientSecret string `json:"-"`
@@ -96,6 +100,9 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 	if err := cfg.loadGameService(); err != nil {
+		return Config{}, err
+	}
+	if err := cfg.loadGateways(); err != nil {
 		return Config{}, err
 	}
 	if err := cfg.loadGoogleOAuth(); err != nil {
