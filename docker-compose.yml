@@ -115,6 +115,8 @@ services:
     environment:
       APP_ENV: production
       PORT: "8080"
+      # The private listener binds only to this address on the private network.
+      INTERNAL_HOST: 172.29.11.10
       INTERNAL_PORT: "8081"
       # Google sign-in is off unless all three are set (Auth refuses a partial set).
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
@@ -150,7 +152,9 @@ services:
       auth-migrate: {condition: service_completed_successfully}
     networks:
       edge:
-      private: {aliases: [auth-service.private]}
+      private:
+        ipv4_address: 172.29.11.10
+        aliases: [auth-service.private]
 
   user-service:
     <<: *hardened
@@ -160,6 +164,8 @@ services:
     environment:
       APP_ENV: production
       PORT: "8080"
+      # The private listener binds only to this address on the private network.
+      INTERNAL_HOST: 172.29.11.11
       INTERNAL_PORT: "8081"
       MIGRATE_ON_START: "true"
       AVATAR_STORAGE_DIR: /var/lib/user-service/avatars
@@ -191,7 +197,9 @@ services:
       postgres: {condition: service_healthy}
     networks:
       edge:
-      private: {aliases: [user-service.private]}
+      private:
+        ipv4_address: 172.29.11.11
+        aliases: [user-service.private]
 
   stats-service:
     <<: *hardened
@@ -201,6 +209,8 @@ services:
     environment:
       APP_ENV: production
       PORT: "8080"
+      # The private listener binds only to this address on the private network.
+      INTERNAL_HOST: 172.29.11.12
       INTERNAL_PORT: "8081"
       MIGRATE_ON_START: "true"
       USER_SERVICE_CREDENTIAL_FILE: /run/secrets/user-service-to-stats-service
@@ -217,7 +227,9 @@ services:
       postgres: {condition: service_healthy}
     networks:
       edge:
-      private: {aliases: [stats-service.private]}
+      private:
+        ipv4_address: 172.29.11.12
+        aliases: [stats-service.private]
 
   game-session:
     <<: *hardened
@@ -226,6 +238,8 @@ services:
     env_file: [secrets/env/game-session.env]
     environment:
       PORT: "8080"
+      # The private listener binds only to this address on the private network.
+      INTERNAL_HOST: 172.29.11.13
       INTERNAL_PORT: "8081"
       TICK_INTERVAL: 1s
       LEAVE_PENALTY_BASE: "1"
@@ -246,7 +260,9 @@ services:
       game-migrate: {condition: service_completed_successfully}
     networks:
       edge:
-      private: {aliases: [game-session.private]}
+      private:
+        ipv4_address: 172.29.11.13
+        aliases: [game-session.private]
 
   game-gateway:
     <<: *hardened
