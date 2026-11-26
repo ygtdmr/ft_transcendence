@@ -205,3 +205,91 @@ func TestGameServiceConfig(t *testing.T) {
 		}
 	}
 }
+
+// TestGatewayConfig checks the revocation settings for every gateway instance.
+//
+// Expected output:
+//
+//   - Development without the settings has no gateways; production refuses it.
+//   - All four settings give both kinds with every listed origin, trailing
+//     slashes removed, and the 5s default timeout.
+//   - Partial settings, a repeated or malformed origin, and a credential
+//     shared with another Gateway kind, the Game Session call or an inbound
+//     caller are refused without printing the credential.
+func TestGatewayConfig(t *testing.T) {
+	base := map[string]string{
+		"APP_ENV": "development", "PORT": "", "INTERNAL_PORT": "", "DATABASE_URL": "postgres://test@localhost/test",
+		"JWT_SECRET": testutil.TestSigningKey, "ACCESS_TOKEN_TTL": "", "REFRESH_TOKEN_TTL": "",
+		"LOG_FORMAT": "", "LOG_LEVEL": "", "USER_INTERNAL_URL": "", "USER_SERVICE_OUTBOUND_CREDENTIAL_FILE": "",
+		"USER_INTERNAL_TIMEOUT": "", "GAME_INTERNAL_URL": "", "GAME_SERVICE_OUTBOUND_CREDENTIAL_FILE": "", "GAME_INTERNAL_TIMEOUT": "",
+		"GAME_GATEWAY_INTERNAL_URLS": "", "GAME_GATEWAY_OUTBOUND_CREDENTIAL_FILE": "",
+		"NOTIFICATION_GATEWAY_INTERNAL_URLS": "", "NOTIFICATION_GATEWAY_OUTBOUND_CREDENTIAL_FILE": "", "GATEWAY_INTERNAL_TIMEOUT": "",
+	}
+	for _, caller := range []string{"WEB_BFF", "GAME_GATEWAY", "NOTIFICATION_GATEWAY", "USER_SERVICE"} {
+		base[caller+"_CREDENTIAL_FILE"], base[caller+"_PREVIOUS_CREDENTIAL_FILE"] = "", ""
+	}
+	set := func(values map[string]string) {
+		for key, value := range base {
+			t.Setenv(key, value)
+		}
+		for key, value := range values {
+			t.Setenv(key, value)
+		}
+	}
+	gameGW, notificationGW := strings.Repeat("w", 40), strings.Repeat("n", 40)
+	valid := func() map[string]string {
+		return map[string]string{
+			"GAME_GATEWAY_INTERNAL_URLS":                    "http://game-gateway-1:8091/, http://game-gateway-2:8091",
+			"GAME_GATEWAY_OUTBOUND_CREDENTIAL_FILE":         writeSecret(t, gameGW),
+			"NOTIFICATION_GATEWAY_INTERNAL_URLS":            "http://notification-gateway:8092",
+			"NOTIFICATION_GATEWAY_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, notificationGW),
+		}
+	}
+
+	set(nil)
+	if cfg, err := config.Load(); err != nil || cfg.Gateways != nil {
+		t.Fatalf("development without gateways = %+v, %v", cfg.Gateways, err)
+	}
+	set(map[string]string{"APP_ENV": "production", "USER_INTERNAL_URL": "http://user-service:8090",
+		"USER_SERVICE_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, strings.Repeat("o", 40)),
+		"GAME_INTERNAL_URL":                     "http://game-session:8093",
+		"GAME_SERVICE_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, strings.Repeat("g", 40))})
+	if _, err := config.Load(); err == nil {
+		t.Fatal("production without gateway settings accepted")
+	}
+
+	set(valid())
+	cfg, err := config.Load()
+	if err != nil || len(cfg.Gateways) != 2 || cfg.GatewayInternalTimeout.String() != "5s" {
+		t.Fatalf("gateway settings = %+v, %v", cfg.Gateways, err)
+	}
+	game, notification := cfg.Gateways[0], cfg.Gateways[1]
+	if game.Kind != "game" || strings.Join(game.URLs, ",") != "http://game-gateway-1:8091,http://game-gateway-2:8091" ||
+		game.Credential != gameGW || notification.Kind != "notification" ||
+		strings.Join(notification.URLs, ",") != "http://notification-gateway:8092" || notification.Credential != notificationGW {
+		t.Fatalf("gateway settings = %+v", cfg.Gateways)
+	}
+
+	for name, change := range map[string]map[string]string{
+		"partial":            {"NOTIFICATION_GATEWAY_INTERNAL_URLS": ""},
+		"repeated origin":    {"NOTIFICATION_GATEWAY_INTERNAL_URLS": "http://game-gateway-2:8091"},
+		"origin with path":   {"GAME_GATEWAY_INTERNAL_URLS": "http://game-gateway:8091/internal"},
+		"empty origin":       {"GAME_GATEWAY_INTERNAL_URLS": "http://game-gateway:8091,"},
+		"bad timeout":        {"GATEWAY_INTERNAL_TIMEOUT": "-1s"},
+		"short credential":   {"GAME_GATEWAY_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, "short")},
+		"shared kinds":       {"NOTIFICATION_GATEWAY_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, gameGW)},
+		"inbound reuse":      {"GAME_GATEWAY_CREDENTIAL_FILE": writeSecret(t, gameGW)},
+		"Game Session reuse": {"GAME_INTERNAL_URL": "http://game-session:8093", "GAME_SERVICE_OUTBOUND_CREDENTIAL_FILE": writeSecret(t, gameGW)},
+	} {
+		t.Run(name, func(t *testing.T) {
+			values := valid()
+			for key, value := range change {
+				values[key] = value
+			}
+			set(values)
+			if _, err := config.Load(); err == nil || strings.Contains(err.Error(), gameGW) || strings.Contains(err.Error(), notificationGW) {
+				t.Fatalf("%s error = %v", name, err)
+			}
+		})
+	}
+}

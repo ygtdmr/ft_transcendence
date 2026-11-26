@@ -46,6 +46,8 @@ func TestAuthConfig(t *testing.T) {
 		"USER_SERVICE_CREDENTIAL_FILE": "", "USER_SERVICE_PREVIOUS_CREDENTIAL_FILE": "",
 		"USER_INTERNAL_URL": "", "USER_SERVICE_OUTBOUND_CREDENTIAL_FILE": "", "USER_INTERNAL_TIMEOUT": "",
 		"GAME_INTERNAL_URL": "", "GAME_SERVICE_OUTBOUND_CREDENTIAL_FILE": "", "GAME_INTERNAL_TIMEOUT": "",
+		"GAME_GATEWAY_INTERNAL_URLS": "", "GAME_GATEWAY_OUTBOUND_CREDENTIAL_FILE": "",
+		"NOTIFICATION_GATEWAY_INTERNAL_URLS": "", "NOTIFICATION_GATEWAY_OUTBOUND_CREDENTIAL_FILE": "", "GATEWAY_INTERNAL_TIMEOUT": "",
 	}
 
 	for key, value := range defaults {
@@ -65,6 +67,7 @@ func TestAuthConfig(t *testing.T) {
 		{"USER_INTERNAL_TIMEOUT", "-1s"},
 		{"GAME_INTERNAL_URL", "http://game-session:8093"}, {"GAME_SERVICE_OUTBOUND_CREDENTIAL_FILE", "/nonexistent/credential"},
 		{"GAME_INTERNAL_TIMEOUT", "0s"},
+		{"GAME_GATEWAY_INTERNAL_URLS", "http://game-gateway:8091"}, {"GATEWAY_INTERNAL_TIMEOUT", "0s"},
 	} {
 		t.Run(tt.key+"="+tt.value, func(t *testing.T) {
 			t.Setenv(tt.key, tt.value)
@@ -84,11 +87,15 @@ func checkLoggingEnvironments(t *testing.T) {
 		t.Run(tt.env, func(t *testing.T) {
 			t.Setenv("APP_ENV", tt.env)
 			if tt.env == "production" {
-				// Production requires User Service and Game Session settings.
+				// Production requires User Service, Game Session and Gateway settings.
 				t.Setenv("USER_INTERNAL_URL", "http://user-service:8090")
 				t.Setenv("USER_SERVICE_OUTBOUND_CREDENTIAL_FILE", writeSecret(t, strings.Repeat("o", 40)))
 				t.Setenv("GAME_INTERNAL_URL", "http://game-session:8093")
 				t.Setenv("GAME_SERVICE_OUTBOUND_CREDENTIAL_FILE", writeSecret(t, strings.Repeat("g", 40)))
+				t.Setenv("GAME_GATEWAY_INTERNAL_URLS", "http://game-gateway:8091")
+				t.Setenv("GAME_GATEWAY_OUTBOUND_CREDENTIAL_FILE", writeSecret(t, strings.Repeat("w", 40)))
+				t.Setenv("NOTIFICATION_GATEWAY_INTERNAL_URLS", "http://notification-gateway:8092")
+				t.Setenv("NOTIFICATION_GATEWAY_OUTBOUND_CREDENTIAL_FILE", writeSecret(t, strings.Repeat("n", 40)))
 			}
 			cfg, err := config.Load()
 			if err != nil || cfg.LogFormat != tt.format || cfg.LogLevel != tt.level {
