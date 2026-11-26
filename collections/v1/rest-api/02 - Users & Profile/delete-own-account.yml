@@ -51,8 +51,11 @@ docs: |-
   | `401` | `UNAUTHORIZED` | invalid session |
   | `422` | `CONFIRMATION_MISMATCH` | `confirm_username` is missing or differs from the current username |
   | `429` | `RATE_LIMITED` | throttled |
+  | `503` | `SERVICE_UNAVAILABLE` | the deletion operation has begun but a participant did not finish in time |
 
   The authentication, confirmation and throttling errors listed above occur before deletion begins and leave the account unchanged. A timeout or dependency failure after a deletion operation begins does not imply rollback of already-completed cleanup; durable coordination continues until completion.
+
+  A `503` after the operation began also clears `ft_session` and `ft_refresh`, because Auth has already revoked every session. The client treats the account as being deleted, clears all private state and returns to Landing; it does not retry the request. User Service finishes the remaining steps in the background.
 examples:
   - name: Success - Account deleted
     request: {url: "{{baseUrl}}/api/{{apiVersion}}/users/me", method: DELETE, headers: [{name: Content-Type, value: application/json, enabled: true}], params: [], body: {mode: json, json: '{"confirm_username":"player_one"}'}}
@@ -65,3 +68,21 @@ examples:
   - name: Error - Confirmation mismatch
     request: {url: "{{baseUrl}}/api/{{apiVersion}}/users/me", method: DELETE, headers: [{name: Content-Type, value: application/json, enabled: true}], params: [], body: {mode: json, json: '{"confirm_username":"player_two"}'}}
     response: {status: 422, headers: [{name: Content-Type, value: application/json}], body: {type: json, data: '{"error":{"code":"CONFIRMATION_MISMATCH","message":"confirm_username must match your current username.","details":{"field":"confirm_username"}}}'}}
+  - name: Error - Deletion continues in the background
+    request: {url: "{{baseUrl}}/api/{{apiVersion}}/users/me", method: DELETE, headers: [{name: Content-Type, value: application/json, enabled: true}], params: [], body: {mode: json, json: '{"confirm_username":"player_one"}'}}
+    response:
+      status: 503
+      headers:
+        - {name: Content-Type, value: application/json}
+        - {name: Set-Cookie, value: "ft_session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0"}
+        - {name: Set-Cookie, value: "ft_refresh=; HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth/refresh; Max-Age=0"}
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "SERVICE_UNAVAILABLE",
+              "message": "Account deletion has started and will finish shortly.",
+              "details": {}
+            }
+          }
