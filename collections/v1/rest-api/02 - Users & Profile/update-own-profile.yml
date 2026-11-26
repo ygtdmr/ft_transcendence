@@ -37,7 +37,7 @@ docs: |-
 
   ## Success behavior and response fields
 
-  `200 OK` returns the updated profile, same shape as `Get own profile`.
+  `200 OK` returns the updated profile, same shape as `Get own profile`. An identical username, or a body without `username`, changes nothing and sends no live update; a change of letter case only is a change.
 
   ## Live update
 
@@ -47,9 +47,11 @@ docs: |-
 
   | Status | Code | When |
   | --- | --- | --- |
-  | `401` | `UNAUTHORIZED` | invalid session |
-  | `422` | `INVALID_USERNAME` | present but malformed |
+  | `400` | `VALIDATION_ERROR` | malformed JSON, more than one JSON value, or a field other than `username` |
+  | `401` | `UNAUTHORIZED` | invalid session, or the owner's account deletion is recorded |
+  | `422` | `INVALID_USERNAME` | present but malformed, or `null` |
   | `409` | `USERNAME_TAKEN` | case-insensitive collision with another account |
+  | `503` | `SERVICE_UNAVAILABLE` | a dependency cannot answer; repeating the same request is safe |
 examples:
   - name: Success - Username updated
     request:
@@ -74,6 +76,7 @@ examples:
               "wins": 12,
               "losses": 8,
               "matches_played": 20,
+              "penalty_points": 0,
               "active_room_id": null,
               "active_room_api_version": null,
               "created_at": "2026-08-01T10:00:00Z"
