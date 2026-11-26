@@ -24,6 +24,7 @@ docs: |-
   | HTTP | Code | Concrete message example | Applicable operations |
   | ---: | --- | --- | --- |
   | `401` | `UNAUTHORIZED` | `A valid active session is required.` | every v2 room endpoint |
+  | `403` | `FORBIDDEN_ORIGIN` | `The request origin is not allowed.` | every cookie-authenticated `POST`, `PUT`, `PATCH` or `DELETE` a browser sends from another origin (`workspace.yml`, Deployment / Same-Origin Model) |
   | `404` | `ROOM_NOT_FOUND` | `Room 9999 was not found.` | join, get, leave, lookup |
   | `409` | `ROOM_NOT_JOINABLE` | `Room 1001 is not joinable while status is COUNTDOWN.` | join |
   | `409` | `ROOM_FULL` | `Room 1001 is full (8 of 8 players).` | join |

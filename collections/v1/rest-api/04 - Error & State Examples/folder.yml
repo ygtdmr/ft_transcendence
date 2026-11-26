@@ -31,6 +31,7 @@ docs: |-
   | `401` | `INVALID_CREDENTIALS` | `Email or password is incorrect.` | login |
   | `401` | `SESSION_EXPIRED` | `The refresh token is invalid or expired. Log in again.` | refresh |
   | `401` | `UNAUTHORIZED` | `A valid active session is required.` | every other protected endpoint |
+  | `403` | `FORBIDDEN_ORIGIN` | `The request origin is not allowed.` | every cookie-authenticated `POST`, `PUT`, `PATCH` or `DELETE` a browser sends from another origin (`workspace.yml`, Deployment / Same-Origin Model) |
   | `404` | `USER_NOT_FOUND` | `User 9999 was not found.` | public profile, add friend |
   | `409` | `ALREADY_FRIENDS` | `User 43 is already a friend.` | add friend |
   | `404` | `NOT_FRIENDS` | `User 9999 is not a friend.` | remove friend |
