@@ -28,7 +28,10 @@ func newInternalServers(t *testing.T) (public *httptest.Server, internal *httpte
 	}
 	svc := service.NewRoomService(placeholderProfiles{}, nil)
 	handler := rest.NewHandler(svc, roomaction.New(svc, placeholderProfiles{}), store)
-	access := rest.NewServiceAccessCheck(map[string]string{"user-service": "secret"}, map[string][]string{"user-service": {"account.cleanup"}})
+	access := rest.NewServiceAccessCheck(
+		map[string]string{"user-service": "secret", "auth-service": "auth-secret"},
+		map[string][]string{"user-service": {"account.cleanup"}, "auth-service": {"session.departure"}},
+	)
 	public = httptest.NewServer(handler.Routes())
 	internal = httptest.NewServer(handler.InternalRoutes(access))
 	t.Cleanup(public.Close)
@@ -82,5 +85,35 @@ func TestJoinAfterAccountCleanup(t *testing.T) {
 	}
 	if status, payload = call(t, public, "POST", "/api/v2/rooms/"+roomID+"/members", "43", ""); status != http.StatusUnauthorized {
 		t.Fatalf("join after cleanup: want 401, got %d %v", status, payload)
+	}
+}
+
+func TestSessionDepartureRemovesMember(t *testing.T) {
+	public, internal := newInternalServers(t)
+
+	status, payload := call(t, public, "POST", "/api/v2/rooms", "42", `{"max_players": 4}`)
+	if status != http.StatusCreated {
+		t.Fatalf("create: want 201, got %d %v", status, payload)
+	}
+	roomID := itoa(int64(data(payload)["room_id"].(float64)))
+	if status, payload = call(t, public, "POST", "/api/v2/rooms/"+roomID+"/members", "43", ""); status != http.StatusCreated {
+		t.Fatalf("join: want 201, got %d %v", status, payload)
+	}
+
+	req, _ := http.NewRequest(http.MethodPut, internal.URL+"/internal/v1/session-departures/3f9b2c71-5d4e-4a86-9c1b-7e2a6d0f8b53", strings.NewReader(`{"user_id": 43}`))
+	req.Header.Set("Authorization", "Bearer auth-secret")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("departure: %v", err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("departure: want 201, got %d", resp.StatusCode)
+	}
+	if status, payload = call(t, public, "GET", "/api/v2/rooms/"+roomID, "43", ""); status != http.StatusForbidden {
+		t.Fatalf("snapshot after departure: want 403, got %d %v", status, payload)
+	}
+	if status, payload = call(t, public, "POST", "/api/v2/rooms/"+roomID+"/members", "43", ""); status != http.StatusCreated {
+		t.Fatalf("join again after logout: want 201, got %d %v", status, payload)
 	}
 }

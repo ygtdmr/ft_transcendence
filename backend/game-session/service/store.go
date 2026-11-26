@@ -15,6 +15,12 @@ type AccountCleanup struct {
 	CompletedAt time.Time
 }
 
+type SessionDeparture struct {
+	SessionID   string
+	UserID      int64
+	CompletedAt time.Time
+}
+
 type RoomStore interface {
 	Transaction(fn func(tx RoomStore) error) error
 	ReadTransaction(fn func(tx RoomStore) error) error
@@ -49,12 +55,17 @@ type RoomStore interface {
 	//account cleanup
 	LookupAccountCleanup(userID int64) (AccountCleanup, bool, error)
 	SaveAccountCleanup(cleanup AccountCleanup) error
+
+	//session departure
+	LookupSessionDeparture(sessionID string) (SessionDeparture, bool, error)
+	SaveSessionDeparture(departure SessionDeparture) error
 }
 
 var ErrProfileSourceUnavailable = errors.New("user-service unavailable")
 var ErrAccountCleanupOperationConflict = errors.New("operation_id belongs to another user")
 var ErrAccountCleanupUserConflict = errors.New("user already cleaned up by another operation")
 var ErrAccountCleanedUp = errors.New("account cleaned up, user cannot act in rooms")
+var ErrSessionDepartureConflict = errors.New("session_id belongs to another user")
 
 type ProfileSource interface {
 	ProfilesByUserIDs(userIDs []int64) (map[int64]room.Profile, error)

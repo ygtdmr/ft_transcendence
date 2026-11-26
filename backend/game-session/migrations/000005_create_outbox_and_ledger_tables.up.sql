@@ -39,4 +39,10 @@ CREATE TABLE account_cleanups (
     completed_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE TABLE session_departures (
+    session_id UUID PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    completed_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 COMMIT;
