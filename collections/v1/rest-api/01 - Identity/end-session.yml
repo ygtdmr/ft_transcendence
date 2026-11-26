@@ -31,6 +31,8 @@ docs: |-
   ## Errors
 
   `401 UNAUTHORIZED` covers invalid/revoked tokens. There is no room-membership error on this endpoint.
+
+  `503 SERVICE_UNAVAILABLE` with an empty details object means Game Session could not record the departure, even after Auth repeated the request. Nothing is revoked and the cookies stay set, so the session remains valid and the client may retry the logout. Once the revocation is recorded, logout answers `204` even if a gateway is temporarily unreachable; the socket closure follows when the gateway answers.
 examples:
   - name: Success - Session revoked, no active room
     request: {url: "{{baseUrl}}/api/{{apiVersion}}/auth/session", method: DELETE, headers: [{name: Accept, value: application/json, enabled: true}], params: [], body: {mode: none}}
@@ -50,6 +52,21 @@ examples:
             "error": {
               "code": "UNAUTHORIZED",
               "message": "A valid active session is required.",
+              "details": {}
+            }
+          }
+  - name: Error - Game Session unavailable
+    request: {url: "{{baseUrl}}/api/{{apiVersion}}/auth/session", method: DELETE, headers: [{name: Accept, value: application/json, enabled: true}], params: [], body: {mode: none}}
+    response:
+      status: 503
+      headers: [{name: Content-Type, value: application/json}]
+      body:
+        type: json
+        data: |-
+          {
+            "error": {
+              "code": "SERVICE_UNAVAILABLE",
+              "message": "The service is temporarily unavailable. Try again later.",
               "details": {}
             }
           }
