@@ -70,6 +70,7 @@ func gameCancelledEvents(cancelledGame *game.GameSnapshot, deficient game.Team, 
 		"game_status":    game.GameStatusCancelled,
 		"phase":          game.PhaseGameOver,
 		"finished_at":    now,
+		"board":          cancelledGame.Board,
 	}
 	closed := map[string]any{
 		"reason":         game.EndReasonInsufficientPlayers,

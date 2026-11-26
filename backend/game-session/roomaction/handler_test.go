@@ -437,6 +437,10 @@ func TestExpireStaffingDeadlineCancelsGameAndClosesRoom(t *testing.T) {
 	if payloadOf(t, events, "game.cancelled")["deficient_team"] != string(game.TeamRed) {
 		t.Fatalf("red lost its operative: %+v", payloadOf(t, events, "game.cancelled"))
 	}
+	cancelledBoard := payloadOf(t, events, "game.cancelled")["board"].([]any)
+	if len(cancelledBoard) != 25 || cancelledBoard[0].(map[string]any)["color"] == nil {
+		t.Fatalf("cancelled board must carry every card with its color: %+v", cancelledBoard)
+	}
 	if countEvents(events, "socket.close") != 3 || payloadOf(t, events, "socket.close")["code"] != float64(4404) {
 		t.Fatalf("every remaining socket closes with 4404: %+v", events)
 	}
