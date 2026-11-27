@@ -23,6 +23,7 @@ type Config struct {
 	LogLevel     string
 	Port         string
 	InternalPort string
+	InternalHost string // INTERNAL_HOST; empty listens on every interface
 	DatabaseURL  string `json:"-"`
 	// AvatarBaseURL is the public HTTPS origin prefixed to avatar paths, or
 	// empty for root-relative avatar URLs.
@@ -90,6 +91,7 @@ func Load() (Config, error) {
 		LogLevel:         strings.TrimSpace(os.Getenv("LOG_LEVEL")),
 		Port:             strings.TrimSpace(os.Getenv("PORT")),
 		InternalPort:     strings.TrimSpace(os.Getenv("INTERNAL_PORT")),
+		InternalHost:     strings.TrimSpace(os.Getenv("INTERNAL_HOST")),
 		AvatarBaseURL:    strings.TrimRight(strings.TrimSpace(os.Getenv("AVATAR_BASE_URL")), "/"),
 		DatabaseURL:      strings.TrimSpace(os.Getenv("DATABASE_URL")),
 		MigrateOnStart:   true,
@@ -179,6 +181,9 @@ func (cfg Config) validate() error {
 	}
 	if cfg.Port == cfg.InternalPort {
 		return errors.New("INTERNAL_PORT must differ from PORT")
+	}
+	if cfg.InternalHost != "" && !validListenHost(cfg.InternalHost) {
+		return errors.New("INTERNAL_HOST must be a host name or an IP address, without a port")
 	}
 
 	if cfg.AvatarBaseURL != "" {

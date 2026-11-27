@@ -49,20 +49,20 @@ type RouteRegistrar interface {
 //
 // Parameters:
 //
-//   - port: Private port (INTERNAL_PORT). Attach it only to the private service network.
+//   - address: Private listener address (INTERNAL_HOST:INTERNAL_PORT). Bind it only to the private service network.
 //   - logger: Service logger receiving access and panic records.
 //   - routes: Controllers whose /internal/v1 routes this listener serves.
 //
 // It returns an unstarted server with the same middleware and error envelope
 // as the public server, but no public routes.
-func NewInternal(port string, logger *slog.Logger, routes ...RouteRegistrar) *http.Server {
+func NewInternal(address string, logger *slog.Logger, routes ...RouteRegistrar) *http.Server {
 	router := baseRouter(logger)
 	for _, registrar := range routes {
 		registrar.RegisterRoutes(router)
 	}
 
 	return &http.Server{
-		Addr:              ":" + port,
+		Addr:              address,
 		Handler:           router,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      15 * time.Second,

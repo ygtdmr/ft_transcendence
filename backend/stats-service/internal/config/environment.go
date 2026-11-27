@@ -24,6 +24,7 @@ type Config struct {
 	LogLevel       string
 	Port           string
 	InternalPort   string
+	InternalHost   string // INTERNAL_HOST; empty listens on every interface
 	DatabaseURL    string `json:"-"`
 	MigrateOnStart bool
 	// CallerCredentials maps each private caller to its accepted credentials.
@@ -55,6 +56,7 @@ func Load() (Config, error) {
 		LogLevel:       strings.TrimSpace(os.Getenv("LOG_LEVEL")),
 		Port:           strings.TrimSpace(os.Getenv("PORT")),
 		InternalPort:   strings.TrimSpace(os.Getenv("INTERNAL_PORT")),
+		InternalHost:   strings.TrimSpace(os.Getenv("INTERNAL_HOST")),
 		DatabaseURL:    strings.TrimSpace(os.Getenv("DATABASE_URL")),
 		MigrateOnStart: true,
 	}
@@ -125,6 +127,9 @@ func (cfg Config) validate() error {
 	}
 	if cfg.Port == cfg.InternalPort {
 		return errors.New("INTERNAL_PORT must differ from PORT")
+	}
+	if cfg.InternalHost != "" && !validListenHost(cfg.InternalHost) {
+		return errors.New("INTERNAL_HOST must be a host name or an IP address, without a port")
 	}
 	if cfg.DatabaseURL == "" {
 		return errors.New("DATABASE_URL is required")

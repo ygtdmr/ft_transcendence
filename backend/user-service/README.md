@@ -27,6 +27,7 @@ environment only and does not load `.env` itself.
 | `DATABASE_URL`              | none, required  | `postgres://` URL. The service creates and uses its own `users` schema. |
 | `PORT`                      | `8080`        | Public HTTP port (health routes).                                           |
 | `INTERNAL_PORT`             | `8090`        | Private listener for `/internal/v1/*`. Must differ from `PORT`.             |
+| `INTERNAL_HOST`             | empty         | Bind host of the private listener. Empty listens on every interface; a deployment sets the container's private-network address. |
 | `APP_ENV`                   | `development` | `development`, `production` or `test`. Sets log defaults.             |
 | `LOG_FORMAT`, `LOG_LEVEL` | by `APP_ENV`  | `text` or `json`; `debug`, `info`, `warn` or `error`.           |
 | `MIGRATE_ON_START`          | `true`        | Apply embedded migrations at startup.                                       |
@@ -52,7 +53,7 @@ environment only and does not load `.env` itself.
 ## Internal API
 
 Private routes serve other services, never browsers. They are served only on
-the private listener (`INTERNAL_PORT`), which belongs on the private service
+the private listener (`INTERNAL_HOST:INTERNAL_PORT`), which belongs on the private service
 network; the public listener does not serve `/internal/*`. The contract is the
 `Internal REST v1 - Services` Bruno collection on the `bruno` branch.
 

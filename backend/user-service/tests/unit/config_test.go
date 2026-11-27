@@ -22,7 +22,7 @@ const validDatabaseURL = "postgres://user:secret@localhost:5432/user?sslmode=dis
 //   - values: Setting names and values; names missing here are set to empty.
 func setEnvironment(t *testing.T, values map[string]string) {
 	t.Helper()
-	for _, name := range []string{"APP_ENV", "LOG_FORMAT", "LOG_LEVEL", "PORT", "INTERNAL_PORT", "DATABASE_URL", "MIGRATE_ON_START",
+	for _, name := range []string{"APP_ENV", "LOG_FORMAT", "LOG_LEVEL", "PORT", "INTERNAL_PORT", "INTERNAL_HOST", "DATABASE_URL", "MIGRATE_ON_START",
 		"AUTH_SERVICE_CREDENTIAL_FILE", "AUTH_SERVICE_PREVIOUS_CREDENTIAL_FILE", "AVATAR_BASE_URL", "AVATAR_STORAGE_DIR", "REPORT_WINDOW",
 		"GAME_SESSION_CREDENTIAL_FILE", "GAME_SESSION_PREVIOUS_CREDENTIAL_FILE",
 		"AUTH_INTERNAL_URL", "AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE", "AUTH_INTERNAL_TIMEOUT",
@@ -515,6 +515,31 @@ func TestLoadGameService(t *testing.T) {
 		setEnvironment(t, values)
 		if _, err := config.Load(); err == nil || strings.Contains(err.Error(), strings.Repeat("m", 40)) {
 			t.Fatalf("%s error = %v", name, err)
+		}
+	}
+}
+
+// TestLoadInternalHost checks the private listener's bind address.
+//
+// Expected output:
+//
+//   - Unset INTERNAL_HOST listens on every interface (":8090").
+//   - A host name or an IP address is joined with INTERNAL_PORT.
+//   - A value with a port or an invalid host is refused, naming INTERNAL_HOST.
+func TestLoadInternalHost(t *testing.T) {
+	for _, tt := range []struct{ host, want string }{
+		{"", ":8090"}, {"user_private", "user_private:8090"}, {"172.20.0.4", "172.20.0.4:8090"}, {"fd00::4", "[fd00::4]:8090"},
+	} {
+		setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL, "INTERNAL_HOST": tt.host})
+		cfg, err := config.Load()
+		if err != nil || cfg.InternalAddress() != tt.want {
+			t.Fatalf("INTERNAL_HOST=%q: address %q, %v; want %q", tt.host, cfg.InternalAddress(), err, tt.want)
+		}
+	}
+	for _, host := range []string{"host:9999", "bad host", "-leading.dash"} {
+		setEnvironment(t, map[string]string{"DATABASE_URL": validDatabaseURL, "INTERNAL_HOST": host})
+		if _, err := config.Load(); err == nil || !strings.Contains(err.Error(), "INTERNAL_HOST") {
+			t.Fatalf("INTERNAL_HOST=%q: error %v, want an INTERNAL_HOST error", host, err)
 		}
 	}
 }

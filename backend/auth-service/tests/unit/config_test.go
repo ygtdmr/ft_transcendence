@@ -39,7 +39,7 @@ func TestAuthConfig(t *testing.T) {
 	defaults := map[string]string{
 		"APP_ENV": "", "LOG_FORMAT": "", "LOG_LEVEL": "",
 		"PORT": "", "DATABASE_URL": "postgres://test@localhost/test", "JWT_SECRET": testutil.TestSigningKey,
-		"ACCESS_TOKEN_TTL": "", "REFRESH_TOKEN_TTL": "", "INTERNAL_PORT": "",
+		"ACCESS_TOKEN_TTL": "", "REFRESH_TOKEN_TTL": "", "INTERNAL_PORT": "", "INTERNAL_HOST": "",
 		"WEB_BFF_CREDENTIAL_FILE": "", "WEB_BFF_PREVIOUS_CREDENTIAL_FILE": "",
 		"GAME_GATEWAY_CREDENTIAL_FILE": "", "GAME_GATEWAY_PREVIOUS_CREDENTIAL_FILE": "",
 		"NOTIFICATION_GATEWAY_CREDENTIAL_FILE": "", "NOTIFICATION_GATEWAY_PREVIOUS_CREDENTIAL_FILE": "",
@@ -62,7 +62,7 @@ func TestAuthConfig(t *testing.T) {
 		{"JWT_SECRET", ""}, {"JWT_SECRET", "short"}, {"PORT", "0"}, {"DATABASE_URL", ""},
 		{"ACCESS_TOKEN_TTL", "bad"}, {"ACCESS_TOKEN_TTL", "0s"},
 		{"REFRESH_TOKEN_TTL", "30days"}, {"REFRESH_TOKEN_TTL", "5m"},
-		{"INTERNAL_PORT", "x"}, {"INTERNAL_PORT", "8080"},
+		{"INTERNAL_PORT", "x"}, {"INTERNAL_PORT", "8080"}, {"INTERNAL_HOST", "auth:9999"}, {"INTERNAL_HOST", "bad host"},
 		{"USER_SERVICE_CREDENTIAL_FILE", "/nonexistent/credential"},
 		{"USER_INTERNAL_URL", "http://user-service:8090"}, {"USER_SERVICE_OUTBOUND_CREDENTIAL_FILE", "/nonexistent/credential"},
 		{"USER_INTERNAL_TIMEOUT", "-1s"},

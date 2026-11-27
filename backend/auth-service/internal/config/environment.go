@@ -21,6 +21,7 @@ type Config struct {
 	LogLevel        string
 	Port            string
 	InternalPort    string
+	InternalHost    string // INTERNAL_HOST; empty listens on every interface
 	DatabaseURL     string
 	JWTSecret       string `json:"-"`
 	AccessTokenTTL  time.Duration
@@ -60,8 +61,8 @@ type Config struct {
 //
 // It takes no parameters and does not load .env files. Missing optional settings
 // use the default ports, token lifetimes and environment-specific logging settings.
-// Private routes are served on INTERNAL_PORT; each caller's service credential
-// is read from the file its credential variable names.
+// Private routes are served on INTERNAL_HOST:INTERNAL_PORT; each caller's
+// service credential is read from the file its credential variable names.
 //
 // It returns the validated Config, or a zero Config on failure.
 //
@@ -79,6 +80,7 @@ func Load() (Config, error) {
 		LogLevel:     strings.TrimSpace(os.Getenv("LOG_LEVEL")),
 		Port:         strings.TrimSpace(os.Getenv("PORT")),
 		InternalPort: strings.TrimSpace(os.Getenv("INTERNAL_PORT")),
+		InternalHost: strings.TrimSpace(os.Getenv("INTERNAL_HOST")),
 		DatabaseURL:  strings.TrimSpace(os.Getenv("DATABASE_URL")),
 		JWTSecret:    strings.TrimSpace(os.Getenv("JWT_SECRET")),
 	}
@@ -178,6 +180,9 @@ func (cfg Config) validate() error {
 	}
 	if cfg.Port == cfg.InternalPort {
 		return errors.New("INTERNAL_PORT must differ from PORT")
+	}
+	if cfg.InternalHost != "" && !validListenHost(cfg.InternalHost) {
+		return errors.New("INTERNAL_HOST must be a host name or an IP address, without a port")
 	}
 
 	if cfg.DatabaseURL == "" {
