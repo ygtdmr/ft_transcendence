@@ -20,7 +20,7 @@ The backend answers on `https://localhost:8443` (`INGRESS_PORT` in `.env` change
 | `auth-service`, `user-service`, `stats-service`, `game-session` | built from `backend/<service>` | One public listener (8080) and one private listener (8081, `/internal/v1`). |
 | `game-gateway`, `notification-gateway` | built from `backend/<service>` | The room socket and the notification socket, plus a private listener. |
 | `postgres` | `postgres:17.11-alpine` | One database and one login role per service. |
-| `rabbitmq` | `rabbitmq:4.4.0-alpine` | The broker. Its topology is issue #189. |
+| `rabbitmq` | `rabbitmq:4.4.0-alpine` | The broker. It imports `deploy/rabbitmq/definitions.json` (queues, exchanges, bindings) each time it starts; that file is the topology of issue #189. |
 | `auth-migrate`, `game-migrate` | `migrate/migrate` | One-shot: apply each service's `migrations/` before it starts. |
 
 User Service and Stats apply their embedded migrations when they start (`MIGRATE_ON_START`). Redis is
@@ -113,7 +113,7 @@ from it. Google sign-in is off until `GOOGLE_CLIENT_ID` is set in `.env` and the
 
 | Gap | Effect | Owner |
 | --- | --- | --- |
-| RabbitMQ topology and event names (#189, #171, #141) | Stats' consumer reconnects with backoff and logs `no queue 'stats.game-events'`; no event flows, and room events never reach the room socket. | zehraxaa |
+| RabbitMQ topology and event names (#189, #171, #141) | `deploy/rabbitmq/definitions.json` holds only the queue Stats consumes (`stats.game-events`), so Stats' consumer connects, but nothing publishes or binds to it: no event flows, and room events never reach the room socket. The file is a placeholder for the real topology: replace it, nothing else in the stack changes. Importing only adds: changing the arguments of a queue that already exists needs `make clean` or deleting that queue. The file must not contain users (the account is generated), and the broker's `load_definitions` setting must not replace the import: on a fresh volume it skips creating that account. | zehraxaa |
 | Game Session trusts `X-User-Id` on its public listener, with no service credential (review of #304) | Only the Web BFF sets it, from a validated session, and the ingress cannot reach the listener. But every container on `private` can, and Game Session has no host setting for its public port, so a compromised backend container could act as any user in the room routes. **Decision (2026-11-27): the BFF will present its own credential** (a `web-bff` to `game-session` pair and scope in the Bruno matrix, checked by Game Session's existing service-auth on `/api/v2/rooms*`), and this must close before the #199 evidence. | BercemES (Game Session, Bruno row), ygtdmr (BFF) |
 | The Web BFF does not serve `GET /api/v2/rooms/{room_id}/presence` yet | The route is answered 404 until the BFF composes Game Session members with User Service presence; its `web-bff` to `user-service` pair is added then. | ygtdmr |
 | REST services have not adopted the shared origin guard (#2) | The ingress enforces the contract's cross-site rule; the services behind it do not. | service owners |
