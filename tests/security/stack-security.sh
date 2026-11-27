@@ -115,12 +115,27 @@ for path in /internal /internal/ /internal/v1/sessions/current /INTERNAL/v1/x //
 	got=$(status --path-as-is "$BASE$path")
 	case "$got" in 404|400) ok "ingress answers $got for $path" ;; *) bad "ingress answers 404 or 400 for $path" "got $got" ;; esac
 done
-check "Game Session REST is not routed (it trusts X-User-Id; waits for the Web BFF)" "404" "$(status -b "$JAR_A" -X POST "$BASE/api/v2/rooms" -H 'Content-Type: application/json' -H "X-User-Id: $ID_A" -d '{"max_players":4}')"
+check "Game Session REST: a forged X-User-Id without a session is refused" "401" "$(status -X POST "$BASE/api/v2/rooms" -H 'Content-Type: application/json' -H "X-User-Id: $ID_A" -d '{"max_players":4}')"
+room=$(c -b "$JAR_A" -X POST "$BASE/api/v2/rooms" -H 'Content-Type: application/json' -H "X-User-Id: $ID_B" -d '{"max_players":4}')
+check "Game Session REST: the caller is the session's user, not the X-User-Id the client sent" "$ID_A" "$(printf '%s' "$room" | sed -n 's/.*"host_user_id":\([0-9]*\).*/\1/p')"
+room_id=$(printf '%s' "$room" | sed -n 's/.*"room_id":\([0-9]*\).*/\1/p')
+[ -z "$room_id" ] || status -b "$JAR_A" -X DELETE "$BASE/api/v2/rooms/$room_id/members/me" -H "Origin: $BASE" >/dev/null
+check "the legacy room API (/api/v1/rooms) is not routed" "404" "$(status -b "$JAR_A" "$BASE/api/v1/rooms")"
+check "an unknown /api path is answered by the BFF in the contract's shape" "NOT_FOUND" "$(body_code -b "$JAR_A" "$BASE/api/v1/no/such/route")"
 probe() { $COMPOSE exec -T ingress wget -S -O /dev/null -T 3 "$1" 2>&1 | grep -E '^\s*HTTP/' | head -1 | awk '{print $2}'; }
-for svc in auth-service user-service stats-service game-session game-gateway notification-gateway; do
+for svc in auth-service user-service game-gateway notification-gateway; do
 	ip=$(docker inspect -f "{{(index .NetworkSettings.Networks \"${PROJECT}_edge\").IPAddress}}" "${PROJECT}-${svc}-1" 2>/dev/null)
+	[ -n "$ip" ] || { bad "$svc is on the edge network"; continue; }
 	check "ingress cannot connect to $svc's private port" "" "$(probe "http://$ip:8081/internal/v1/x")"
 done
+# Stats and Game Session answer the Web BFF only: they are not on the network the ingress is on.
+for svc in stats-service game-session; do
+	nets=$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{$k}} {{end}}' "${PROJECT}-${svc}-1")
+	check "$svc is on the private network only" "${PROJECT}_private " "$nets"
+	check "ingress cannot reach $svc's public port" "" "$(probe "http://$svc:8080/readyz")"
+done
+edge_members=$(docker network inspect "${PROJECT}_edge" -f '{{range .Containers}}{{.Name}} {{end}}' | tr ' ' '\n' | grep -v '^$' | sed "s/^${PROJECT}-//; s/-1$//" | sort | tr '\n' ' ')
+check "the edge network holds the ingress and only what it forwards to" "auth-service game-gateway ingress notification-gateway user-service web-bff " "$edge_members"
 ingress_nets=$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{$k}} {{end}}' "${PROJECT}-ingress-1")
 check "the ingress is on the edge network only" "${PROJECT}_edge " "$ingress_nets"
 for store in postgres rabbitmq; do
@@ -157,6 +172,9 @@ check "Auth: account metadata is refused to Notification Gateway" "403" "$(priva
 check "Auth: account metadata is allowed to User Service" "200" "$(private_call user-service-to-auth-service GET $ACCT)"
 check "Auth: a valid credential without a session cookie still gets no session (401)" "401" "$(private_call game-gateway-to-auth-service GET $SESS)"
 check "Game Session: Stats' credential has no caller entry" "401" "$(private_call stats-service-to-auth-service GET http://game-session.private:8081/internal/v1/memberships/1)"
+check "Auth: the Web BFF's credential is accepted for session validation (scope session.validate)" "UNAUTHORIZED" "$(private_code web-bff-to-auth-service GET $SESS)"
+check "Auth: the Web BFF's credential is refused account metadata (scope)" "403 SERVICE_FORBIDDEN" "$(private_call web-bff-to-auth-service GET $ACCT) $(private_code web-bff-to-auth-service GET $ACCT)"
+check "User: the Web BFF's credential is refused (presence.read is not wired yet)" "401" "$(private_call web-bff-to-auth-service GET 'http://user-service.private:8081/internal/v1/presence?user_id=1')"
 
 # ==================================================================================
 section "6. Abuse: injection, oversized input, rate limits"
@@ -190,7 +208,7 @@ notroute "no route deletes another user's account" "$(status -b "$JAR_A" -X DELE
 
 # ==================================================================================
 section "8. Least privilege: containers, database roles, broker"
-for svc in auth-service user-service stats-service game-session game-gateway notification-gateway ingress; do
+for svc in auth-service user-service stats-service game-session game-gateway notification-gateway web-bff ingress; do
 	cid="${PROJECT}-${svc}-1"
 	read -r user ro priv nnp caps <<<"$(docker inspect -f '{{.Config.User}}|{{.HostConfig.ReadonlyRootfs}}|{{.HostConfig.Privileged}}|{{index .HostConfig.SecurityOpt 0}}|{{.HostConfig.CapDrop}}' "$cid" | tr '|' ' ')"
 	[ "$ro" = "true" ] && [ "$priv" = "false" ] && [ "$nnp" = "no-new-privileges:true" ] && [ "$caps" = "[ALL]" ] \
@@ -228,6 +246,8 @@ for f in "${SECRETS_DIR:-secrets}"/credentials/* "${SECRETS_DIR:-secrets}"/db/*.
 	if printf '%s' "$logs" | grep -qF -- "$value"; then leaked=$((leaked + 1)); echo "        found the value of $f in a log"; fi
 done
 check "no generated secret appears in any container log" "0" "$leaked"
+jwt=$(tr -d '\n' <"${SECRETS_DIR:-secrets}/jwt_secret")
+if docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' "${PROJECT}-auth-service-1" | grep -qF -- "$jwt"; then bad "the signing key is not in Auth's environment (docker inspect)"; else ok "the signing key is not in Auth's environment (docker inspect)"; fi
 session_value=$(awk '$6=="ft_session"{print $7}' "$JAR_A" | head -1)
 refresh_value=$(awk '$6=="ft_refresh"{print $7}' "$JAR_A" | head -1)
 if [ -n "$session_value" ] && printf '%s' "$logs" | grep -qF -- "$session_value"; then bad "session cookie value is not logged"; else ok "session cookie value is not logged"; fi

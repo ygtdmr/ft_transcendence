@@ -1,6 +1,8 @@
 #!/bin/sh
-# Waits until every public listener answers its readiness check, probing from
-# inside the ingress container (the only one that shares the edge network).
+# Waits until every public listener answers its readiness check. Services on the
+# edge network are probed from inside the ingress container. Stats and Game Session
+# are on the private network only (their public listener answers the Web BFF alone),
+# so they are probed from a throwaway curl container attached to it.
 #
 # The services' own images are distroless and carry no probe tool, so readiness is
 # observed from outside them. Auth has no health route yet (#85 adoption), so it
@@ -9,10 +11,16 @@
 set -eu
 
 compose=${COMPOSE:-docker compose}
+project=${PROJECT:-ft-transcendence}
+curl_image=curlimages/curl:8.12.1
 deadline=$(( $(date +%s) + ${READY_TIMEOUT:-120} ))
 
 probe_ok() { # probe_ok <service> <path>
 	$compose exec -T ingress wget -q -O /dev/null -T 3 "http://$1:8080$2" 2>/dev/null
+}
+
+probe_private() { # probe_private <service> <path>: from the private network
+	docker run --rm --network "${project}_private" "$curl_image" -sf -o /dev/null --max-time 3 "http://$1.private:8080$2" 2>/dev/null
 }
 
 probe_401() { # probe_401 <service> <path>
@@ -21,9 +29,10 @@ probe_401() { # probe_401 <service> <path>
 
 all_ready() {
 	probe_401 auth-service /api/v1/auth/session &&
+		probe_ok web-bff /readyz &&
 		probe_ok user-service /readyz &&
-		probe_ok stats-service /readyz &&
-		probe_ok game-session /readyz &&
+		probe_private stats-service /readyz &&
+		probe_private game-session /readyz &&
 		probe_ok game-gateway /readyz &&
 		probe_ok notification-gateway /readyz
 }

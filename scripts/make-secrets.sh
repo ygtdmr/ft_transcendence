@@ -13,7 +13,9 @@
 #   secrets/db/<service>.password          one PostgreSQL password per service role
 #   secrets/credentials/<caller>-to-<receiver>
 #                                          one service credential per caller/receiver pair
-#   secrets/env/<service>.env              DATABASE_URL (and JWT_SECRET for Auth)
+#   secrets/env/<service>.env              DATABASE_URL (and RABBITMQ_URL for Stats)
+#   secrets/jwt_secret                     Auth's signing key, mounted as JWT_SECRET_FILE
+#   secrets/google_client_secret           Auth's Google client secret (empty: Google sign-in off)
 #   secrets/postgres_superuser, secrets/rabbitmq_password, secrets/rabbitmq.conf
 set -eu
 umask 077
@@ -35,7 +37,22 @@ create() { # create <file> <function that prints the value> [mode]
 
 create "$dir/postgres_superuser" random_hex
 create "$dir/rabbitmq_password" random_hex 0600
-create "$dir/jwt_secret" random_base64 0600
+# Auth reads the signing key from this file (JWT_SECRET_FILE), so a container's
+# unprivileged user must be able to read it; the 0700 directory keeps the host's
+# other users out. It is set on every run so a file made with 0600 by an earlier
+# version of this script is fixed too.
+create "$dir/jwt_secret" random_base64 0444
+chmod 0444 "$dir/jwt_secret"
+
+# Auth's Google client secret, read through GOOGLE_CLIENT_SECRET_FILE. Empty means
+# Google sign-in is off. To turn it on, put the secret in this file (no newline
+# needed) and set GOOGLE_CLIENT_ID in .env; Auth refuses to start with only one of
+# the two.
+if [ ! -e "$dir/google_client_secret" ]; then
+	: >"$dir/google_client_secret"
+	chmod 0444 "$dir/google_client_secret"
+	echo "created $dir/google_client_secret (empty: Google sign-in is off)"
+fi
 
 for service in auth-service user-service stats-service game-session; do
 	create "$dir/db/$service.password" random_hex
@@ -49,6 +66,7 @@ for pair in \
 	auth-service-to-game-gateway \
 	auth-service-to-notification-gateway \
 	user-service-to-auth-service \
+	web-bff-to-auth-service \
 	user-service-to-game-gateway \
 	user-service-to-notification-gateway \
 	user-service-to-stats-service \
@@ -81,7 +99,16 @@ write_env() { # write_env <service> <database> <extra lines...>
 	echo "created $file"
 }
 
-write_env auth-service auth "JWT_SECRET=$(cat "$dir/jwt_secret")"
+write_env auth-service auth
+# An environment file made before Auth read JWT_SECRET_FILE still carries the key
+# as a plain value, and Auth refuses to start with both set. The line is dropped;
+# the key itself stays in secrets/jwt_secret.
+if grep -q '^JWT_SECRET=' "$dir/env/auth-service.env"; then
+	grep -v '^JWT_SECRET=' "$dir/env/auth-service.env" >"$dir/env/auth-service.env.new"
+	mv "$dir/env/auth-service.env.new" "$dir/env/auth-service.env"
+	chmod 0600 "$dir/env/auth-service.env"
+	echo "updated $dir/env/auth-service.env (JWT_SECRET is a file now)"
+fi
 write_env user-service users
 write_env stats-service stats "RABBITMQ_URL=amqp://ft:$(cat "$dir/rabbitmq_password")@rabbitmq:5672/"
 write_env game-session gamesession

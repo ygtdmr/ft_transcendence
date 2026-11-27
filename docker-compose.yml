@@ -2,9 +2,14 @@
 # and starts everything below. Owner-by-owner notes are in docs/DEPLOY.md.
 #
 # Networks
-#   edge     the ingress and each service's public listener (8080).
-#   private  internal: true, so it has no route out. PostgreSQL, RabbitMQ and every
-#            service's private listener (8081, /internal/v1) live here.
+#   edge     the ingress and the services it forwards to: the Web BFF, both gateways,
+#            User Service (static avatars) and Auth (Google sign-in needs a route
+#            out). Stats and Game Session are not on it: their public listeners (8080)
+#            answer only the Web BFF, on private, and Game Session trusts the
+#            X-User-Id the BFF sets.
+#   private  internal: true, so it has no route out. PostgreSQL, RabbitMQ, the BFF's
+#            way to every service's public listener (8080) and every service's
+#            private listener (8081, /internal/v1) live here.
 # Only the ingress publishes a port, and only on 127.0.0.1.
 
 name: ft-transcendence
@@ -120,11 +125,19 @@ services:
       INTERNAL_PORT: "8081"
       # Google sign-in is off unless all three are set (Auth refuses a partial set).
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       PUBLIC_BASE_URL: ${GOOGLE_CLIENT_ID:+${PUBLIC_BASE_URL:-https://localhost:8443}}
-      # The ingress is the only proxy; it overwrites X-Forwarded-For.
-      TRUSTED_PROXIES: 172.29.10.0/24
+      # The signing key and the Google client secret are files, not environment
+      # values, so `docker inspect` does not show them (#157 F4). The other
+      # secrets come from the environment file for now.
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+      GOOGLE_CLIENT_SECRET_FILE: /run/secrets/google_client_secret
+      # Two hops add to X-Forwarded-For: the ingress, which overwrites whatever the
+      # client sent with its address, and the Web BFF, which appends the ingress's
+      # address. Auth sees the BFF as the peer, so it trusts both and the client
+      # is the entry left of them.
+      TRUSTED_PROXIES: 172.29.10.2,172.29.11.30
       # Callers of Auth's private listener.
+      WEB_BFF_CREDENTIAL_FILE: /run/secrets/web-bff-to-auth-service
       GAME_GATEWAY_CREDENTIAL_FILE: /run/secrets/game-gateway-to-auth-service
       NOTIFICATION_GATEWAY_CREDENTIAL_FILE: /run/secrets/notification-gateway-to-auth-service
       STATS_SERVICE_CREDENTIAL_FILE: /run/secrets/stats-service-to-auth-service
@@ -139,6 +152,9 @@ services:
       NOTIFICATION_GATEWAY_INTERNAL_URLS: http://notification-gateway.private:8081
       NOTIFICATION_GATEWAY_OUTBOUND_CREDENTIAL_FILE: /run/secrets/auth-service-to-notification-gateway
     secrets:
+      - jwt_secret
+      - google_client_secret
+      - web-bff-to-auth-service
       - game-gateway-to-auth-service
       - notification-gateway-to-auth-service
       - stats-service-to-auth-service
@@ -225,8 +241,8 @@ services:
       - stats-service-to-auth-service
     depends_on:
       postgres: {condition: service_healthy}
+    # Not on edge: only the Web BFF reaches the public listener, over private.
     networks:
-      edge:
       private:
         ipv4_address: 172.29.11.12
         aliases: [stats-service.private]
@@ -258,11 +274,44 @@ services:
     depends_on:
       postgres: {condition: service_healthy}
       game-migrate: {condition: service_completed_successfully}
+    # Not on edge. Its public listener takes the caller from X-User-Id, so it must
+    # answer only the Web BFF, which sets the header from a validated session.
+    # Every other container on private can still reach it (no host binding exists
+    # for the public port yet): see "Known differences" in docs/DEPLOY.md.
     networks:
-      edge:
       private:
         ipv4_address: 172.29.11.13
         aliases: [game-session.private]
+
+  # The browser's REST entry: checks the origin and the session, then forwards each
+  # route of its table to the service that owns it (issue #88).
+  web-bff:
+    <<: *hardened
+    build: {context: ./backend, dockerfile: web-bff/Dockerfile}
+    image: ft-transcendence/web-bff:local
+    environment:
+      APP_ENV: production
+      PORT: "8080"
+      PUBLIC_BASE_URL: *public_base_url
+      AUTH_INTERNAL_URL: http://auth-service.private:8081
+      AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE: /run/secrets/web-bff-to-auth-service
+      AUTH_INTERNAL_TIMEOUT: 3s
+      # The services' public listeners, reached on private so that they need not be
+      # on the network the ingress is on.
+      AUTH_PUBLIC_URL: http://auth-service.private:8080
+      USER_PUBLIC_URL: http://user-service.private:8080
+      STATS_PUBLIC_URL: http://stats-service.private:8080
+      GAME_PUBLIC_URL: http://game-session.private:8080
+    secrets:
+      - web-bff-to-auth-service
+    depends_on:
+      - auth-service
+    networks:
+      edge:
+      private:
+        # Auth lists this address in TRUSTED_PROXIES.
+        ipv4_address: 172.29.11.30
+        aliases: [web-bff.private]
 
   game-gateway:
     <<: *hardened
@@ -335,7 +384,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
-    depends_on: [auth-service, user-service, stats-service, game-session, game-gateway, notification-gateway]
+    depends_on: [web-bff, user-service, game-gateway, notification-gateway]
     networks:
       edge:
         ipv4_address: 172.29.10.2
@@ -366,7 +415,10 @@ secrets:
   db_game_session:           {file: ./secrets/db/game-session.password}
   tls_certificate:           {file: ./certs/server.crt}
   tls_key:                   {file: ./certs/server.key}
-  auth-service-to-user-service:           {file: ./secrets/credentials/auth-service-to-user-service}
+  jwt_secret:                {file: ./secrets/jwt_secret}
+  google_client_secret:      {file: ./secrets/google_client_secret}
+  web-bff-to-auth-service:                {file: ./secrets/credentials/web-bff-to-auth-service}
+  auth-service-to-user-service:          {file: ./secrets/credentials/auth-service-to-user-service}
   auth-service-to-game-session:           {file: ./secrets/credentials/auth-service-to-game-session}
   auth-service-to-game-gateway:           {file: ./secrets/credentials/auth-service-to-game-gateway}
   auth-service-to-notification-gateway:   {file: ./secrets/credentials/auth-service-to-notification-gateway}
