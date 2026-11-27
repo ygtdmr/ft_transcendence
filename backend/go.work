@@ -7,4 +7,5 @@ use (
 	./shared
 	./stats-service
 	./user-service
+	./web-bff
 )
