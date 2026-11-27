@@ -126,8 +126,6 @@ is each owner's change. Known differences, left to their owners:
 
 | Service | Difference | Convention |
 | --- | --- | --- |
-| auth, user, stats | The private listener binds every interface | `INTERNAL_HOST` (`config.Reader.InternalAddress`), finding F3 on #157 |
-| auth-service | `JWT_SECRET`, `GOOGLE_CLIENT_SECRET` are plain environment values | `*_FILE`, finding F4 on #157 |
 | game-session | `USER_SERVICE_INTERNAL_URL`, `GAME_TO_USER_SERVICE_CREDENTIAL_FILE` | `USER_INTERNAL_URL`, `USER_SERVICE_OUTBOUND_CREDENTIAL_FILE` |
 | game-session | No `*_PREVIOUS_CREDENTIAL_FILE`; no `<RECEIVER>_INTERNAL_TIMEOUT` | Rotation with two credentials (finding F2 on #157); a configured timeout |
 | game-session | Does not read `APP_ENV`, `LOG_FORMAT`, `LOG_LEVEL` | Common settings |

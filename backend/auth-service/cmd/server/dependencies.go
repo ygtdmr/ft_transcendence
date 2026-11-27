@@ -129,7 +129,7 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 		logger.WarnContext(ctx, "no service credentials configured; private routes accept no caller")
 	}
 	serviceAuth := serviceauth.New(cfg.CallerCredentials, serviceauth.DefaultMatrix())
-	internal := server.NewInternal(cfg.InternalPort, logger, controller.NewInternalReads(authService, serviceAuth),
+	internal := server.NewInternal(cfg.InternalAddress(), logger, controller.NewInternalReads(authService, serviceAuth),
 		controller.NewAccountDeletion(authService, serviceAuth))
 
 	return []*http.Server{server.New(cfg.Port, authController, logger), internal}, cleanup, nil

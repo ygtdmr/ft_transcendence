@@ -76,7 +76,7 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 	}
 	profileService := service.NewProfile(userpostgres.NewProfile(pool))
 	profileReads := service.NewProfileRead(userpostgres.NewProfile(pool), service.AvatarURLs{Base: cfg.AvatarBaseURL})
-	internal := server.NewInternal(cfg.InternalPort, logger,
+	internal := server.NewInternal(cfg.InternalAddress(), logger,
 		controller.NewInternalProvisioning(profileService, auth),
 		controller.NewInternalProfile(profileReads, auth),
 		controller.NewInternalFriendshipVerdict(service.NewFriendshipVerdicts(userpostgres.NewFriendshipVerdicts(pool)), auth),

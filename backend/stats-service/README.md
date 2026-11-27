@@ -33,6 +33,7 @@ environment only and does not load `.env` itself.
 | `LOG_FORMAT`, `LOG_LEVEL` | by `APP_ENV`    | `text` or `json`; `debug`, `info`, `warn` or `error`.   |
 | `MIGRATE_ON_START`        | `true`          | Apply embedded migrations at startup.                   |
 | `INTERNAL_PORT`           | `8090`          | Private listener port; must differ from `PORT`.         |
+| `INTERNAL_HOST`           | empty           | Bind host of the private listener. Empty listens on every interface; a deployment sets the container's private-network address. |
 | `USER_SERVICE_CREDENTIAL_FILE`, `USER_SERVICE_PREVIOUS_CREDENTIAL_FILE` | empty | User Service's credential files. Empty accepts no caller. |
 | `AUTH_INTERNAL_URL`, `AUTH_SERVICE_OUTBOUND_CREDENTIAL_FILE` | empty | Auth's private listener and this service's credential. Required in production. |
 | `AUTH_INTERNAL_TIMEOUT`   | `5s`            | Upper bound for one call to Auth.                       |

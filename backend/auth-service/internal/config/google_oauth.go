@@ -10,16 +10,22 @@ import (
 // loadGoogleOAuth reads the backend-only Google sign-in settings.
 //
 // GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET and PUBLIC_BASE_URL are set together
-// or not at all. Without them, Google sign-in redirects to
+// or not at all. The client secret comes from the file named by
+// GOOGLE_CLIENT_SECRET_FILE, or from GOOGLE_CLIENT_SECRET for local runs. Without them, Google sign-in redirects to
 // /?oauth_error=OAUTH_PROVIDER_ERROR.
 //
 // Errors:
 //
+//   - GOOGLE_CLIENT_SECRET and GOOGLE_CLIENT_SECRET_FILE are both set, or the file cannot be read.
 //   - Only some of the three settings are present.
 //   - PUBLIC_BASE_URL is not an https:// origin without a path.
 func (cfg *Config) loadGoogleOAuth() error {
 	cfg.GoogleClientID = strings.TrimSpace(os.Getenv("GOOGLE_CLIENT_ID"))
-	cfg.GoogleClientSecret = strings.TrimSpace(os.Getenv("GOOGLE_CLIENT_SECRET"))
+	secret, err := secretSetting("GOOGLE_CLIENT_SECRET")
+	if err != nil {
+		return err
+	}
+	cfg.GoogleClientSecret = secret
 	cfg.PublicBaseURL = strings.TrimRight(strings.TrimSpace(os.Getenv("PUBLIC_BASE_URL")), "/")
 
 	set := 0
