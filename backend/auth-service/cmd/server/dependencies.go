@@ -123,6 +123,7 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 		return nil, nil, err
 	}
 	authController := controller.NewAuth(authService, controller.WithGoogleOAuth(google, logger), controller.WithRateLimits(limits))
+	healthController := controller.NewHealth(service.NewHealth(authpostgres.NewHealth(pool)))
 	cleanup := startSessionRevocations(ctx, authService, pool.Close, logger)
 
 	if len(cfg.CallerCredentials) == 0 {
@@ -132,7 +133,7 @@ func setup(ctx context.Context, cfg config.Config, logger *slog.Logger) ([]*http
 	internal := server.NewInternal(cfg.InternalAddress(), logger, controller.NewInternalReads(authService, serviceAuth),
 		controller.NewAccountDeletion(authService, serviceAuth))
 
-	return []*http.Server{server.New(cfg.Port, authController, logger), internal}, cleanup, nil
+	return []*http.Server{server.New(cfg.Port, authController, logger, healthController), internal}, cleanup, nil
 }
 
 // rateLimits builds the login and registration limiters from validated settings.
