@@ -1,6 +1,5 @@
 #!/bin/sh
-# Creates a self-signed TLS certificate for the local ingress if none exists
-# (the same certificate the devops branch's scripts/make-cert.sh makes).
+# Creates a self-signed TLS certificate for the local ingress if none exists.
 # It is for local runs only; a real deployment supplies a certificate from a CA
 # at certs/server.crt and certs/server.key (docs/DEPLOY.md).
 set -eu

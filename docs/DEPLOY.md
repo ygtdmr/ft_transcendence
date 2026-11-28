@@ -27,7 +27,7 @@ User Service and Stats apply their embedded migrations when they start (`MIGRATE
 left out: it is optional and never holds durable state.
 
 The frontend is not served yet: it is not on an integration branch. When it lands, its static root and the
-`try_files` fallback go into `deploy/ingress/nginx.conf`, as in the `devops` branch's gateway.
+`try_files` fallback go into `deploy/ingress/nginx.conf`.
 
 ## Networks
 
