@@ -5,11 +5,14 @@
 #   edge     the ingress and the services it forwards to: the Web BFF, both gateways,
 #            User Service (static avatars) and Auth (Google sign-in needs a route
 #            out). Stats and Game Session are not on it: their public listeners (8080)
-#            answer only the Web BFF, on private, and Game Session trusts the
-#            X-User-Id the BFF sets.
+#            answer only the Web BFF.
 #   private  internal: true, so it has no route out. PostgreSQL, RabbitMQ, the BFF's
-#            way to every service's public listener (8080) and every service's
-#            private listener (8081, /internal/v1) live here.
+#            way to the public listeners (8080) of Auth, User and Stats, and every
+#            service's private listener (8081, /internal/v1) live here.
+#   game-rest internal: true. Only the Web BFF and Game Session are on it. Game
+#            Session's public listener (8080) binds its address here (PUBLIC_HOST),
+#            because its room routes take the caller from the X-User-Id header and
+#            check no credential: nothing else on private can connect to that port.
 # Only the ingress publishes a port, and only on 127.0.0.1.
 
 name: ft-transcendence
@@ -269,7 +272,9 @@ services:
     env_file: [secrets/env/game-session.env]
     environment:
       PORT: "8080"
-      # The private listener binds only to this address on the private network.
+      # The public listener binds only to this address, on the network shared with the
+      # Web BFF; the private listener binds only to its address on the private network.
+      PUBLIC_HOST: 172.29.12.13
       INTERNAL_HOST: 172.29.11.13
       INTERNAL_PORT: "8081"
       TICK_INTERVAL: 1s
@@ -290,13 +295,17 @@ services:
       postgres: {condition: service_healthy}
       game-migrate: {condition: service_completed_successfully}
     # Not on edge. Its public listener takes the caller from X-User-Id, so it must
-    # answer only the Web BFF, which sets the header from a validated session.
-    # Every other container on private can still reach it (no host binding exists
-    # for the public port yet): see "Known differences" in docs/DEPLOY.md.
+    # answer only the Web BFF, which sets the header from a validated session. That
+    # listener is bound to the game-rest address, which only the BFF shares; the
+    # gateways, Auth and User reach the private listener on private and find nothing
+    # on 8080 there.
     networks:
       private:
         ipv4_address: 172.29.11.13
         aliases: [game-session.private]
+      game-rest:
+        ipv4_address: 172.29.12.13
+        aliases: [game-session.rest]
 
   # The browser's REST entry: checks the origin and the session, then forwards each
   # route of its table to the service that owns it (issue #88).
@@ -316,7 +325,7 @@ services:
       AUTH_PUBLIC_URL: http://auth-service.private:8080
       USER_PUBLIC_URL: http://user-service.private:8080
       STATS_PUBLIC_URL: http://stats-service.private:8080
-      GAME_PUBLIC_URL: http://game-session.private:8080
+      GAME_PUBLIC_URL: http://game-session.rest:8080
     secrets:
       - web-bff-to-auth-service
     depends_on:
@@ -327,6 +336,8 @@ services:
         # Auth lists this address in TRUSTED_PROXIES.
         ipv4_address: 172.29.11.30
         aliases: [web-bff.private]
+      game-rest:
+        ipv4_address: 172.29.12.30
 
   game-gateway:
     <<: *hardened
@@ -416,6 +427,12 @@ networks:
     internal: true
     ipam:
       config: [{subnet: 172.29.11.0/24, ip_range: 172.29.11.128/25}]
+  # The Web BFF's way to Game Session's public listener, and nothing else.
+  game-rest:
+    driver: bridge
+    internal: true
+    ipam:
+      config: [{subnet: 172.29.12.0/24, ip_range: 172.29.12.128/25}]
 
 volumes:
   postgres-data:

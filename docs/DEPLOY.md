@@ -36,14 +36,24 @@ The frontend is not served yet: it is not on an integration branch. When it land
                                       └──> user-service (:8080, /static/avatars/ only)
 
  private network (internal: true, no route out)
-   postgres, rabbitmq, web-bff ──> every service's public listener (:8080)
+   postgres, rabbitmq, web-bff ──> the public listeners (:8080) of Auth, User and Stats
    and every service's private listener (:8081), each on a fixed address
+
+ game-rest network (internal: true, no route out)
+   web-bff ──> game-session public listener (:8080), and nothing else is on it
 ```
 
 - Only `ingress` publishes a port. The ingress is on `edge` only; PostgreSQL and RabbitMQ are on `private` only.
 - `edge` holds the ingress, the Web BFF, both gateways, User Service (avatar files) and Auth (Google sign-in
-  needs a route out). Stats and Game Session are on `private` only: their public listeners answer the Web BFF,
-  which reaches them as `<name>.private:8080`, and the ingress cannot reach them at all.
+  needs a route out). Stats and Game Session are not on it: their public listeners answer the Web BFF, and the
+  ingress cannot reach them at all. The BFF reaches Stats as `stats-service.private:8080`.
+- **Game Session's public listener is reachable from the Web BFF only.** Its room routes take the caller from the
+  `X-User-Id` header and check no credential (decision on #304, recorded in #305): the header is trustworthy only if
+  nobody but the BFF can send it. The gateways must reach Game Session's private listener, so they share `private`
+  with it, and a listener bound to every interface would be open to them too. `PUBLIC_HOST` binds the public
+  listener to Game Session's address on `game-rest`, a network that holds the BFF and Game Session and nothing else
+  (the private listener binds `INTERNAL_HOST` on `private`, as everywhere). `make security-test` proves it: a
+  container on `private` gets no connection to port 8080 by name or by address, and a container on `game-rest` does.
 - Every service binds its private listener to its own `private` address (`INTERNAL_HOST`), so the ingress cannot
   connect to it even though it shares `edge` with four of them (`make security-test` checks all four).
 - Auth trusts two proxies for the client address (`TRUSTED_PROXIES`): the ingress, which overwrites
@@ -96,7 +106,7 @@ during the overlap and the old one is refused afterwards. The real secrets are u
 
 ## Verifying
 
-`make security-test` runs 118 checks against the running stack: TLS versions and headers, cookie attributes,
+`make security-test` runs 126 checks against the running stack: TLS versions and headers, cookie attributes,
 CSRF/CORS/WebSocket origin, private listeners unreachable from the ingress, credentials and scopes, injection and
 oversized input, rate limits, profile IDOR, container and database least privilege, and no secret in any log or
 tracked file. It restarts Auth first because rate-limit counters live in memory.
@@ -114,7 +124,7 @@ from it. Google sign-in is off until `GOOGLE_CLIENT_ID` is set in `.env` and the
 | Gap | Effect | Owner |
 | --- | --- | --- |
 | RabbitMQ topology and event names (#189, #171, #141) | `deploy/rabbitmq/definitions.json` holds only the queue Stats consumes (`stats.game-events`), so Stats' consumer connects, but nothing publishes or binds to it: no event flows, and room events never reach the room socket. The file is a placeholder for the real topology: replace it, nothing else in the stack changes. Importing only adds: changing the arguments of a queue that already exists needs `make clean` or deleting that queue. The file must not contain users (the account is generated), and the broker's `load_definitions` setting must not replace the import: on a fresh volume it skips creating that account. | zehraxaa |
-| Game Session trusts `X-User-Id` on its public listener, with no service credential (review of #304) | Only the Web BFF sets it, from a validated session, and the ingress cannot reach the listener. But every container on `private` can, and Game Session has no host setting for its public port, so a compromised backend container could act as any user in the room routes. **Decision (2026-11-27): the BFF will present its own credential** (a `web-bff` to `game-session` pair and scope in the Bruno matrix, checked by Game Session's existing service-auth on `/api/v2/rooms*`), and this must close before the #199 evidence. | BercemES (Game Session, Bruno row), ygtdmr (BFF) |
+| Game Session trusts `X-User-Id` on its public listener, with no service credential (decision on #304, option A) | Isolation holds the line: only the Web BFF can connect (`PUBLIC_HOST` on `game-rest`, see Networks), and `make security-test` checks it. What it does not cover is the Web BFF itself: a compromised BFF could act as any user in the room routes. If that is not acceptable later, the BFF sends a credential and Game Session checks it with its existing `RequireScope`. `PUBLIC_HOST` is a Game Session change that the stack depends on. | ygtdmr (BFF), BercemES (Game Session) |
 | The Web BFF does not serve `GET /api/v2/rooms/{room_id}/presence` yet | The route is answered 404 until the BFF composes Game Session members with User Service presence; its `web-bff` to `user-service` pair is added then. | ygtdmr |
 | REST services have not adopted the shared origin guard (#2) | The ingress enforces the contract's cross-site rule; the services behind it do not. | service owners |
 | Auth has no health route (#85 adoption) | Readiness of Auth is probed with a request that must answer 401. | ygtdmr |

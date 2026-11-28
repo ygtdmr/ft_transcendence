@@ -129,11 +129,30 @@ for svc in auth-service user-service game-gateway notification-gateway; do
 	check "ingress cannot connect to $svc's private port" "" "$(probe "http://$ip:8081/internal/v1/x")"
 done
 # Stats and Game Session answer the Web BFF only: they are not on the network the ingress is on.
-for svc in stats-service game-session; do
-	nets=$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{$k}} {{end}}' "${PROJECT}-${svc}-1")
-	check "$svc is on the private network only" "${PROJECT}_private " "$nets"
-	check "ingress cannot reach $svc's public port" "" "$(probe "http://$svc:8080/readyz")"
-done
+nets_of() { docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{$k}} {{end}}' "${PROJECT}-$1-1"; }
+check "stats-service is on the private network only" "${PROJECT}_private " "$(nets_of stats-service)"
+check "ingress cannot reach stats-service's public port" "" "$(probe "http://stats-service:8080/readyz")"
+check "game-session is on the private and game-rest networks only" "${PROJECT}_game-rest ${PROJECT}_private " "$(nets_of game-session)"
+check "ingress cannot reach game-session's public port" "" "$(probe "http://game-session:8080/readyz")"
+
+# Game Session's room routes take the caller from X-User-Id and check no credential, so only the
+# Web BFF may reach that listener. It is bound to the address on game-rest, which only the BFF shares.
+game_rest_members=$(docker network inspect "${PROJECT}_game-rest" -f '{{range .Containers}}{{.Name}} {{end}}' | tr ' ' '\n' | grep -v '^$' | sed "s/^${PROJECT}-//; s/-1$//" | sort | tr '\n' ' ')
+check "the game-rest network holds Game Session and the Web BFF only" "game-session web-bff " "$game_rest_members"
+check "the game-rest network has no route out" "true" "$(docker network inspect "${PROJECT}_game-rest" -f '{{.Internal}}')"
+check "Game Session's public listener is bound to its game-rest address" "172.29.12.13:8080" \
+	"$(docker logs "${PROJECT}-game-session-1" 2>&1 | grep '"server":"public"' | tail -1 | sed -n 's/.*"addr":"\([^"]*\)".*/\1/p')"
+from_net() { # from_net <network> <url> [curl args]: status code, 000 when nothing answered
+	net=$1; url=$2; shift 2
+	docker run --rm --network "${PROJECT}_$net" "$CURL_IMAGE" -s -o /dev/null -w '%{http_code}' --max-time 3 "$@" "$url" 2>/dev/null
+}
+FORGED=(-X POST -H 'Content-Type: application/json' -H "X-User-Id: $ID_A" -d '{"max_players":4}')
+check "a container on private (a gateway's position) cannot reach Game Session's public port by name" "000" \
+	"$(from_net private http://game-session.private:8080/api/v2/rooms "${FORGED[@]}")"
+check "... nor by its private address" "000" "$(from_net private http://172.29.11.13:8080/api/v2/rooms "${FORGED[@]}")"
+check "... nor by its game-rest address" "000" "$(from_net private http://172.29.12.13:8080/api/v2/rooms "${FORGED[@]}")"
+check "a container on game-rest (the Web BFF's position) does reach it" "200" "$(from_net game-rest http://game-session.rest:8080/readyz)"
+check "Game Session's private listener is still on private, and wants a credential" "401" "$(from_net private http://game-session.private:8081/internal/v1/memberships/1)"
 edge_members=$(docker network inspect "${PROJECT}_edge" -f '{{range .Containers}}{{.Name}} {{end}}' | tr ' ' '\n' | grep -v '^$' | sed "s/^${PROJECT}-//; s/-1$//" | sort | tr '\n' ' ')
 check "the edge network holds the ingress and only what it forwards to" "auth-service game-gateway ingress notification-gateway user-service web-bff " "$edge_members"
 ingress_nets=$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{$k}} {{end}}' "${PROJECT}-ingress-1")
@@ -214,7 +233,9 @@ for svc in auth-service user-service stats-service game-session game-gateway not
 	[ "$ro" = "true" ] && [ "$priv" = "false" ] && [ "$nnp" = "no-new-privileges:true" ] && [ "$caps" = "[ALL]" ] \
 		&& ok "$svc: read-only, unprivileged, no-new-privileges, all capabilities dropped" \
 		|| bad "$svc: hardened runtime" "readonly=$ro privileged=$priv secopt=$nnp capdrop=$caps"
-	uid=$(docker image inspect -f '{{.Config.User}}' "$(docker inspect -f '{{.Image}}' "$cid")")
+	# The container's own config is the user it actually runs as (the image's USER unless Compose overrides
+	# it). Reading the image by ID instead fails after a rebuild, once the tag has moved on.
+	uid=$user
 	case "$svc:$uid" in ingress:101|ingress:nginx|*:nonroot|*:65532*) ok "$svc: runs as a non-root user ($uid)" ;; *) bad "$svc: runs as a non-root user" "image user [$uid]" ;; esac
 done
 mounts=$(docker ps -q --filter "label=com.docker.compose.project=$PROJECT" | xargs docker inspect -f '{{.Name}} {{range .Mounts}}{{.Source}} {{end}}' | grep -c 'docker.sock')
