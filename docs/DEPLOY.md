@@ -112,10 +112,16 @@ origin refused before the cookie is read, expired, wrongly signed and unknown se
 rooms, then logout and refresh-token reuse closing every tab with `4401` while other sessions and users keep
 their sockets, nothing usable left for the revoked session, and a Game Gateway restart that members reconnect
 after. Rooms are created and joined through the Web BFF with the users' own session cookies, as a browser does.
+The same run proves the BFF's own admission: no, expired, forged and unknown sessions are a `401` on every protected
+route, the caller is the session's user whatever identity headers the client sends, a cross-site write is a `403
+FORBIDDEN_ORIGIN` before the session is looked at, and private paths are a `404`. It also stops Auth and User Service
+for real: with Auth down a verified session is a `503 SERVICE_UNAVAILABLE`, never a pass-through and never a logout,
+and the same session works again once Auth is back, with no trace of the refused room create.
 It does not cover a second gateway instance, nor slow-client queue bounds (those are proven in each gateway's own
-test suite).
+test suite). The run registers one account more than the gateway tests, five in all, which is Auth's registration
+limit per client (five per ten minutes); `make integration-test` restarts Auth first to reset it.
 
-`make security-test` runs 126 checks against the running stack: TLS versions and headers, cookie attributes,
+`make security-test` runs 128 checks against the running stack: TLS versions and headers, cookie attributes,
 CSRF/CORS/WebSocket origin, private listeners unreachable from the ingress, credentials and scopes, injection and
 oversized input, rate limits, profile IDOR, container and database least privilege, and no secret in any log or
 tracked file. It restarts Auth first because rate-limit counters live in memory.
@@ -154,7 +160,6 @@ from it. Google sign-in is off until `GOOGLE_CLIENT_ID` is set in `.env` and the
 | Game Session trusts `X-User-Id` on its public listener, with no service credential (decision on #304, option A) | Isolation holds the line: only the Web BFF can connect (`PUBLIC_HOST` on `game-rest`, see Networks), and `make security-test` checks it. What it does not cover is the Web BFF itself: a compromised BFF could act as any user in the room routes. If that is not acceptable later, the BFF sends a credential and Game Session checks it with its existing `RequireScope`. `PUBLIC_HOST` is a Game Session change that the stack depends on. | ygtdmr (BFF), BercemES (Game Session) |
 | The Web BFF does not serve `GET /api/v2/rooms/{room_id}/presence` yet | The route is answered 404 until the BFF composes Game Session members with User Service presence; its `web-bff` to `user-service` pair is added then. | ygtdmr |
 | REST services have not adopted the shared origin guard (#2) | The ingress enforces the contract's cross-site rule; the services behind it do not. | service owners |
-| Auth has no health route (#85 adoption) | Readiness of Auth is probed with a request that must answer 401. | ygtdmr |
 | `DATABASE_URL` and `RABBITMQ_URL` come from the environment (#157 F4) | Visible to anyone who can run `docker inspect` on the host. Auth's signing key and Google secret are files since #303; User, Stats and Game Session have no `_FILE` form for the database URL yet. | service owners |
 | One instance of each service | The Game Gateway contract assumes a single instance. | contract |
 

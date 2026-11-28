@@ -120,6 +120,9 @@ room=$(c -b "$JAR_A" -X POST "$BASE/api/v2/rooms" -H 'Content-Type: application/
 check "Game Session REST: the caller is the session's user, not the X-User-Id the client sent" "$ID_A" "$(printf '%s' "$room" | sed -n 's/.*"host_user_id":\([0-9]*\).*/\1/p')"
 room_id=$(printf '%s' "$room" | sed -n 's/.*"room_id":\([0-9]*\).*/\1/p')
 [ -z "$room_id" ] || status -b "$JAR_A" -X DELETE "$BASE/api/v2/rooms/$room_id/members/me" -H "Origin: $BASE" >/dev/null
+for probe_path in /healthz /readyz; do
+	check "the ingress does not expose $probe_path" "404" "$(status "$BASE$probe_path")"
+done
 check "the legacy room API (/api/v1/rooms) is not routed" "404" "$(status -b "$JAR_A" "$BASE/api/v1/rooms")"
 check "an unknown /api path is answered by the BFF in the contract's shape" "NOT_FOUND" "$(body_code -b "$JAR_A" "$BASE/api/v1/no/such/route")"
 probe() { $COMPOSE exec -T ingress wget -S -O /dev/null -T 3 "$1" 2>&1 | grep -E '^\s*HTTP/' | head -1 | awk '{print $2}'; }
