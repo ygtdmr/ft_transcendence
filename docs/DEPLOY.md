@@ -106,6 +106,15 @@ during the overlap and the old one is refused afterwards. The real secrets are u
 
 ## Verifying
 
+`make integration-test` (issue #194) proves gateway and Auth admission and revocation through the real ingress with
+a real WebSocket client: cookie-only admission (no query-string or header token, no `ft_refresh` as a session),
+origin refused before the cookie is read, expired, wrongly signed and unknown sessions, membership and unknown
+rooms, then logout and refresh-token reuse closing every tab with `4401` while other sessions and users keep
+their sockets, nothing usable left for the revoked session, and a Game Gateway restart that members reconnect
+after. Rooms are created and joined through the Web BFF with the users' own session cookies, as a browser does.
+It does not cover a second gateway instance, nor slow-client queue bounds (those are proven in each gateway's own
+test suite).
+
 `make security-test` runs 126 checks against the running stack: TLS versions and headers, cookie attributes,
 CSRF/CORS/WebSocket origin, private listeners unreachable from the ingress, credentials and scopes, injection and
 oversized input, rate limits, profile IDOR, container and database least privilege, and no secret in any log or
