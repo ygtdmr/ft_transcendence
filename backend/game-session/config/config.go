@@ -15,6 +15,7 @@ import (
 type Config struct {
 	DatabaseURL           string
 	Port                  int
+	PublicHost            string
 	InternalPort          int
 	InternalHost          string
 	TickInterval          time.Duration
@@ -94,6 +95,10 @@ func Load() (Config, error) {
 	if cfg.InternalHost != "" && !validListenHost(cfg.InternalHost) {
 		return Config{}, errors.New("INTERNAL_HOST must be a host name or an IP address, without a port")
 	}
+	cfg.PublicHost = strings.TrimSpace(os.Getenv("PUBLIC_HOST"))
+	if cfg.PublicHost != "" && !validListenHost(cfg.PublicHost) {
+		return Config{}, errors.New("PUBLIC_HOST must be a host name or an IP address, without a port")
+	}
 	if raw := os.Getenv("TICK_INTERVAL"); raw != "" {
 		interval, err := time.ParseDuration(raw)
 		if err != nil || interval <= 0 {
@@ -116,6 +121,16 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 	return cfg, nil
+}
+
+// PublicAddress returns the address the public listener binds to, PUBLIC_HOST
+// joined with PORT. The public room routes take the acting user from X-User-Id
+// and check no credential, so a deployment sets PUBLIC_HOST to the container's
+// address on the one network it shares with the Web BFF: no other container can
+// then connect to that port, even one that shares the private network. Empty
+// listens on every interface, for local runs only.
+func (cfg Config) PublicAddress() string {
+	return net.JoinHostPort(cfg.PublicHost, strconv.Itoa(cfg.Port))
 }
 
 // InternalAddress returns the address the private listener binds to,

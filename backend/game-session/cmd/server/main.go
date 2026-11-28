@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -23,7 +22,7 @@ import (
 
 func createServers(cfg config.Config, handler *rest.Handler, log *slog.Logger) (*http.Server, *http.Server) {
 	server := &http.Server{
-		Addr:              fmt.Sprintf(":%d", cfg.Port),
+		Addr:              cfg.PublicAddress(),
 		Handler:           handler.Routes(),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
