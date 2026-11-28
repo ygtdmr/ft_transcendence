@@ -112,8 +112,14 @@ origin refused before the cookie is read, expired, wrongly signed and unknown se
 rooms, then logout and refresh-token reuse closing every tab with `4401` while other sessions and users keep
 their sockets, nothing usable left for the revoked session, and a Game Gateway restart that members reconnect
 after. Rooms are created and joined through the Web BFF with the users' own session cookies, as a browser does.
+The same run proves the BFF's own admission: no, expired, forged and unknown sessions are a `401` on every protected
+route, the caller is the session's user whatever identity headers the client sends, a cross-site write is a `403
+FORBIDDEN_ORIGIN` before the session is looked at, and private paths are a `404`. It also stops Auth and User Service
+for real: with Auth down a verified session is a `503 SERVICE_UNAVAILABLE`, never a pass-through and never a logout,
+and the same session works again once Auth is back, with no trace of the refused room create.
 It does not cover a second gateway instance, nor slow-client queue bounds (those are proven in each gateway's own
-test suite).
+test suite). The run registers one account more than the gateway tests, five in all, which is Auth's registration
+limit per client (five per ten minutes); `make integration-test` restarts Auth first to reset it.
 
 `make security-test` runs 126 checks against the running stack: TLS versions and headers, cookie attributes,
 CSRF/CORS/WebSocket origin, private listeners unreachable from the ingress, credentials and scopes, injection and

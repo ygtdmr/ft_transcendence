@@ -6,9 +6,9 @@ package gatewayauth_test
 // and every REST call while unrelated sessions carry on.
 //
 // Run with `make integration-test` (it restarts Auth first so the in-memory rate
-// limits start empty). The tests call a real ingress, real Auth, real gateways
-// and a real Game Session; the only thing acting as a stand-in is the Web BFF,
-// which does not exist yet: Game Session REST is called from inside the stack.
+// limits start empty). The tests call a real ingress, real Auth, real gateways,
+// the real Web BFF and a real Game Session; nothing is a stand-in. Game Session
+// REST is reached the way a browser reaches it, through the ingress and the BFF.
 
 import (
 	"fmt"
