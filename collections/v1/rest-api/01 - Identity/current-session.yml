@@ -34,7 +34,7 @@ docs: |-
   | `data.user.user_id` | integer | yes | no | positive | Authenticated user |
   | `data.user.username` | string | yes | no | username rule | Current canonical username from User Service |
   | `data.active_room_id` | integer or null | yes | yes | positive or `null` | Current live room membership (from Game Session's membership index), never a permanent profile field |
-  | `data.active_room_api_version` | string enum or null | yes | yes | `v1`, `v2`, or `null` | REST/room-WebSocket pair the frontend must restore; null exactly when `active_room_id` is null |
+  | `data.active_room_api_version` | string enum or null | yes | yes | `v2` or `null` | Room protocol version the frontend must restore; null exactly when `active_room_id` is null |
   | `data.session_expires_at` | `string<date-time>` | yes | no | ISO 8601 UTC | `ft_session` expiry |
 
   ## State changes, events, and errors

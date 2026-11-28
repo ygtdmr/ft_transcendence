@@ -39,7 +39,7 @@ docs: |-
   | `data.matches_played` | integer | yes | no | `wins + losses` | Total settled matches |
   | `data.penalty_points` | integer | yes | no | `>= 0` | Accumulated leave penalties (`workspace.yml`, Leave Penalty); visible only to its owner |
   | `data.active_room_id` | integer or null | yes | yes | positive or `null` | Temporary room membership link |
-  | `data.active_room_api_version` | string enum or null | yes | yes | `v1`, `v2`, or `null` | Protocol version paired with `active_room_id`; both are null together |
+  | `data.active_room_api_version` | string enum or null | yes | yes | `v2` or `null` | Protocol version paired with `active_room_id`; both are null together |
   | `data.created_at` | `string<date-time>` | yes | no | ISO 8601 UTC | Account creation time |
 
   ## State changes, events, and errors

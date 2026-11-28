@@ -66,7 +66,7 @@ docs: |-
 
   ## State changes and events
 
-  A new session pair is persisted. Login neither creates nor clears room membership; because membership is user-scoped, the account may already have an active v1/v2 room through another session. The frontend calls `GET /api/v1/auth/session` after login to recover the `(active_room_id, active_room_api_version)` pair. No WebSocket event is emitted merely because login succeeded.
+  A new session pair is persisted. Login neither creates nor clears room membership; because membership is user-scoped, the account may already have an active room through another session. The frontend calls `GET /api/v1/auth/session` after login to recover the `(active_room_id, active_room_api_version)` pair. No WebSocket event is emitted merely because login succeeded.
 
   ## Errors
 

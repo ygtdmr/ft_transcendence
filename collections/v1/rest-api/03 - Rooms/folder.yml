@@ -5,6 +5,8 @@ info:
 docs: |-
   # Rooms
 
+  > **Historical, not served.** Room and game are v2-only (`REST API v2 - Game`). These requests are kept for reference; no service serves them and a client must not call them.
+
   Creating joins the creator and assigns host. Only `WAITING` rooms accept joins, and a user may have one active room (`active_room_id` is derived live from Game Session's membership index, not a durable field that can orphan an account — `workspace.yml`, State Ownership). The host transfers to the longest-present member after a host leaves `WAITING`; an empty room closes; a `FINISHED` room closes once its last member leaves. Team, role, ready, room settings, countdown, and gameplay mutations use WebSocket.
 
   Every room has a capacity, `max_players`, in `4..8` (default `8`). The host sets it on create and can change it while the room is `WAITING` with `room.settings.update`; it can never drop below the current `player_count`. Join returns `409 ROOM_FULL` once `player_count` equals `max_players`.

@@ -19,6 +19,8 @@ docs:
   content: |-
     # ft_transcendence WebSocket Protocol v1
 
+    > **Historical, not served.** The room socket is v2-only (`WebSocket v2 - Game`). This collection is kept for reference; no service serves it and a client must not connect to it.
+
     ## Connection
 
     Connect to `{{wsUrl}}/ws/{{apiVersion}}/rooms/{{roomId}}` (room socket). The session must be active; for the room socket the user must already belong to the room through REST. Authentication is never placed in the URL.
