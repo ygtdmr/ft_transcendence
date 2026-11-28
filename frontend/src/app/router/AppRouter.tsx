@@ -1,8 +1,8 @@
 import { Navigate, Outlet, RouterProvider, createBrowserRouter } from 'react-router-dom';
 
-import { ChatMount } from '@app/chat/ChatMount';
 import { ModalHost } from '@app/modal/ModalHost';
 import { AppToasts } from '@app/notices/AppToasts';
+import { NotificationConnectionProvider } from '@app/connection/NotificationConnectionProvider';
 import { RoomConnectionProvider } from '@app/connection/RoomConnectionProvider';
 import { DisconnectedNotice } from '@features/room/components/ConnectionOverlay';
 import { GameLayout } from '@layouts/GameLayout';
@@ -28,7 +28,7 @@ function AppShell() {
     <>
       <Outlet />
       <ModalHost />
-      <ChatMount />
+      <NotificationConnectionProvider />
       <DisconnectedNotice />
       <AppToasts />
     </>

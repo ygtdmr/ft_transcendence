@@ -1,10 +1,10 @@
 /**
- * The signed-in user's own profile, from `GET /api/users/me`, shared by every view that
+ * The signed-in user's own profile, from `GET /api/v1/users/me`, shared by every view that
  * shows it: the profile menu on Room Discovery, the Ready Room and the Game Board, and
  * Settings.
  *
  * It is read once per signed-in user and then kept current by the server's answers to
- * the Settings actions — the updated profile from `PATCH /api/users/me` and the new
+ * the Settings actions — the updated profile from `PATCH /api/v1/users/me` and the new
  * `avatar_url` from an upload or a preset pick — so a change shows everywhere at once,
  * without a reload. It never holds anything the server has not confirmed. Nothing is
  * persisted.

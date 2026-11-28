@@ -169,19 +169,6 @@ ready, then disappears. A join during the countdown stops it with a notice.
 | Match, Spymaster | `scenario('spymaster-turn')`, Leave | Heavier penalty warning         |
 | Result screen    | `scenario('game-over')`, Exit       | Leaves at once, no dialog       |
 
-### Invites
-
-1. In a room, open `red_agent`'s profile and press **Invite**, or press **Invite** beside
-   `red_agent` in the chat panel's Friends tab. Expected: Invite Sent.
-2. Invite `blue_agent` (offline). Expected: the offline error.
-3. Receive an invite:
-
-   ```js
-   mockSockets.chat.inviteReceived({ user_id: 43, username: 'red_agent' }, 1001, 'QWER12');
-   ```
-
-   Accept it. Expected: you join `QWER12`.
-
 ## Game
 
 ### Spymaster
@@ -302,6 +289,7 @@ mockSockets.room().passTurn();
 | Missed moves | `mockSockets.offline()`, then `mockSockets.guess('RED')`, then `mockSockets.online()`      | After reconnect the board shows the guess from the snapshot   |
 | Grace expiry | `mockSockets.room().graceMs.game = 5000`, then `mockSockets.offline()` for longer than 5 s | You lose the seat; after `online()` you are back in the Lobby |
 | Room gone    | Staffing pause with a short `staffingMs` (see [Staffing pause](#staffing-pause)), wait     | Room closed notice, back to the Lobby                         |
+| Social drop  | `mockSockets.notifications.dropConnection(3000)`                                           | Friends and requests are read again after reconnect           |
 
 With the real backend, inspect frames in DevTools › Network › WS. In development every
 frame is also logged in the console.
@@ -314,10 +302,9 @@ frame is also logged in the console.
 2. Change the username. Try `red_agent` (taken) and an invalid value.
 3. Pick a preset avatar. Upload an image; a file above 2 MB is refused.
    Expected: a new username or avatar shows everywhere at once, without a reload: the
-   profile menu, your seat in the Ready Room or the Game, the room chat, and the names in
-   Match History. Try it during a running match too; the game does not change.
+   profile menu, your seat in the Ready Room or the Game, and the names in Match History. Try it during a running match too; the game does not change.
    `mockApi.server.profileUpdateBy(43, { username: 'agent_red' })` renames a friend:
-   the friend list, your direct conversation and the room follow.
+   the friend list and the room follow.
 4. Delete the account: the confirmation needs the exact username. Expected: back to
    the Landing page with "Your account was deleted."
 
@@ -344,48 +331,14 @@ online status. Report the user once; a second report answers `ALREADY_REPORTED`.
 
 ### Blocking
 
-1. Open `red_agent`'s profile and press **Block User**. Expected: the friendship, Message
-   and Invite disappear; the button reads **Unblock User**.
-2. Expected: the direct chat with `red_agent` is closed, and search shows `red_agent` as
-   Blocked.
+1. Open `red_agent`'s profile and press **Block User**. Expected: the friendship
+   disappears; the button reads **Unblock User**.
+2. Expected: search shows `red_agent` as Blocked.
 3. **Unblock User**. Expected: the suspended friendship returns; a request cancelled by
    the block does not.
 4. Run `mockApi.server.blockedBy(46)`, then search `extra_red` and press Add Friend.
    Expected: "You cannot send a friend request to this user." The block itself is never
    shown.
-
-### Chat during a match
-
-1. Start a match (`mockSockets.room().configureStartable('OPERATIVE')`) and open the chat.
-   Expected: room and direct conversations are readable, and the composer is replaced by
-   "Chat is unavailable while the game is active."
-2. `mockSockets.room().playerLeave(43)` pauses the match. Expected: the chat button and
-   panel stay above the Game Paused dialog and are not dimmed; the composer returns and
-   sending works. Tab from the dialog's Leave Game moves into the chat and back. Restore
-   staffing: the chat becomes read only again.
-3. Unread counts: with the panel closed, `mockSockets.chat.directMessage(44, 'hi')`.
-   Expected: a badge on the chat button and on the conversation; opening it clears them.
-   Your own messages never count.
-
-### Chat
-
-1. Open the chat with `red_agent`: recent messages. Open `blue_master`: scroll up to
-   load older pages.
-2. Receive messages:
-
-   ```js
-   mockSockets.chat.directMessage(43, 'hi!');
-   mockSockets.chat.roomMessage(48, 'ready?'); // while in QWER12
-   ```
-
-3. Delivery faults, before sending a message:
-
-   ```js
-   mockSockets.chat.failNext(); // send fails; retry works
-   mockSockets.chat.dropNextAck(); // ack lost; message still arrives
-   mockSockets.chat.loseNextSend(); // ack and event lost
-   mockSockets.chat.duplicateNext(); // event delivered twice; shown once
-   ```
 
 ### Match history and statistics
 

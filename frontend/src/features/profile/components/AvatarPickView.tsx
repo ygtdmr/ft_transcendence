@@ -16,7 +16,7 @@ const presetName = (presetId: string): string => presetId.replace(/[-_]+/g, ' ')
 
 /**
  * Pick Avatar, inside the Settings dialog: the ready-made avatars from
- * `GET /api/avatars/presets` as one radio group. The current avatar starts selected;
+ * `GET /api/v1/avatars/presets` as one radio group. The current avatar starts selected;
  * choosing another moves the selection, SAVE AVATAR applies it and Cancel keeps the
  * current one.
  */

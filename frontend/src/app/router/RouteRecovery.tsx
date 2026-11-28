@@ -9,7 +9,7 @@ import type { ToastNotice } from '@shared/stores';
  * Route recovery: the screen comes from the server's view of the user's room membership,
  * never from the URL alone.
  *
- * `activeRoomId` mirrors `active_room_id` from `GET /api/auth/session` at bootstrap and is
+ * `activeRoomId` mirrors `active_room_id` from `GET /api/v1/auth/session` at bootstrap and is
  * kept current by entering and leaving rooms, so these guards hold every authenticated
  * route to it: a member is in their room, and a non-member is in the Lobby. Once inside the
  * room, the screen itself follows the authoritative `room.status` from the room snapshot.

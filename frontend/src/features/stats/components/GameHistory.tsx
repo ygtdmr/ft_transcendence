@@ -10,7 +10,7 @@ import * as styles from './GameHistory.styles';
 
 /**
  * GAME HISTORY on the own profile: the signed-in user's finished matches, newest first,
- * from `GET /api/users/me/matches`. The contract offers no history for other players.
+ * from `GET /api/v1/users/me/matches`. The contract offers no history for other players.
  *
  * Each row shows WIN or LOSS, the opponents, the user's team and role, how the game ended,
  * the final score with the user's team first, and the date. Older matches page in with the

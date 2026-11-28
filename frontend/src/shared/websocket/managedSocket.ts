@@ -1,5 +1,5 @@
 /**
- * Transport foundation shared by the room socket and the chat socket.
+ * Transport foundation shared by the room socket and the notification socket.
  *
  * Authentication is cookie-only: the HttpOnly `ft_session`
  * cookie is attached by the browser on a same-origin upgrade. This module therefore
@@ -7,7 +7,7 @@
  * handshake header — the `WebSocket` constructor takes a path and nothing else.
  *
  * It owns transport concerns only: connect, disconnect, backoff reconnect, JSON
- * parsing and `request_id` correlation. Interpreting any `room.*`/`game.*`/`chat.*`
+ * parsing and `request_id` correlation. Interpreting any `room.*`/`game.*`/social
  * message is the caller's job.
  */
 

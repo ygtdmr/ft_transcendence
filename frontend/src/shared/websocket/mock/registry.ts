@@ -8,7 +8,6 @@
  */
 
 import { useSessionStore } from '@shared/stores';
-import type { ChannelPeer } from '@shared/types';
 
 import type { MockRoomServer } from './mockRoomServer';
 import type { MockPlayer } from './mockRoomServer';
@@ -42,21 +41,24 @@ export const mockSession = { authorized: (): boolean => true };
  */
 export const mockRoomLifecycle = { changed: (): void => {} };
 
+/** A user as the mock sockets show them. */
+export interface MockDirectoryUser {
+  user_id: number;
+  username: string;
+  avatar_url: string;
+  is_online: boolean;
+}
+
 /**
- * What the mock Channel Service asks the owners of users and rooms, as the real one asks
- * User/Auth and Game Session. The mock REST server installs the real answers; without it
- * nobody is a friend.
+ * What the mock sockets ask the owner of users, as the real gateways ask User and Auth.
+ * The mock REST server installs the real answers.
  */
 export interface MockDirectory {
   selfId(): number;
-  isFriend(userId: number): boolean;
-  user(userId: number): ChannelPeer | null;
-  roomCode(roomId: number): string | null;
+  user(userId: number): MockDirectoryUser | null;
 }
 
 export const mockDirectory: MockDirectory = {
   selfId: () => mockSelfPlayer().user_id,
-  isFriend: () => false,
   user: () => null,
-  roomCode: () => null,
 };

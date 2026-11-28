@@ -135,18 +135,3 @@ export interface RoomLookupResponse {
   /** `true` only for a `WAITING` room with a free seat and no member still on a result. */
   joinable: boolean;
 }
-
-/** `POST /api/v2/rooms/{room_id}/invites` body and `202 Accepted` response. */
-export interface InviteFriendRequest {
-  user_id: number;
-}
-
-export interface InviteFriendResponse {
-  invite_id: string;
-  room_id: number;
-  room_code: string;
-  to_user_id: number;
-  accepted_at: string;
-  /** Delivery deadline of the live notification; it reserves no seat. */
-  expires_at: string;
-}

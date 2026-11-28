@@ -3,8 +3,8 @@ import { Outlet } from 'react-router-dom';
 import { Footer } from './Footer';
 
 /**
- * Authenticated lobby shell. The page draws its own header and content column; the chat
- * widget and the profile modal are mounted at the app level, so this layout only frames
+ * Authenticated lobby shell. The page draws its own header and content column; the profile
+ * modal is mounted at the app level, so this layout only frames
  * the page above the legal footer.
  */
 export function LobbyLayout() {

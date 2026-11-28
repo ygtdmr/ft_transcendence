@@ -4,7 +4,7 @@ import { buttonInteraction } from '@shared/ui';
  * Class recipes for the Friends dialog.
  *
  * It is built from the same parts as the Settings card and the Players Online cards: the
- * Settings card surface and header, the chat's pill search field, and player rows with the
+ * Settings card surface and header, a pill search field, and player rows with the
  * Players Online presence badge. Phones are the base; from `md:` the card is the 80% scale
  * the other pop-ups over Room Discovery use.
  */

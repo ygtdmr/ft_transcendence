@@ -1,11 +1,9 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { RoomInvitations } from '@app/notices/RoomInvitations';
 import createRoomArtwork from '@assets/lobby/lobby-create-room.svg';
 import joinRoomArtwork from '@assets/lobby/lobby-join-room.svg';
 import mascotArtwork from '@assets/lobby/lobby-mascot.svg';
-import { ChatHeaderButton } from '@features/chat/components/ChatWidget';
 import { OnlinePlayers } from '@features/friends/components/OnlinePlayers';
 import { ProfileMenu } from '@features/profile/components/ProfileMenu';
 import { CreateRoomDialog } from '@features/room/components/CreateRoomDialog';
@@ -42,8 +40,7 @@ const ACTIONS: {
  * Rooms are found by code only; there is no public room list. Create Room and Join Room
  * open as dialogs over this page, which stays mounted and visible behind them, and only a
  * room the server has created or joined moves the player on, to that room. The profile
- * summary and the player cards open profiles over the page as well. Room invitations the
- * user receives appear here too, each with Join and Dismiss.
+ * summary and the player cards open profiles over the page as well.
  */
 export function LobbyPage() {
   const { t } = useTranslation();
@@ -55,9 +52,6 @@ export function LobbyPage() {
       <div className={styles.column}>
         <header className={styles.header}>
           <ProfileMenu className={styles.profile} />
-          <span className={styles.chat}>
-            <ChatHeaderButton />
-          </span>
         </header>
 
         <img src={mascotArtwork} alt="" className={styles.mascot} />
@@ -128,7 +122,6 @@ export function LobbyPage() {
 
       {dialog === 'create' && <CreateRoomDialog onClose={closeDialog} />}
       {dialog === 'join' && <JoinRoomDialog onClose={closeDialog} />}
-      <RoomInvitations />
     </main>
   );
 }

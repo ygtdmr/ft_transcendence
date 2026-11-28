@@ -6,6 +6,7 @@
  */
 
 import { apiRequest } from '@shared/api';
+import { CORE_API_PATH } from '@shared/constants';
 import type {
   BlockResponse,
   Friend,
@@ -23,7 +24,7 @@ import type {
 const FRIEND_PAGE_LIMIT = 100;
 
 export const listFriends = (query: FriendListQuery = {}): Promise<FriendListResponse> =>
-  apiRequest('/friends', { query });
+  apiRequest(`${CORE_API_PATH}/friends`, { query });
 
 /**
  * The whole friend list, read page by page until `has_more` is false. Friendship is
@@ -40,36 +41,36 @@ export async function listAllFriends(): Promise<{ friends: Friend[]; friendCount
 }
 
 export const removeFriend = (userId: number): Promise<void> =>
-  apiRequest(`/friends/${userId}`, { method: 'DELETE' });
+  apiRequest(`${CORE_API_PATH}/friends/${userId}`, { method: 'DELETE' });
 
 export const sendFriendRequest = (body: SendFriendRequestBody): Promise<FriendRequest> =>
-  apiRequest('/friends/requests', { method: 'POST', body });
+  apiRequest(`${CORE_API_PATH}/friends/requests`, { method: 'POST', body });
 
 export const listFriendRequests = (): Promise<FriendRequestListResponse> =>
-  apiRequest('/friends/requests');
+  apiRequest(`${CORE_API_PATH}/friends/requests`);
 
 /** The recipient accepts; the answer is the new friend. */
 export const acceptFriendRequest = (requestId: number): Promise<Friend> =>
-  apiRequest(`/friends/requests/${requestId}/accept`, { method: 'POST' });
+  apiRequest(`${CORE_API_PATH}/friends/requests/${requestId}/accept`, { method: 'POST' });
 
 export const declineFriendRequest = (requestId: number): Promise<void> =>
-  apiRequest(`/friends/requests/${requestId}/decline`, { method: 'POST' });
+  apiRequest(`${CORE_API_PATH}/friends/requests/${requestId}/decline`, { method: 'POST' });
 
 /** The sender withdraws their own request before it is answered. */
 export const cancelFriendRequest = (requestId: number): Promise<void> =>
-  apiRequest(`/friends/requests/${requestId}`, { method: 'DELETE' });
+  apiRequest(`${CORE_API_PATH}/friends/requests/${requestId}`, { method: 'DELETE' });
 
 export const blockUser = (userId: number): Promise<BlockResponse> =>
-  apiRequest(`/users/${userId}/block`, { method: 'PUT' });
+  apiRequest(`${CORE_API_PATH}/users/${userId}/block`, { method: 'PUT' });
 
 export const unblockUser = (userId: number): Promise<void> =>
-  apiRequest(`/users/${userId}/block`, { method: 'DELETE' });
+  apiRequest(`${CORE_API_PATH}/users/${userId}/block`, { method: 'DELETE' });
 
 /** The signed-in user's relationship to `userId`, as the public profile reports it. */
 export const getRelationship = async (
   userId: number,
 ): Promise<Pick<PublicProfile, 'relationship' | 'friend_request_id'>> => {
-  const profile = await apiRequest<PublicProfile>(`/users/${userId}`);
+  const profile = await apiRequest<PublicProfile>(`${CORE_API_PATH}/users/${userId}`);
   return { relationship: profile.relationship, friend_request_id: profile.friend_request_id };
 };
 
@@ -78,4 +79,4 @@ export const searchUsers = (
   query: UserSearchQuery,
   signal?: AbortSignal,
 ): Promise<UserSearchResponse> =>
-  apiRequest('/users/search', { query, ...(signal ? { signal } : {}) });
+  apiRequest(`${CORE_API_PATH}/users/search`, { query, ...(signal ? { signal } : {}) });

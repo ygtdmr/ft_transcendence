@@ -19,7 +19,6 @@ import type {
   FriendRequest,
   FriendRequestListResponse,
   HealthResponse,
-  InviteFriendResponse,
   LoginResponse,
   MatchHistoryResponse,
   OwnProfile,
@@ -35,13 +34,12 @@ import type {
   AvatarPresetListResponse,
   UserSearchResponse,
 } from '@shared/types';
-import { CHAT_API_PATH, ROOM_API_PATH } from '@shared/constants';
+import { ROOM_API_PATH } from '@shared/constants';
 import {
   MockActionError,
-  MockChannelError,
   MockRoomServer,
-  mockChat,
   mockDirectory,
+  mockNotifications,
   mockRooms,
   mockSession,
 } from '@shared/websocket/mock';
@@ -145,15 +143,10 @@ interface MockRoomEntry {
 
 const ok = (data: unknown): MockResult => ({ status: 200, data });
 const created = (data: unknown): MockResult => ({ status: 201, data });
-const accepted = (data: unknown): MockResult => ({ status: 202, data });
 const noContent: MockResult = { status: 204 };
 
 const bodyOf = <T>(options: ApiRequestOptions): Partial<T> =>
   typeof options.body === 'object' && options.body !== null ? (options.body as Partial<T>) : {};
-
-/** A Chat REST v2 path under `CHAT_API_PATH`, e.g. `/v2/channels/7001/messages`. */
-const chatPattern = (suffix: string): RegExp =>
-  new RegExp(`^${CHAT_API_PATH.replace(/\//g, '\\/')}${suffix}$`);
 
 /** A Game REST v2 path under `ROOM_API_PATH`, e.g. `/v2/rooms/1001/members`. */
 const roomPattern = (suffix: string): RegExp =>
@@ -202,7 +195,6 @@ export class MockApiServer {
   /** When the signed-in user last reported each user, by reported user ID. */
   private reports = new Map<number, number>();
   private nextReportId = 9001;
-  private nextInviteId = 10;
   private readonly routes: Route[];
 
   constructor(config: MockApiConfig) {
@@ -210,9 +202,8 @@ export class MockApiServer {
     this.routes = this.buildRoutes();
     this.reset();
     mockSession.authorized = () => this.isAuthenticated();
-    // The mock Channel Service asks this server, as the real one asks User/Auth.
+    // The mock sockets ask this server about users, as the real gateways ask User/Auth.
     mockDirectory.selfId = () => this.sessionUserId ?? SELF_USER_ID;
-    mockDirectory.isFriend = (userId) => this.isActiveFriend(userId);
     mockDirectory.user = (userId) => {
       const account = this.accounts.find((a) => a.user_id === userId);
       return account
@@ -224,7 +215,6 @@ export class MockApiServer {
           }
         : null;
     };
-    mockDirectory.roomCode = (roomId) => this.rooms.get(roomId)?.code ?? null;
   }
 
   /** The access cookie expires; the next `401` refreshes it, as it would in production. */
@@ -273,17 +263,9 @@ export class MockApiServer {
       try {
         this.applyForcedOutcome(route);
         if (route.auth && !this.isAuthenticated()) throw unauthorized();
-        const response = this.respond(route.handle({ params: match.slice(1), options }));
-        // Room changes made over REST reach the mock Channel Service's lifecycle projection.
-        if (method !== 'GET') mockChat.syncRooms();
-        return response;
+        return this.respond(route.handle({ params: match.slice(1), options }));
       } catch (error) {
         if (error instanceof HttpError) return this.respondError(error);
-        if (error instanceof MockChannelError) {
-          return this.respondError(
-            new HttpError(error.status, error.code as RestErrorCode, error.message, error.details),
-          );
-        }
         throw error;
       }
     }
@@ -305,7 +287,7 @@ export class MockApiServer {
       return;
     }
     const request = this.addRequest(userId, me);
-    mockChat.notify('friend.request.received', { request: this.toRequest(request) });
+    mockNotifications.notify('friend.request.received', { request: this.toRequest(request) });
   }
 
   /** `userId` accepts the signed-in user's pending request. */
@@ -330,8 +312,7 @@ export class MockApiServer {
 
   /** `userId` blocks (or, with `false`, unblocks) the signed-in user. */
   blockedBy(userId: number, blocking = true): void {
-    if (blocking)
-      this.applyBlock(userId, () => this.blockedByIds.add(userId), 'FRIENDSHIP_REMOVED');
+    if (blocking) this.applyBlock(userId, () => this.blockedByIds.add(userId));
     else this.liftBlock(userId, () => this.blockedByIds.delete(userId));
   }
 
@@ -349,7 +330,7 @@ export class MockApiServer {
 
   /**
    * A confirmed username or avatar change reaches every view of the user: the members of
-   * their active room through `room.player.updated`, and on the chat socket the user's own
+   * their active room through `room.player.updated`, and on the notification socket the user's own
    * sessions, their friends and the other side of a pending request.
    */
   private profileChanged(
@@ -364,7 +345,7 @@ export class MockApiServer {
       relationship === null ||
       ['FRIENDS', 'REQUEST_SENT', 'REQUEST_RECEIVED'].includes(relationship)
     ) {
-      mockChat.notify('user.profile.updated', {
+      mockNotifications.notify('user.profile.updated', {
         user_id: account.user_id,
         username: account.username,
         avatar_url: account.avatar_url,
@@ -463,7 +444,7 @@ export class MockApiServer {
 
   private resolve(request: MockFriendRequest, status: 'DECLINED' | 'CANCELLED'): void {
     this.requests.delete(request.request_id);
-    mockChat.notify('friend.request.resolved', {
+    mockNotifications.notify('friend.request.resolved', {
       request_id: request.request_id,
       from_user_id: request.from_user_id,
       to_user_id: request.to_user_id,
@@ -477,14 +458,13 @@ export class MockApiServer {
     const other = this.otherOf(request);
     this.friendIds.add(other);
     const friend = this.toFriend(other);
-    mockChat.notify('friend.request.resolved', {
+    mockNotifications.notify('friend.request.resolved', {
       request_id: request.request_id,
       from_user_id: request.from_user_id,
       to_user_id: request.to_user_id,
       status: 'ACCEPTED',
       friend,
     });
-    mockChat.friendshipChanged(other, true);
     return friend;
   }
 
@@ -492,19 +472,14 @@ export class MockApiServer {
    * A block, either way: pending requests between the two users are cancelled and their
    * friendship is suspended, all in one step.
    */
-  private applyBlock(
-    userId: number,
-    add: () => void,
-    reason: 'USER_BLOCKED' | 'FRIENDSHIP_REMOVED',
-  ): void {
+  private applyBlock(userId: number, add: () => void): void {
     const wasFriend = this.isActiveFriend(userId);
     add();
     for (const request of [...this.requests.values()]) {
       if (this.otherOf(request) === userId) this.resolve(request, 'CANCELLED');
     }
     if (wasFriend) {
-      mockChat.notify('friend.removed', { user_id: userId });
-      mockChat.friendshipChanged(userId, false, reason);
+      mockNotifications.notify('friend.removed', { user_id: userId });
     }
   }
 
@@ -513,8 +488,7 @@ export class MockApiServer {
     const wasFriend = this.isActiveFriend(userId);
     remove();
     if (!wasFriend && this.isActiveFriend(userId)) {
-      mockChat.notify('friend.restored', { friend: this.toFriend(userId) });
-      mockChat.friendshipChanged(userId, true);
+      mockNotifications.notify('friend.restored', { friend: this.toFriend(userId) });
     }
   }
 
@@ -692,7 +666,7 @@ export class MockApiServer {
     const selfId = () => this.self().user_id;
 
     return [
-      route('health', 'GET', /^\/health$/, false, () =>
+      route('health', 'GET', /^\/v1\/health$/, false, () =>
         ok({
           status: 'OK',
           contract_version: '1.2.0-dev',
@@ -705,7 +679,7 @@ export class MockApiServer {
       route(
         'register',
         'POST',
-        /^\/auth\/register$/,
+        /^\/v1\/auth\/register$/,
         false,
         ({ options }) => {
           const body = bodyOf<{ email: string; username: string; password: string }>(options);
@@ -792,7 +766,7 @@ export class MockApiServer {
       route(
         'login',
         'POST',
-        /^\/auth\/login$/,
+        /^\/v1\/auth\/login$/,
         false,
         ({ options }) => {
           const body = bodyOf<{ email: string; password: string }>(options);
@@ -817,7 +791,7 @@ export class MockApiServer {
       route(
         'refresh',
         'POST',
-        /^\/auth\/refresh$/,
+        /^\/v1\/auth\/refresh$/,
         false,
         () => {
           if (this.sessionUserId === null || !this.refreshValid) {
@@ -840,7 +814,7 @@ export class MockApiServer {
         },
       ),
 
-      route('session', 'GET', /^\/auth\/session$/, true, () => {
+      route('session', 'GET', /^\/v1\/auth\/session$/, true, () => {
         const account = this.self();
         return ok({
           user: { user_id: account.user_id, username: account.username },
@@ -850,7 +824,7 @@ export class MockApiServer {
         } satisfies SessionResponse);
       }),
 
-      route('endSession', 'DELETE', /^\/auth\/session$/, true, () => {
+      route('endSession', 'DELETE', /^\/v1\/auth\/session$/, true, () => {
         const userId = selfId();
         const roomId = this.activeRoomId(userId);
         // Logout leaves the room; during a match it counts as leaving it.
@@ -862,7 +836,7 @@ export class MockApiServer {
 
       /* --------------------------- users and profile ------------------------- */
 
-      route('getOwnProfile', 'GET', /^\/users\/me$/, true, () => {
+      route('getOwnProfile', 'GET', /^\/v1\/users\/me$/, true, () => {
         const account = this.self();
         return ok(toOwnProfile(account, this.activeRoomId(account.user_id)) satisfies OwnProfile);
       }),
@@ -870,7 +844,7 @@ export class MockApiServer {
       route(
         'updateOwnProfile',
         'PATCH',
-        /^\/users\/me$/,
+        /^\/v1\/users\/me$/,
         true,
         ({ options }) => {
           const account = this.self();
@@ -923,7 +897,7 @@ export class MockApiServer {
       route(
         'deleteOwnAccount',
         'DELETE',
-        /^\/users\/me$/,
+        /^\/v1\/users\/me$/,
         true,
         ({ options }) => {
           const account = this.self();
@@ -966,7 +940,7 @@ export class MockApiServer {
       route(
         'reportUser',
         'POST',
-        /^\/users\/(\d+)\/reports$/,
+        /^\/v1\/users\/(\d+)\/reports$/,
         true,
         ({ params, options }) => {
           const reporterId = selfId();
@@ -1035,7 +1009,7 @@ export class MockApiServer {
         },
       ),
 
-      route('searchUsers', 'GET', /^\/users\/search$/, true, ({ options }) => {
+      route('searchUsers', 'GET', /^\/v1\/users\/search$/, true, ({ options }) => {
         const q = String(options.query?.q ?? '').trim();
         if (q.length < 1 || q.length > 20) throw validation('q must be 1..20 characters.', 'q');
         const limit = Number(options.query?.limit ?? 20);
@@ -1074,7 +1048,7 @@ export class MockApiServer {
         } satisfies UserSearchResponse);
       }),
 
-      route('matchHistory', 'GET', /^\/users\/me\/matches$/, true, ({ options }) => {
+      route('matchHistory', 'GET', /^\/v1\/users\/me\/matches$/, true, ({ options }) => {
         const limit = Number(options.query?.limit ?? 20);
         if (!Number.isInteger(limit) || limit < 1 || limit > 50) {
           throw validation('limit must be an integer from 1 through 50.', 'limit');
@@ -1089,7 +1063,7 @@ export class MockApiServer {
       route(
         'getPublicProfile',
         'GET',
-        /^\/users\/([^/]+)$/,
+        /^\/v1\/users\/([^/]+)$/,
         true,
         ({ params }) => {
           const userId = Number(params[0]);
@@ -1116,7 +1090,7 @@ export class MockApiServer {
       route(
         'uploadAvatar',
         'POST',
-        /^\/users\/me\/avatar$/,
+        /^\/v1\/users\/me\/avatar$/,
         true,
         ({ options }) => {
           const file = options.formData?.get('avatar');
@@ -1146,14 +1120,14 @@ export class MockApiServer {
         },
       ),
 
-      route('listAvatarPresets', 'GET', /^\/avatars\/presets$/, true, () =>
+      route('listAvatarPresets', 'GET', /^\/v1\/avatars\/presets$/, true, () =>
         ok({ presets: AVATAR_PRESETS } satisfies AvatarPresetListResponse),
       ),
 
       route(
         'selectAvatarPreset',
         'PUT',
-        /^\/users\/me\/avatar$/,
+        /^\/v1\/users\/me\/avatar$/,
         true,
         ({ options }) => {
           const { preset_id: presetId } = bodyOf<{ preset_id: string }>(options);
@@ -1181,7 +1155,7 @@ export class MockApiServer {
 
       /* --------------------------------- friends ----------------------------- */
 
-      route('listFriends', 'GET', /^\/friends$/, true, ({ options }) => {
+      route('listFriends', 'GET', /^\/v1\/friends$/, true, ({ options }) => {
         const limit = Number(options.query?.limit ?? 50);
         const offset = Number(options.query?.offset ?? 0);
         if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
@@ -1212,7 +1186,7 @@ export class MockApiServer {
         } satisfies FriendListResponse);
       }),
 
-      route('listFriendRequests', 'GET', /^\/friends\/requests$/, true, () => {
+      route('listFriendRequests', 'GET', /^\/v1\/friends\/requests$/, true, () => {
         const me = selfId();
         const newest = (a: MockFriendRequest, b: MockFriendRequest) =>
           b.created_at.localeCompare(a.created_at) || b.request_id - a.request_id;
@@ -1226,7 +1200,7 @@ export class MockApiServer {
       route(
         'sendFriendRequest',
         'POST',
-        /^\/friends\/requests$/,
+        /^\/v1\/friends\/requests$/,
         true,
         ({ options }) => {
           const me = selfId();
@@ -1260,7 +1234,7 @@ export class MockApiServer {
             );
           }
           const request = this.toRequest(this.addRequest(me, userId));
-          mockChat.notify('friend.request.received', { request });
+          mockNotifications.notify('friend.request.received', { request });
           return created(request);
         },
         {
@@ -1285,7 +1259,7 @@ export class MockApiServer {
       route(
         'acceptFriendRequest',
         'POST',
-        /^\/friends\/requests\/([^/]+)\/accept$/,
+        /^\/v1\/friends\/requests\/([^/]+)\/accept$/,
         true,
         ({ params }) => {
           const requestId = Number(params[0]);
@@ -1303,7 +1277,7 @@ export class MockApiServer {
       route(
         'declineFriendRequest',
         'POST',
-        /^\/friends\/requests\/([^/]+)\/decline$/,
+        /^\/v1\/friends\/requests\/([^/]+)\/decline$/,
         true,
         ({ params }) => {
           const requestId = Number(params[0]);
@@ -1320,7 +1294,7 @@ export class MockApiServer {
       route(
         'cancelFriendRequest',
         'DELETE',
-        /^\/friends\/requests\/([^/]+)$/,
+        /^\/v1\/friends\/requests\/([^/]+)$/,
         true,
         ({ params }) => {
           const requestId = Number(params[0]);
@@ -1344,7 +1318,7 @@ export class MockApiServer {
       route(
         'removeFriend',
         'DELETE',
-        /^\/friends\/([^/]+)$/,
+        /^\/v1\/friends\/([^/]+)$/,
         true,
         ({ params }) => {
           const userId = Number(params[0]);
@@ -1354,8 +1328,7 @@ export class MockApiServer {
             });
           }
           this.friendIds.delete(userId);
-          mockChat.notify('friend.removed', { user_id: userId });
-          mockChat.friendshipChanged(userId, false);
+          mockNotifications.notify('friend.removed', { user_id: userId });
           return noContent;
         },
         {
@@ -1369,14 +1342,14 @@ export class MockApiServer {
       route(
         'blockUser',
         'PUT',
-        /^\/users\/([^/]+)\/block$/,
+        /^\/v1\/users\/([^/]+)\/block$/,
         true,
         ({ params }) => {
           const userId = Number(params[0]);
           if (userId === selfId()) throw validation('You cannot block yourself.', 'user_id');
           this.requireUser(userId);
           if (!this.blockedIds.has(userId)) {
-            this.applyBlock(userId, () => this.blockedIds.add(userId), 'USER_BLOCKED');
+            this.applyBlock(userId, () => this.blockedIds.add(userId));
           }
           return ok({
             user_id: userId,
@@ -1393,7 +1366,7 @@ export class MockApiServer {
       route(
         'unblockUser',
         'DELETE',
-        /^\/users\/([^/]+)\/block$/,
+        /^\/v1\/users\/([^/]+)\/block$/,
         true,
         ({ params }) => {
           const userId = Number(params[0]);
@@ -1568,137 +1541,6 @@ export class MockApiServer {
         {
           'not-found': () => roomNotFound(9999),
           forbidden: () => notMember(1001, 47),
-        },
-      ),
-
-      route(
-        'inviteFriend',
-        'POST',
-        roomPattern('/([^/]+)/invites'),
-        true,
-        ({ params, options }) => {
-          const roomId = this.parseRoomId(params[0]);
-          const me = selfId();
-          const { user_id: userId } = bodyOf<{ user_id: number }>(options);
-          if (!isPositiveInt(userId) || userId === me) {
-            throw validation('user_id must be a positive integer other than your own.', 'user_id');
-          }
-          const server = this.requireRoom(roomId);
-          if (!server.hasMember(me)) throw notMember(roomId, me);
-          const friend = this.accounts.find((a) => a.user_id === userId);
-          if (!friend) {
-            throw new HttpError(404, 'USER_NOT_FOUND', `User ${userId} was not found.`, {
-              user_id: userId,
-            });
-          }
-          if (!this.isActiveFriend(userId)) {
-            throw new HttpError(404, 'NOT_FRIENDS', `User ${userId} is not a friend.`, {
-              user_id: userId,
-            });
-          }
-          const room = server.state();
-          if (room.status !== 'WAITING' || !server.joinable()) throw notJoinable(room);
-          if (room.player_count >= room.max_players) throw roomFull(room);
-          if (!friend.is_online) {
-            throw new HttpError(
-              409,
-              'USER_OFFLINE',
-              `User ${userId} has no active Chat Gateway v2 connection.`,
-              { user_id: userId },
-            );
-          }
-          if (this.activeRoomId(userId) !== null) {
-            throw new HttpError(
-              409,
-              'USER_IN_ROOM',
-              `User ${userId} already belongs to an active room.`,
-              {
-                user_id: userId,
-              },
-            );
-          }
-          const entry = this.rooms.get(roomId);
-          const acceptedAt = new Date();
-          return accepted({
-            invite_id: `inv_${String(this.nextInviteId++).padStart(4, '0')}`,
-            room_id: roomId,
-            room_code: entry?.code ?? room.room_code,
-            to_user_id: userId,
-            accepted_at: acceptedAt.toISOString(),
-            expires_at: new Date(acceptedAt.getTime() + 30_000).toISOString(),
-          } satisfies InviteFriendResponse);
-        },
-        {
-          forbidden: () => notMember(1001, 47),
-          'not-found': () =>
-            new HttpError(404, 'NOT_FRIENDS', 'User 9999 is not a friend.', { user_id: 9999 }),
-          conflict: () =>
-            new HttpError(
-              409,
-              'USER_OFFLINE',
-              'User 43 has no active Chat Gateway v2 connection.',
-              {
-                user_id: 43,
-              },
-            ),
-          'validation-error': () => validation('user_id must be a positive integer.', 'user_id'),
-        },
-      ),
-
-      /* ------------------------------ Chat REST v2 --------------------------- */
-
-      route('listChannels', 'GET', chatPattern(''), true, ({ options }) =>
-        ok(mockChat.listChannels({ limit: options.query?.limit, after: options.query?.after })),
-      ),
-
-      route(
-        'openDirectChannel',
-        'POST',
-        chatPattern('/direct'),
-        true,
-        ({ options }) => {
-          const { peer_user_id: peerUserId } = bodyOf<{ peer_user_id: number }>(options);
-          const { created: isNew, data } = mockChat.openDirect(peerUserId);
-          return isNew ? created(data) : ok(data);
-        },
-        {
-          forbidden: () =>
-            new HttpError(403, 'NOT_PERMITTED', 'Direct channels are available to friends only.', {
-              peer_user_id: 99,
-            }),
-          'not-found': () =>
-            new HttpError(404, 'USER_NOT_FOUND', 'User 9999 was not found.', { user_id: 9999 }),
-          'validation-error': () =>
-            validation('peer_user_id must be a positive integer.', 'peer_user_id'),
-        },
-      ),
-
-      route(
-        'messageHistory',
-        'GET',
-        chatPattern('/([^/]+)/messages'),
-        true,
-        ({ params, options }) => {
-          const channelId = Number(params[0]);
-          if (!Number.isInteger(channelId) || channelId <= 0) {
-            throw validation('channel_id must be a positive integer.', 'channel_id');
-          }
-          return ok(
-            mockChat.history(channelId, {
-              limit: options.query?.limit,
-              before: options.query?.before,
-            }),
-          );
-        },
-        {
-          forbidden: () =>
-            new HttpError(403, 'CHANNEL_ACCESS_REVOKED', 'Access to channel 7001 has ended.', {
-              channel_id: 7001,
-            }),
-          'not-found': () =>
-            new HttpError(404, 'CHANNEL_NOT_FOUND', 'Channel 9999 was not found.', {
-              channel_id: 9999,
-            }),
         },
       ),
     ];

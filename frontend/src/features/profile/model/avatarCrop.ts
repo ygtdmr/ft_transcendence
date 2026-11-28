@@ -99,7 +99,7 @@ export function sourceRect(image: ImageSize, viewport: number, crop: CropState) 
   return { sx: -crop.x / scale, sy: -crop.y / scale, size: viewport / scale };
 }
 
-/** Render the crop to a square file ready for `POST /api/users/me/avatar`. */
+/** Render the crop to a square file ready for `POST /api/v1/users/me/avatar`. */
 export async function exportAvatar(
   image: CanvasImageSource & ImageSize,
   viewport: number,

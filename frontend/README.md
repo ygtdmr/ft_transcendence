@@ -44,11 +44,11 @@ the seed data (see [Resetting mock state](docs/MOCKS.md#resetting-mock-state)).
 
 ## Development Modes
 
-| Mode                | How to activate                                                      | REST                                | Room and chat sockets               | Use                                                                  |
+| Mode                | How to activate                                                      | REST                                | Room and notification sockets       | Use                                                                  |
 | ------------------- | -------------------------------------------------------------------- | ----------------------------------- | ----------------------------------- | -------------------------------------------------------------------- |
 | Backend development | `npm run dev`, mock variables unset                                  | Real Gateway through the Vite proxy | Real Gateway through the Vite proxy | Integration with the backend                                         |
 | Full mock           | `npm run dev` with `VITE_MOCK_API=true` and `VITE_MOCK_SOCKETS=true` | In-memory mock                      | In-memory mock                      | Frontend work with no backend                                        |
-| Sockets-only mock   | `npm run dev` with only `VITE_MOCK_SOCKETS=true`                     | Real Gateway                        | In-memory mock                      | Real accounts, simulated rooms and chat                              |
+| Sockets-only mock   | `npm run dev` with only `VITE_MOCK_SOCKETS=true`                     | Real Gateway                        | In-memory mock                      | Real accounts, simulated rooms                                       |
 | REST-only mock      | `npm run dev` with only `VITE_MOCK_API=true`                         | In-memory mock                      | Real Gateway                        | Rarely useful: the mock session cookie does not exist on the Gateway |
 | Production build    | `npm run build`, then `npm run preview`                              | Same origin `/api`                  | Same origin `/ws`                   | Checking the shipped bundle                                          |
 
@@ -80,7 +80,7 @@ All variables are optional. `.env.example` lists each one.
 | `VITE_WS_BASE_PATH`       | `/ws`                   | All builds                                 | WebSocket prefix. Same rule                                                   |
 | `VITE_MOCK_API`           | unset                   | Development only                           | `true` answers every REST call from the mock REST server                      |
 | `VITE_MOCK_AUTH`          | `logged-in`             | Development only, with `VITE_MOCK_API`     | Initial mock session: `logged-in`, `logged-out`, `in-room`, `session-expired` |
-| `VITE_MOCK_SOCKETS`       | unset                   | Development only                           | `true` replaces the room and chat sockets with the mock servers               |
+| `VITE_MOCK_SOCKETS`       | unset                   | Development only                           | `true` replaces the room and notification sockets with the mock servers       |
 | `VITE_MOCK_ROOM_SCENARIO` | `room-waiting`          | Development only, with `VITE_MOCK_SOCKETS` | Scenario of a room socket for a room the mock REST server does not know       |
 
 `VITE_*` values are inlined into the bundle. Never put a secret in one. Authentication
@@ -121,14 +121,14 @@ Both console objects log a line when they install. Full reference:
 
 ## Development Tools
 
-| Tool                     | Access                                       | Purpose                                                                   |
-| ------------------------ | -------------------------------------------- | ------------------------------------------------------------------------- |
-| `mockApi`                | Browser console, `VITE_MOCK_API=true`        | Latency, forced REST errors, session expiry, reset                        |
-| `mockSockets`            | Browser console, `VITE_MOCK_SOCKETS=true`    | Other players, game moves, scenarios, drops, offline network, chat events |
-| `/ui`                    | <http://localhost:5173/ui>, development only | Gallery of the shared UI primitives                                       |
-| WebSocket frame log      | Console, development only                    | Every inbound and outbound frame (`devFlags.logWebSocketTraffic`)         |
-| REST error log           | Console, development only                    | Normalized REST failures (`devFlags.logApiErrors`)                        |
-| `[mock api]` debug lines | Console, Verbose level                       | One line per mocked REST call with its status                             |
+| Tool                     | Access                                       | Purpose                                                           |
+| ------------------------ | -------------------------------------------- | ----------------------------------------------------------------- |
+| `mockApi`                | Browser console, `VITE_MOCK_API=true`        | Latency, forced REST errors, session expiry, reset                |
+| `mockSockets`            | Browser console, `VITE_MOCK_SOCKETS=true`    | Other players, game moves, scenarios, drops, offline network      |
+| `/ui`                    | <http://localhost:5173/ui>, development only | Gallery of the shared UI primitives                               |
+| WebSocket frame log      | Console, development only                    | Every inbound and outbound frame (`devFlags.logWebSocketTraffic`) |
+| REST error log           | Console, development only                    | Normalized REST failures (`devFlags.logApiErrors`)                |
+| `[mock api]` debug lines | Console, Verbose level                       | One line per mocked REST call with its status                     |
 
 ### Browser DevTools
 

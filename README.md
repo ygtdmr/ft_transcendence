@@ -34,7 +34,7 @@ value. `src/shared/styles/README.md` documents the token names and the few value
 stay plain custom properties.
 
 Icons are Font Awesome SVGs behind one component, `shared/ui/Icon`. A screen passes a name
-from the project icon set (`<Icon name="chat" />`); the icon inherits the surrounding font
+from the project icon set (`<Icon name="players" />`); the icon inherits the surrounding font
 size and color, so `text-lg` and `text-primary` style it like text. `shared/ui/Icon/icons.ts`
 is the full set — a screen that needs a new icon adds it there first, which keeps the
 bundle to the icons actually used.
@@ -45,7 +45,7 @@ bundle to the icons actually used.
 src/
 ├── app/         router, providers, bootstrap, app-level mounts, connection owners
 ├── layouts/     PublicLayout, LobbyLayout, GameLayout, Footer
-├── features/    auth, lobby, room, game, profile, friends, chat, stats
+├── features/    auth, room, game, profile, friends, stats
 ├── shared/      api, websocket, stores, types, ui, constants, utils, styles, hooks
 └── assets/      icons, fonts, images
 ```
@@ -61,7 +61,7 @@ app  ->  layouts  ->  features  ->  shared
 
 - `shared/` never imports `app/`, `layouts/` or `features/`.
 - A feature never imports another feature. Cross-feature needs go through `shared/` or
-  an app-level mount point (the modal host, the chat mount).
+  an app-level mount point (the modal host, the connection providers).
 - UI components never call REST or WebSocket directly — always through a feature hook.
 
 The first two rules are enforced by ESLint (`no-restricted-imports`); the third is a
@@ -71,7 +71,9 @@ review rule.
 
 - REST and WebSocket contracts: the `bruno` branch (`collections/`). Rooms and
   games use the Game v2 contract as a pair: REST at `/api/v2/rooms` and the room socket
-  at `/ws/v2/rooms/{room_id}`. Chat uses Chat v2; identity, profile and friends use v1.
+  at `/ws/v2/rooms/{room_id}`. Identity, profile, friends and match history use v1 under
+  `/api/v1`. Social and profile events arrive on the notification socket at
+  `/ws/v2/notifications`.
 - Visual reference: the `ui-design` branch. Mockups are a visual reference for layout,
   color and typography. They are not a behavioral contract; where a mockup and the Bruno
   contract disagree, the contract wins.

@@ -149,21 +149,21 @@
 	},
 	"privacy": {
 		"title": "Privacy Policy",
-		"intro": "This page explains what Codenames Online stores about you, why it is stored, and how long it is kept. Codenames Online is a student project built for the 42 curriculum, and it only collects what it needs to run accounts, matches and chat.",
+		"intro": "This page explains what Codenames Online stores about you, why it is stored, and how long it is kept. Codenames Online is a student project built for the 42 curriculum, and it only collects what it needs to run accounts, matches and friends.",
 		"sections": [
 			{
 				"id": "what-we-store",
 				"title": "What we store",
 				"paragraphs": [
 					"Your account holds an email address, a username and a password. The password is never stored as plain text, only as a hash.",
-					"Your profile holds the avatar you pick from the preset set or upload. Playing matches adds your match history and the statistics derived from it, such as wins and losses. Using the social features adds your friend connections and the chat messages you send."
+					"Your profile holds the avatar you pick from the preset set or upload. Playing matches adds your match history and the statistics derived from it, such as wins and losses. Using the social features adds your friend connections, the players you block and the reports you file."
 				]
 			},
 			{
 				"id": "why-we-store-it",
 				"title": "Why we store it",
 				"paragraphs": [
-					"Account data signs you in and identifies you to other players. Match results power your profile, your match history and your statistics. Friend connections and messages run the friends list and chat.",
+					"Account data signs you in and identifies you to other players. Match results power your profile, your match history and your statistics. Friend connections run the friends list, and blocks and reports keep the game safe to play.",
 					"Your data is used only to run the game. Nothing is sold, rented or shared with advertisers."
 				]
 			},
@@ -184,11 +184,11 @@
 				]
 			},
 			{
-				"id": "chat-messages",
-				"title": "Chat messages",
+				"id": "google-services",
+				"title": "Google services",
 				"paragraphs": [
-					"Room chat and direct messages between friends are kept for a limited period set by the server. Each message is deleted when that period ends.",
-					"Room messages are visible only to the players in that room, and direct messages only to the two friends in the conversation."
+					"If you sign in with Google, Google shares your email address and an account identifier with the game. The game never receives your Google password.",
+					"The interface font is loaded from Google Fonts, so your browser sends your IP address to Google when the page loads."
 				]
 			},
 			{
@@ -203,7 +203,7 @@
 				"id": "how-long-we-keep-it",
 				"title": "How long we keep it",
 				"paragraphs": [
-					"Account, profile, friend and match data stay while your account exists and the project's server is running. Chat messages are deleted when their retention period ends, and live room data is deleted when the room closes."
+					"Account, profile, friend and match data stay while your account exists and the project's server is running. Live room data is deleted when the room closes."
 				]
 			},
 			{
@@ -211,14 +211,14 @@
 				"title": "Your choices",
 				"paragraphs": [
 					"You can change your username and your avatar at any time, add or remove friends, and switch the interface language.",
-					"Changing your email address or password and deleting your account are not available inside the game. To have your account and its data removed, contact the project team."
+					"You can delete your account and its data from Settings; this cannot be undone. Changing your email address or password is not available inside the game."
 				]
 			},
 			{
 				"id": "security",
 				"title": "Security",
 				"paragraphs": [
-					"Passwords are stored only as hashes, session cookies cannot be read by page scripts, and the deployed game is served over HTTPS. No system is perfectly secure, so avoid sharing sensitive personal information in your username, your avatar or your messages."
+					"Passwords are stored only as hashes, session cookies cannot be read by page scripts, and the deployed game is served over HTTPS. No system is perfectly secure, so avoid sharing sensitive personal information in your username or your avatar."
 				]
 			},
 			{
@@ -245,7 +245,7 @@
 				"id": "about-the-game",
 				"title": "About the game",
 				"paragraphs": [
-					"Codenames Online is a real-time multiplayer word game. It offers accounts, profiles, game rooms, friends, chat, match history and statistics.",
+					"Codenames Online is a real-time multiplayer word game. It offers accounts, profiles, game rooms, friends, match history and statistics.",
 					"It is an independent educational project inspired by the Codenames board game. It is not affiliated with, endorsed by or connected to Czech Games Edition or the Codenames brand."
 				]
 			},
@@ -265,10 +265,10 @@
 				]
 			},
 			{
-				"id": "chat-and-conduct",
-				"title": "Chat and conduct",
+				"id": "conduct",
+				"title": "Conduct",
 				"paragraphs": [
-					"Chat is for players in your room and for friends. Respect other players: harassment, hate speech, threats and spam are not allowed. You are responsible for the messages you send.",
+					"Respect other players: harassment, hate speech, threats and offensive usernames or avatars are not allowed.",
 					"Do not leave or stall matches on purpose to spoil them for others. A room host can remove players from the room outside a running match."
 				]
 			},
@@ -284,7 +284,7 @@
 				"id": "your-content",
 				"title": "Your content",
 				"paragraphs": [
-					"Your username, your avatar and your messages stay yours. The game stores only what it needs to run a match, show a profile and deliver chat, as described in the Privacy Policy."
+					"Your username and your avatar stay yours. The game stores only what it needs to run a match and show a profile, as described in the Privacy Policy."
 				]
 			},
 			{
@@ -299,7 +299,7 @@
 				"id": "changes-and-ending-use",
 				"title": "Changes and ending use",
 				"paragraphs": [
-					"These terms can change as the game develops, and the date at the top of this page shows the current version. You can stop using the game at any time. To have your account removed, contact the project team."
+					"These terms can change as the game develops, and the date at the top of this page shows the current version. You can stop using the game at any time, and you can delete your account from Settings."
 				]
 			},
 			{
@@ -586,14 +586,6 @@
 			"insufficientPlayers": "The room closed: a team stayed without a player it needed. The match didn't count.",
 			"seatUnavailable": "The match resumed before you took a seat, so you left the room."
 		},
-		"invites": {
-			"title": "{{username}} invited you to play",
-			"body": "Room code",
-			"join": "Join",
-			"joining": "Joining…",
-			"dismiss": "Dismiss",
-			"closed": "This room has closed."
-		},
 		"settings": {
 			"timer": "Turn timer",
 			"language": "Language",
@@ -808,27 +800,6 @@
 			"cancel": "Cancel Request",
 			"cancelling": "Cancelling…"
 		},
-		"message": "Message",
-		"invite": {
-			"button": {
-				"READY": "Invite",
-				"FAILED": "Invite",
-				"SENDING": "Inviting…",
-				"SENT": "Invite Sent",
-				"UNAVAILABLE": "Invite"
-			},
-			"sent": "Invite sent. {{username}} can join your room from the invitation.",
-			"failed": "The invite couldn't be sent. Try again.",
-			"reason": {
-				"NO_ACTIVE_ROOM": "Join or create a room to invite {{username}}.",
-				"ROOM_NOT_JOINABLE": "Your game has started. Invites work while the room is waiting for players.",
-				"ROOM_FULL": "Your room is full.",
-				"IN_YOUR_ROOM": "{{username}} is already in your room.",
-				"OFFLINE": "{{username}} is offline. Invite is available when they are online.",
-				"IN_ROOM": "{{username}} is already in another room.",
-				"NOT_FRIENDS": "Add {{username}} as a friend to invite them."
-			}
-		},
 		"notFound": {
 			"title": "Player not found",
 			"body": "This account is no longer available."
@@ -897,124 +868,7 @@
 			"blocking": "Blocking…",
 			"unblock": "Unblock User",
 			"unblocking": "Unblocking…",
-			"hint": "You blocked {{username}}. You can't message, invite or befriend each other until you unblock them."
-		}
-	},
-	"chat": {
-		"launcher": {
-			"title": "Chat",
-			"label": "Open chat",
-			"labelUnread_one": "Open chat, {{count}} new message",
-			"labelUnread_other": "Open chat, {{count}} new messages",
-			"caption_one": "{{count}} new message",
-			"caption_other": "{{count}} new messages",
-			"captionNone": "No new messages"
-		},
-		"panel": {
-			"title": "Chats",
-			"close": "Close chat",
-			"back": "Back to chats"
-		},
-		"search": {
-			"label": "Search friends",
-			"placeholder": "Search friends"
-		},
-		"tabs": {
-			"label": "Conversations",
-			"ROOM": "Room",
-			"FRIENDS": "Friends"
-		},
-		"sections": {
-			"room": "In this room",
-			"friends": "Friends"
-		},
-		"room": {
-			"name": "Room chat",
-			"code": "Room {{code}}",
-			"preparing": "Room chat is getting ready…",
-			"closed": "Room chat is closed"
-		},
-		"list": {
-			"loading": "Loading chats…",
-			"channelsError": "Couldn't load your chats.",
-			"friendsError": "Couldn't load your friends.",
-			"noRoom": "Join a room to chat with its players.",
-			"noFriends": "Add friends to chat with them here.",
-			"noResults": "No one matches “{{query}}”.",
-			"noMessages": "No messages yet",
-			"fromYou": "You: {{text}}",
-			"fromPlayer": "{{name}}: {{text}}",
-			"addFriend": "Add as friend to start chatting",
-			"opening": "Opening chat…",
-			"openFailed": "Couldn't open this chat. Try again.",
-			"unread_one": "{{count}} new message",
-			"unread_other": "{{count}} new messages"
-		},
-		"presence": {
-			"online": "Online",
-			"offline": "Offline"
-		},
-		"age": {
-			"now": "now",
-			"MINUTES": "{{count}}m",
-			"HOURS": "{{count}}h",
-			"DAYS": "{{count}}d"
-		},
-		"day": {
-			"today": "Today",
-			"yesterday": "Yesterday"
-		},
-		"thread": {
-			"label": "Messages",
-			"loading": "Loading messages…",
-			"error": "Couldn't load these messages.",
-			"empty": "No messages yet. Say hi!",
-			"emptyRoom": "No messages yet. Say hi to your room!",
-			"olderLoading": "Loading earlier messages…",
-			"olderFailed": "Couldn't load earlier messages.",
-			"newMessages": "New messages",
-			"newFrom": "New message from {{name}}",
-			"newMessage": "New message",
-			"you": "You:"
-		},
-		"composer": {
-			"label": "Message",
-			"placeholder": "Write a message…",
-			"send": "Send message",
-			"offline": "Reconnecting… you can send again in a moment.",
-			"tooLong": "Messages can be up to {{max}} characters.",
-			"count": "{{count}}/{{max}}"
-		},
-		"pending": {
-			"sending": "Sending…",
-			"retry": "Retry",
-			"discard": "Remove",
-			"failed": {
-				"OFFLINE": "Not sent: you're offline.",
-				"TIMEOUT": "Not sent yet: the server didn't answer.",
-				"UNAVAILABLE": "Not sent: chat is unavailable right now.",
-				"REVOKED": "Not sent: you can't message this chat anymore.",
-				"INVALID": "Not sent: the message was rejected.",
-				"READ_ONLY": "Not sent: chat is unavailable while the game is active."
-			}
-		},
-		"access": {
-			"direct": "You're no longer friends. Add them as a friend to chat again.",
-			"viewProfile": "View profile",
-			"room": {
-				"default": "You can't use this room chat anymore.",
-				"GAME_FINISHED": "Room chat closed when the game ended.",
-				"ROOM_LEFT": "You left this room, so its chat is closed.",
-				"KICKED_BY_HOST": "You were removed from this room, so its chat is closed.",
-				"POST_GAME_TIMEOUT": "Room chat closed after the game.",
-				"ROOM_CLOSED": "This room has closed."
-			},
-			"gameRunning": "Chat is unavailable while the game is active. It opens again when the game is paused or over."
-		},
-		"unknownPlayer": "Player",
-		"retry": "Try again",
-		"invite": {
-			"label": "Invite {{username}} to your room"
+			"hint": "You blocked {{username}}. You can't befriend each other until you unblock them."
 		}
 	},
 	"settings": {
@@ -1095,7 +949,7 @@
 		"deleteAccount": {
 			"button": "Delete account",
 			"title": "Delete Account?",
-			"body": "This permanently deletes your account, profile, friends, statistics and messages. It can't be undone.",
+			"body": "This permanently deletes your account, profile, friends and statistics. It can't be undone.",
 			"inMatch": "You're playing in a match. Deleting your account removes you from it. If your team is left short and nobody takes your seat in time, the room closes.",
 			"confirmLabel": "Type <name>{{username}}</name> to confirm",
 			"confirmHint": "Your username, exactly as it appears in your profile.",

@@ -1,7 +1,7 @@
 /**
  * The signed-in user's own profile, from the shared own-profile store.
  *
- * The first view that asks reads `GET /api/users/me`; every other view shares that read
+ * The first view that asks reads `GET /api/v1/users/me`; every other view shares that read
  * and every later change Settings makes. Until the profile arrives, or if it fails, the
  * session's username is still known, so the profile menu never goes blank.
  */

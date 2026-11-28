@@ -17,6 +17,13 @@ export const API_BASE_PATH = import.meta.env.VITE_API_BASE_PATH ?? '/api';
 export const WS_BASE_PATH = import.meta.env.VITE_WS_BASE_PATH ?? '/ws';
 
 /**
+ * Version segment of the shared v1 contract: Auth (`/api/v1/auth/*`), profiles, avatars,
+ * search, reports, blocks, friends and match history. The refresh cookie is scoped to
+ * `/api/v1/auth/refresh`, so these calls must keep the version in their path.
+ */
+export const CORE_API_PATH = '/v1';
+
+/**
  * Game v2 version segment. Rooms and games use one contract as a pair: REST at
  * `/api/v2/rooms` with the room socket at `/ws/v2/rooms/{room_id}`. A session never mixes
  * it with the v1 room contract.
@@ -31,16 +38,10 @@ export const wsRoomPath = (roomId: number): string =>
   `${WS_BASE_PATH}/${GAME_API_VERSION}/rooms/${roomId}`;
 
 /**
- * Chat v2 version segment. Chat is its own versioned contract (`chatApiVersion`): its
- * REST calls go to `/api/v2/channels` and its socket to Chat Gateway at `/ws/v2/channels`.
+ * Per-user Notification Gateway socket (`notificationApiVersion` v2), independent of any
+ * room. It carries social and profile events and keeps the user online.
  */
-export const CHAT_API_VERSION = 'v2';
-
-/** Chat REST prefix, relative to `API_BASE_PATH`. */
-export const CHAT_API_PATH = `/${CHAT_API_VERSION}/channels`;
-
-/** Per-user Chat Gateway socket, independent of any room. */
-export const WS_CHAT_PATH = `${WS_BASE_PATH}/${CHAT_API_VERSION}/channels`;
+export const WS_NOTIFICATIONS_PATH = `${WS_BASE_PATH}/v2/notifications`;
 
 /** Absolute `ws(s)://` URL for a same-origin socket path. */
 export function toWebSocketUrl(path: string): string {

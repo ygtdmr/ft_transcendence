@@ -11,7 +11,7 @@
  */
 
 import { apiRequest } from '@shared/api';
-import { API_BASE_PATH } from '@shared/constants';
+import { API_BASE_PATH, CORE_API_PATH } from '@shared/constants';
 import type {
   LoginRequest,
   LoginResponse,
@@ -22,14 +22,14 @@ import type {
 } from '@shared/types';
 
 export const registerAccount = (body: RegisterRequest): Promise<RegisterResponse> =>
-  apiRequest('/auth/register', { method: 'POST', body, skipRefresh: true });
+  apiRequest(`${CORE_API_PATH}/auth/register`, { method: 'POST', body, skipRefresh: true });
 
 export const login = (body: LoginRequest): Promise<LoginResponse> =>
-  apiRequest('/auth/login', { method: 'POST', body, skipRefresh: true });
+  apiRequest(`${CORE_API_PATH}/auth/login`, { method: 'POST', body, skipRefresh: true });
 
 /** Rotates `ft_refresh` and reissues both cookies. Never retried through the refresh hook. */
 export const refreshSession = (): Promise<RefreshResponse> =>
-  apiRequest('/auth/refresh', { method: 'POST', skipRefresh: true });
+  apiRequest(`${CORE_API_PATH}/auth/refresh`, { method: 'POST', skipRefresh: true });
 
 /**
  * The route-recovery bootstrap read: `active_room_id` here is authoritative, not the URL.
@@ -37,7 +37,8 @@ export const refreshSession = (): Promise<RefreshResponse> =>
  * Refresh is deliberately left enabled — a reload with an expired `ft_session` but a
  * live `ft_refresh` must recover the session rather than drop the user to Login.
  */
-export const fetchSession = (): Promise<SessionResponse> => apiRequest('/auth/session');
+export const fetchSession = (): Promise<SessionResponse> =>
+  apiRequest(`${CORE_API_PATH}/auth/session`);
 
 /**
  * Where "Continue with Google" sends the browser. It is a top-level navigation, not a
@@ -46,10 +47,11 @@ export const fetchSession = (): Promise<SessionResponse> => apiRequest('/auth/se
  * `?oauth_error=<code>`. The frontend never holds a Google token or client secret.
  */
 export const googleSignInUrl = (returnTo: string): string =>
-  `${API_BASE_PATH}/auth/oauth/google/authorize?${new URLSearchParams({ return_to: returnTo })}`;
+  `${API_BASE_PATH}${CORE_API_PATH}/auth/oauth/google/authorize?${new URLSearchParams({ return_to: returnTo })}`;
 
 /**
  * Revokes both credentials. Legal in every room status; during a running match it counts
  * as the player leaving it.
  */
-export const endSession = (): Promise<void> => apiRequest('/auth/session', { method: 'DELETE' });
+export const endSession = (): Promise<void> =>
+  apiRequest(`${CORE_API_PATH}/auth/session`, { method: 'DELETE' });

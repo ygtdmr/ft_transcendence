@@ -10,7 +10,7 @@ export type LogOutStatus = 'IDLE' | 'PENDING' | 'FAILED';
 /**
  * Log Out, from Settings.
  *
- *   DELETE /api/auth/session -> clear private state -> anonymous session -> Landing
+ *   DELETE /api/v1/auth/session -> clear private state -> anonymous session -> Landing
  *
  * The server revokes both session cookies, closes this session's sockets and, during a
  * match the user plays in, counts it as leaving the match (a leave penalty); the account,

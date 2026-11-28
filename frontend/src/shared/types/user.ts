@@ -5,7 +5,7 @@
 
 import type { RoomApiVersion } from './auth';
 
-/** `GET /api/users/me`, `PATCH /api/users/me`. */
+/** `GET /api/v1/users/me`, `PATCH /api/v1/users/me`. */
 export interface OwnProfile {
   user_id: number;
   username: string;
@@ -29,7 +29,7 @@ export interface OwnProfile {
  */
 export type Relationship = 'NONE' | 'REQUEST_SENT' | 'REQUEST_RECEIVED' | 'FRIENDS' | 'BLOCKED';
 
-/** `GET /api/users/{user_id}`. */
+/** `GET /api/v1/users/{user_id}`. */
 export interface PublicProfile {
   user_id: number;
   username: string;
@@ -45,22 +45,22 @@ export interface PublicProfile {
 }
 
 /**
- * Username rule shared by Register and `PATCH /api/users/me`: trimmed, 3–20 letters,
+ * Username rule shared by Register and `PATCH /api/v1/users/me`: trimmed, 3–20 letters,
  * digits or underscores. Uniqueness is case-insensitive and only the server can check it.
  */
 export const USERNAME_PATTERN = /^[A-Za-z0-9_]{3,20}$/;
 
-/** `PATCH /api/users/me` request body — `username` omitted means unchanged. */
+/** `PATCH /api/v1/users/me` request body — `username` omitted means unchanged. */
 export interface UpdateOwnProfileRequest {
   username?: string;
 }
 
-/** `POST /api/users/me/avatar` (multipart, field name `avatar`). */
+/** `POST /api/v1/users/me/avatar` (multipart, field name `avatar`). */
 export interface UploadAvatarResponse {
   avatar_url: string;
 }
 
-/** `GET /api/avatars/presets` entry — a ready-made avatar. */
+/** `GET /api/v1/avatars/presets` entry — a ready-made avatar. */
 export interface AvatarPreset {
   preset_id: string;
   avatar_url: string;
@@ -70,17 +70,17 @@ export interface AvatarPresetListResponse {
   presets: AvatarPreset[];
 }
 
-/** `PUT /api/users/me/avatar` body; the response is `UploadAvatarResponse`. */
+/** `PUT /api/v1/users/me/avatar` body; the response is `UploadAvatarResponse`. */
 export interface SelectAvatarPresetRequest {
   preset_id: string;
 }
 
-/** `DELETE /api/users/me` body: the current username, typed as confirmation. */
+/** `DELETE /api/v1/users/me` body: the current username, typed as confirmation. */
 export interface DeleteOwnAccountRequest {
   confirm_username: string;
 }
 
-/** Report categories for `POST /api/users/{user_id}/reports`. */
+/** Report categories for `POST /api/v1/users/{user_id}/reports`. */
 export const REPORT_REASONS = [
   'HARASSMENT',
   'CHEATING',
@@ -94,7 +94,7 @@ export type ReportReason = (typeof REPORT_REASONS)[number];
 /** Longest `details` text a report accepts, after trimming. */
 export const REPORT_DETAILS_MAX = 500;
 
-/** `POST /api/users/{user_id}/reports` body. */
+/** `POST /api/v1/users/{user_id}/reports` body. */
 export interface ReportUserRequest {
   reason: ReportReason;
   details?: string;
@@ -109,7 +109,7 @@ export interface ReportUserResponse {
   created_at: string;
 }
 
-/** `GET /api/friends` entry, and the `Accept friend request` response body. */
+/** `GET /api/v1/friends` entry, and the `Accept friend request` response body. */
 export interface Friend {
   user_id: number;
   username: string;
@@ -117,7 +117,7 @@ export interface Friend {
   is_online: boolean;
 }
 
-/** `GET /api/friends` — one page, ordered case-insensitively by `username`, then `user_id`. */
+/** `GET /api/v1/friends` — one page, ordered case-insensitively by `username`, then `user_id`. */
 export interface FriendListResponse {
   friend_count: number;
   /** Applied page size, `1..100`. */
@@ -130,7 +130,7 @@ export interface FriendListResponse {
 }
 
 /**
- * `GET /api/friends` query parameters. A type alias, like `MatchHistoryQuery`, so it can
+ * `GET /api/v1/friends` query parameters. A type alias, like `MatchHistoryQuery`, so it can
  * be passed straight to the REST client's `query` option.
  */
 export type FriendListQuery = {
@@ -140,7 +140,7 @@ export type FriendListQuery = {
   offset?: number;
 };
 
-/** `POST /api/friends/requests` body. */
+/** `POST /api/v1/friends/requests` body. */
 export interface SendFriendRequestBody {
   user_id: number;
 }
@@ -152,7 +152,7 @@ export interface FriendRequestUser {
   avatar_url: string;
 }
 
-/** A pending friend request: `POST /api/friends/requests` and `GET /api/friends/requests`. */
+/** A pending friend request: `POST /api/v1/friends/requests` and `GET /api/v1/friends/requests`. */
 export interface FriendRequest {
   request_id: number;
   from_user: FriendRequestUser;
@@ -161,19 +161,19 @@ export interface FriendRequest {
   created_at: string;
 }
 
-/** `GET /api/friends/requests`, newest first in each list. */
+/** `GET /api/v1/friends/requests`, newest first in each list. */
 export interface FriendRequestListResponse {
   incoming: FriendRequest[];
   outgoing: FriendRequest[];
 }
 
-/** `PUT /api/users/{user_id}/block` response. */
+/** `PUT /api/v1/users/{user_id}/block` response. */
 export interface BlockResponse {
   user_id: number;
   blocked_at: string;
 }
 
-/** `GET /api/users/search?q=` result entry. */
+/** `GET /api/v1/users/search?q=` result entry. */
 export interface UserSearchResult {
   user_id: number;
   username: string;
@@ -183,7 +183,7 @@ export interface UserSearchResult {
 }
 
 /**
- * `GET /api/users/search` — one page of matches, ranked by username prefix, then
+ * `GET /api/v1/users/search` — one page of matches, ranked by username prefix, then
  * case-insensitive username, then `user_id`.
  */
 export interface UserSearchResponse {
@@ -196,7 +196,7 @@ export interface UserSearchResponse {
   has_more: boolean;
 }
 
-/** `GET /api/users/search` query parameters. */
+/** `GET /api/v1/users/search` query parameters. */
 export type UserSearchQuery = {
   /** Trimmed, `1..20` characters, matched case-insensitively anywhere in the username. */
   q: string;
