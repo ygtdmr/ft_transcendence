@@ -1,0 +1,156 @@
+package config
+
+import (
+	"errors"
+	"net"
+	"os"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+
+	"game-session/room"
+)
+
+type Config struct {
+	DatabaseURL           string
+	Port                  int
+	PublicHost            string
+	InternalPort          int
+	InternalHost          string
+	TickInterval          time.Duration
+	Penalty               *room.PenaltyConfig
+	ServiceTokens         map[string]string
+	UserServiceURL        string
+	UserServiceCredential string
+}
+
+func loadServiceTokens() (map[string]string, error) {
+	tokens := map[string]string{}
+	for serviceName, envName := range map[string]string{
+		"auth-service": "AUTH_SERVICE_CREDENTIAL_FILE",
+		"user-service": "USER_SERVICE_CREDENTIAL_FILE",
+		"game-gateway": "GAME_GATEWAY_CREDENTIAL_FILE",
+	} {
+		path := os.Getenv(envName)
+		if path == "" {
+			continue
+		}
+		content, err := os.ReadFile(path)
+		if err != nil {
+			return nil, errors.New(envName + " could not be read: " + err.Error())
+		}
+		tokens[serviceName] = strings.TrimSpace(string(content))
+	}
+	return tokens, nil
+}
+
+func loadUserServiceConfig(cfg *Config) error {
+	cfg.UserServiceURL = strings.TrimRight(os.Getenv("USER_SERVICE_INTERNAL_URL"), "/")
+	if cfg.UserServiceURL == "" {
+		return errors.New("USER_SERVICE_INTERNAL_URL is required")
+	}
+	credentialPath := os.Getenv("GAME_TO_USER_SERVICE_CREDENTIAL_FILE")
+	if credentialPath == "" {
+		return errors.New("GAME_TO_USER_SERVICE_CREDENTIAL_FILE is required")
+	}
+	credential, err := os.ReadFile(credentialPath)
+	if err != nil {
+		return errors.New("GAME_TO_USER_SERVICE_CREDENTIAL_FILE could not be read: " + err.Error())
+	}
+	cfg.UserServiceCredential = strings.TrimSpace(string(credential))
+	if cfg.UserServiceCredential == "" {
+		return errors.New("GAME_TO_USER_SERVICE_CREDENTIAL_FILE is empty")
+	}
+	return nil
+}
+
+// env isimleri Furkan'ın shared/config paketi merge olunca ona göre güncellenecek
+func Load() (Config, error) {
+	cfg := Config{
+		DatabaseURL:   os.Getenv("DATABASE_URL"),
+		Port:          8083,
+		InternalPort:  8093,
+		TickInterval:  time.Second,
+		ServiceTokens: map[string]string{},
+	}
+	if cfg.DatabaseURL == "" {
+		return Config{}, errors.New("DATABASE_URL is required")
+	}
+	if raw := os.Getenv("PORT"); raw != "" {
+		port, err := strconv.Atoi(raw)
+		if err != nil || port <= 0 || port > 65535 {
+			return Config{}, errors.New("PORT must be a number between 1 and 65535")
+		}
+		cfg.Port = port
+	}
+	if raw := os.Getenv("INTERNAL_PORT"); raw != "" {
+		port, err := strconv.Atoi(raw)
+		if err != nil || port <= 0 || port > 65535 {
+			return Config{}, errors.New("INTERNAL_PORT must be a number between 1 and 65535")
+		}
+		cfg.InternalPort = port
+	}
+	cfg.InternalHost = strings.TrimSpace(os.Getenv("INTERNAL_HOST"))
+	if cfg.InternalHost != "" && !validListenHost(cfg.InternalHost) {
+		return Config{}, errors.New("INTERNAL_HOST must be a host name or an IP address, without a port")
+	}
+	cfg.PublicHost = strings.TrimSpace(os.Getenv("PUBLIC_HOST"))
+	if cfg.PublicHost != "" && !validListenHost(cfg.PublicHost) {
+		return Config{}, errors.New("PUBLIC_HOST must be a host name or an IP address, without a port")
+	}
+	if raw := os.Getenv("TICK_INTERVAL"); raw != "" {
+		interval, err := time.ParseDuration(raw)
+		if err != nil || interval <= 0 {
+			return Config{}, errors.New("TICK_INTERVAL must be a positive duration like 1s")
+		}
+		cfg.TickInterval = interval
+	}
+	if err := loadUserServiceConfig(&cfg); err != nil {
+		return Config{}, err
+	}
+	serviceTokens, err := loadServiceTokens()
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.ServiceTokens = serviceTokens
+	penalty, err := room.PenaltyConfigFromEnv(os.Getenv)
+	if err == nil {
+		cfg.Penalty = &penalty
+	} else if !errors.Is(err, room.ErrPenaltyNotConfigured) {
+		return Config{}, err
+	}
+	return cfg, nil
+}
+
+// PublicAddress returns the address the public listener binds to, PUBLIC_HOST
+// joined with PORT. The public room routes take the acting user from X-User-Id
+// and check no credential, so a deployment sets PUBLIC_HOST to the container's
+// address on the one network it shares with the Web BFF: no other container can
+// then connect to that port, even one that shares the private network. Empty
+// listens on every interface, for local runs only.
+func (cfg Config) PublicAddress() string {
+	return net.JoinHostPort(cfg.PublicHost, strconv.Itoa(cfg.Port))
+}
+
+// InternalAddress returns the address the private listener binds to,
+// INTERNAL_HOST joined with INTERNAL_PORT. A deployment sets INTERNAL_HOST to the
+// container's address on the private service network, so the reverse proxy's
+// network cannot reach the private routes. Empty listens on every interface, for
+// local runs only.
+func (cfg Config) InternalAddress() string {
+	return net.JoinHostPort(cfg.InternalHost, strconv.Itoa(cfg.InternalPort))
+}
+
+// hostLabels matches a DNS host name (underscores allowed: Compose service names).
+var hostLabels = regexp.MustCompile(`^(?i)[a-z0-9_]([a-z0-9_-]{0,61}[a-z0-9_])?(\.[a-z0-9_]([a-z0-9_-]{0,61}[a-z0-9_])?)*$`)
+
+// validListenHost reports whether host is an IP address or a DNS host name,
+// without a port. Game Session does not import backend/shared, so it carries the
+// same rule as the one shared/config applies to INTERNAL_HOST.
+func validListenHost(host string) bool {
+	if net.ParseIP(host) != nil {
+		return true
+	}
+	return len(host) <= 253 && hostLabels.MatchString(host)
+}

@@ -1,0 +1,4 @@
+BEGIN;
+DROP TABLE room_members;
+DROP TABLE rooms;
+COMMIT;

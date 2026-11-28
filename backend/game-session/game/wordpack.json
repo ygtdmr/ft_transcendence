@@ -1,0 +1,3204 @@
+{
+    "words": [
+        {
+            "key": "africa",
+            "translations": {
+                "en": "AFRICA",
+                "tr": "AFRİKA",
+                "fr": "AFRIQUE"
+            }
+        },
+        {
+            "key": "agent",
+            "translations": {
+                "en": "AGENT",
+                "tr": "AJAN",
+                "fr": "AGENT"
+            }
+        },
+        {
+            "key": "air",
+            "translations": {
+                "en": "AIR",
+                "tr": "HAVA",
+                "fr": "AIR"
+            }
+        },
+        {
+            "key": "alien",
+            "translations": {
+                "en": "ALIEN",
+                "tr": "UZAYLI",
+                "fr": "ALIEN"
+            }
+        },
+        {
+            "key": "alps",
+            "translations": {
+                "en": "ALPS",
+                "tr": "ALPLER",
+                "fr": "ALPES"
+            }
+        },
+        {
+            "key": "amazon",
+            "translations": {
+                "en": "AMAZON",
+                "tr": "AMAZON",
+                "fr": "AMAZONE"
+            }
+        },
+        {
+            "key": "ambulance",
+            "translations": {
+                "en": "AMBULANCE",
+                "tr": "AMBULANS",
+                "fr": "AMBULANCE"
+            }
+        },
+        {
+            "key": "america",
+            "translations": {
+                "en": "AMERICA",
+                "tr": "AMERİKA",
+                "fr": "AMÉRIQUE"
+            }
+        },
+        {
+            "key": "angel",
+            "translations": {
+                "en": "ANGEL",
+                "tr": "MELEK",
+                "fr": "ANGE"
+            }
+        },
+        {
+            "key": "antarctica",
+            "translations": {
+                "en": "ANTARCTICA",
+                "tr": "ANTARKTİKA",
+                "fr": "ANTARCTIQUE"
+            }
+        },
+        {
+            "key": "apple",
+            "translations": {
+                "en": "APPLE",
+                "tr": "ELMA",
+                "fr": "POMME"
+            }
+        },
+        {
+            "key": "arm",
+            "translations": {
+                "en": "ARM",
+                "tr": "KOL",
+                "fr": "BRAS"
+            }
+        },
+        {
+            "key": "atlantis",
+            "translations": {
+                "en": "ATLANTIS",
+                "tr": "ATLANTİS",
+                "fr": "ATLANTIDE"
+            }
+        },
+        {
+            "key": "australia",
+            "translations": {
+                "en": "AUSTRALIA",
+                "tr": "AVUSTRALYA",
+                "fr": "AUSTRALIE"
+            }
+        },
+        {
+            "key": "aztec",
+            "translations": {
+                "en": "AZTEC",
+                "tr": "AZTEK",
+                "fr": "AZTÈQUE"
+            }
+        },
+        {
+            "key": "back",
+            "translations": {
+                "en": "BACK",
+                "tr": "ARKA",
+                "fr": "DOS"
+            }
+        },
+        {
+            "key": "ball",
+            "translations": {
+                "en": "BALL",
+                "tr": "TOP",
+                "fr": "BALLE"
+            }
+        },
+        {
+            "key": "band",
+            "translations": {
+                "en": "BAND",
+                "tr": "BANDO",
+                "fr": "GROUPE"
+            }
+        },
+        {
+            "key": "bank",
+            "translations": {
+                "en": "BANK",
+                "tr": "BANKA",
+                "fr": "BANQUE"
+            }
+        },
+        {
+            "key": "bar",
+            "translations": {
+                "en": "BAR",
+                "tr": "BAR",
+                "fr": "BAR"
+            }
+        },
+        {
+            "key": "bark",
+            "translations": {
+                "en": "BARK",
+                "tr": "KABUK",
+                "fr": "ÉCORCE"
+            }
+        },
+        {
+            "key": "bat",
+            "translations": {
+                "en": "BAT",
+                "tr": "YASAURA",
+                "fr": "CHAUVE-SOURIS"
+            }
+        },
+        {
+            "key": "battery",
+            "translations": {
+                "en": "BATTERY",
+                "tr": "PİL",
+                "fr": "PILE"
+            }
+        },
+        {
+            "key": "beach",
+            "translations": {
+                "en": "BEACH",
+                "tr": "PLAJ",
+                "fr": "PLAGE"
+            }
+        },
+        {
+            "key": "bear",
+            "translations": {
+                "en": "BEAR",
+                "tr": "AYI",
+                "fr": "OURS"
+            }
+        },
+        {
+            "key": "beat",
+            "translations": {
+                "en": "BEAT",
+                "tr": "RİTİM",
+                "fr": "BATTEMENT"
+            }
+        },
+        {
+            "key": "bed",
+            "translations": {
+                "en": "BED",
+                "tr": "YATAK",
+                "fr": "LIT"
+            }
+        },
+        {
+            "key": "beijing",
+            "translations": {
+                "en": "BEIJING",
+                "tr": "PEKİN",
+                "fr": "PÉKIN"
+            }
+        },
+        {
+            "key": "bell",
+            "translations": {
+                "en": "BELL",
+                "tr": "ZİL",
+                "fr": "CLOCHE"
+            }
+        },
+        {
+            "key": "belt",
+            "translations": {
+                "en": "BELT",
+                "tr": "KEMER",
+                "fr": "CEINTURE"
+            }
+        },
+        {
+            "key": "berlin",
+            "translations": {
+                "en": "BERLIN",
+                "tr": "BERLİN",
+                "fr": "BERLIN"
+            }
+        },
+        {
+            "key": "bermuda",
+            "translations": {
+                "en": "BERMUDA",
+                "tr": "BERMUDA",
+                "fr": "BERMUDES"
+            }
+        },
+        {
+            "key": "berry",
+            "translations": {
+                "en": "BERRY",
+                "tr": "DUT",
+                "fr": "BAIE"
+            }
+        },
+        {
+            "key": "bill",
+            "translations": {
+                "en": "BILL",
+                "tr": "FATURA",
+                "fr": "FACTURE"
+            }
+        },
+        {
+            "key": "block",
+            "translations": {
+                "en": "BLOCK",
+                "tr": "BLOK",
+                "fr": "BLOC"
+            }
+        },
+        {
+            "key": "board",
+            "translations": {
+                "en": "BOARD",
+                "tr": "TAHTA",
+                "fr": "PLANCHE"
+            }
+        },
+        {
+            "key": "bolt",
+            "translations": {
+                "en": "BOLT",
+                "tr": "CİVATA",
+                "fr": "BOULON"
+            }
+        },
+        {
+            "key": "bomb",
+            "translations": {
+                "en": "BOMB",
+                "tr": "BOMBA",
+                "fr": "BOMBE"
+            }
+        },
+        {
+            "key": "bond",
+            "translations": {
+                "en": "BOND",
+                "tr": "BAĞ",
+                "fr": "LIEN"
+            }
+        },
+        {
+            "key": "boom",
+            "translations": {
+                "en": "BOOM",
+                "tr": "PATLAMA",
+                "fr": "BOOM"
+            }
+        },
+        {
+            "key": "boot",
+            "translations": {
+                "en": "BOOT",
+                "tr": "ÇİZME",
+                "fr": "BOTTE"
+            }
+        },
+        {
+            "key": "bottle",
+            "translations": {
+                "en": "BOTTLE",
+                "tr": "ŞİŞE",
+                "fr": "BOUTEILLE"
+            }
+        },
+        {
+            "key": "bow",
+            "translations": {
+                "en": "BOW",
+                "tr": "YAY",
+                "fr": "ARC"
+            }
+        },
+        {
+            "key": "box",
+            "translations": {
+                "en": "BOX",
+                "tr": "KUTU",
+                "fr": "BOÎTE"
+            }
+        },
+        {
+            "key": "bridge",
+            "translations": {
+                "en": "BRIDGE",
+                "tr": "KÖPRÜ",
+                "fr": "PONT"
+            }
+        },
+        {
+            "key": "brush",
+            "translations": {
+                "en": "BRUSH",
+                "tr": "FIRÇA",
+                "fr": "BROSSE"
+            }
+        },
+        {
+            "key": "buck",
+            "translations": {
+                "en": "BUCK",
+                "tr": "ERKEK GEYİK",
+                "fr": "CERF"
+            }
+        },
+        {
+            "key": "buffalo",
+            "translations": {
+                "en": "BUFFALO",
+                "tr": "MANDA",
+                "fr": "BUFFLE"
+            }
+        },
+        {
+            "key": "bug",
+            "translations": {
+                "en": "BUG",
+                "tr": "BÖCEK",
+                "fr": "INSECTE"
+            }
+        },
+        {
+            "key": "bugle",
+            "translations": {
+                "en": "BUGLE",
+                "tr": "BORAZAN",
+                "fr": "CLAIRON"
+            }
+        },
+        {
+            "key": "button",
+            "translations": {
+                "en": "BUTTON",
+                "tr": "DÜĞME",
+                "fr": "BOUTON"
+            }
+        },
+        {
+            "key": "calf",
+            "translations": {
+                "en": "CALF",
+                "tr": "BUZAĞI",
+                "fr": "VEAU"
+            }
+        },
+        {
+            "key": "canada",
+            "translations": {
+                "en": "CANADA",
+                "tr": "KANADA",
+                "fr": "CANADA"
+            }
+        },
+        {
+            "key": "cap",
+            "translations": {
+                "en": "CAP",
+                "tr": "ŞAPKA",
+                "fr": "CASQUETTE"
+            }
+        },
+        {
+            "key": "capital",
+            "translations": {
+                "en": "CAPITAL",
+                "tr": "BAŞKENT",
+                "fr": "CAPITALE"
+            }
+        },
+        {
+            "key": "car",
+            "translations": {
+                "en": "CAR",
+                "tr": "ARABA",
+                "fr": "VOITURE"
+            }
+        },
+        {
+            "key": "card",
+            "translations": {
+                "en": "CARD",
+                "tr": "KART",
+                "fr": "CARTE"
+            }
+        },
+        {
+            "key": "carrot",
+            "translations": {
+                "en": "CARROT",
+                "tr": "HAVUÇ",
+                "fr": "CAROTTE"
+            }
+        },
+        {
+            "key": "casino",
+            "translations": {
+                "en": "CASINO",
+                "tr": "KAZİNO",
+                "fr": "CASINO"
+            }
+        },
+        {
+            "key": "cast",
+            "translations": {
+                "en": "CAST",
+                "tr": "ALÇI",
+                "fr": "MOULE"
+            }
+        },
+        {
+            "key": "cat",
+            "translations": {
+                "en": "CAT",
+                "tr": "KEDİ",
+                "fr": "CHAT"
+            }
+        },
+        {
+            "key": "cell",
+            "translations": {
+                "en": "CELL",
+                "tr": "HÜCRE",
+                "fr": "CELLULE"
+            }
+        },
+        {
+            "key": "centaur",
+            "translations": {
+                "en": "CENTAUR",
+                "tr": "KENTAUROS",
+                "fr": "CENTAURE"
+            }
+        },
+        {
+            "key": "center",
+            "translations": {
+                "en": "CENTER",
+                "tr": "MERKEZ",
+                "fr": "CENTRE"
+            }
+        },
+        {
+            "key": "chair",
+            "translations": {
+                "en": "CHAIR",
+                "tr": "SANDALYE",
+                "fr": "CHAISE"
+            }
+        },
+        {
+            "key": "change",
+            "translations": {
+                "en": "CHANGE",
+                "tr": "DEĞİŞİKLİK",
+                "fr": "CHANGEMENT"
+            }
+        },
+        {
+            "key": "charge",
+            "translations": {
+                "en": "CHARGE",
+                "tr": "ŞARJ",
+                "fr": "CHARGE"
+            }
+        },
+        {
+            "key": "check",
+            "translations": {
+                "en": "CHECK",
+                "tr": "KONTROL",
+                "fr": "CHÈQUE"
+            }
+        },
+        {
+            "key": "chest",
+            "translations": {
+                "en": "CHEST",
+                "tr": "GÖĞÜS",
+                "fr": "POITRINE"
+            }
+        },
+        {
+            "key": "chick",
+            "translations": {
+                "en": "CHICK",
+                "tr": "CIVCIV",
+                "fr": "POUSSIN"
+            }
+        },
+        {
+            "key": "china",
+            "translations": {
+                "en": "CHINA",
+                "tr": "ÇİN",
+                "fr": "CHINE"
+            }
+        },
+        {
+            "key": "chocolate",
+            "translations": {
+                "en": "CHOCOLATE",
+                "tr": "ÇİKOLATA",
+                "fr": "CHOCOLAT"
+            }
+        },
+        {
+            "key": "church",
+            "translations": {
+                "en": "CHURCH",
+                "tr": "KİLİSE",
+                "fr": "ÉGLISE"
+            }
+        },
+        {
+            "key": "circle",
+            "translations": {
+                "en": "CIRCLE",
+                "tr": "DAİRE",
+                "fr": "CERCLE"
+            }
+        },
+        {
+            "key": "cliff",
+            "translations": {
+                "en": "CLIFF",
+                "tr": "UÇURUM",
+                "fr": "FALAISE"
+            }
+        },
+        {
+            "key": "cloak",
+            "translations": {
+                "en": "CLOAK",
+                "tr": "PELERİN",
+                "fr": "CAPE"
+            }
+        },
+        {
+            "key": "club",
+            "translations": {
+                "en": "CLUB",
+                "tr": "KULÜP",
+                "fr": "CLUB"
+            }
+        },
+        {
+            "key": "code",
+            "translations": {
+                "en": "CODE",
+                "tr": "KOD",
+                "fr": "CODE"
+            }
+        },
+        {
+            "key": "cold",
+            "translations": {
+                "en": "COLD",
+                "tr": "SOĞUK",
+                "fr": "FROID"
+            }
+        },
+        {
+            "key": "comic",
+            "translations": {
+                "en": "COMIC",
+                "tr": "ÇİZGİ ROMAN",
+                "fr": "BANDE DESSINÉE"
+            }
+        },
+        {
+            "key": "compound",
+            "translations": {
+                "en": "COMPOUND",
+                "tr": "BİLEŞİK",
+                "fr": "COMPOSÉ"
+            }
+        },
+        {
+            "key": "concert",
+            "translations": {
+                "en": "CONCERT",
+                "tr": "KONSER",
+                "fr": "CONCERT"
+            }
+        },
+        {
+            "key": "conductor",
+            "translations": {
+                "en": "CONDUCTOR",
+                "tr": "ORKESTRA ŞEFİ",
+                "fr": "CHEF D'ORCHESTRE"
+            }
+        },
+        {
+            "key": "contract",
+            "translations": {
+                "en": "CONTRACT",
+                "tr": "SÖZLEŞME",
+                "fr": "CONTRAT"
+            }
+        },
+        {
+            "key": "cook",
+            "translations": {
+                "en": "COOK",
+                "tr": "AŞÇI",
+                "fr": "CUISINIER"
+            }
+        },
+        {
+            "key": "copper",
+            "translations": {
+                "en": "COPPER",
+                "tr": "BAKIR",
+                "fr": "CUIVRE"
+            }
+        },
+        {
+            "key": "cotton",
+            "translations": {
+                "en": "COTTON",
+                "tr": "PAMUK",
+                "fr": "COTON"
+            }
+        },
+        {
+            "key": "court",
+            "translations": {
+                "en": "COURT",
+                "tr": "MAHKEME",
+                "fr": "TRIBUNAL"
+            }
+        },
+        {
+            "key": "cover",
+            "translations": {
+                "en": "COVER",
+                "tr": "KAPAK",
+                "fr": "COUVERTURE"
+            }
+        },
+        {
+            "key": "crane",
+            "translations": {
+                "en": "CRANE",
+                "tr": "VİNÇ",
+                "fr": "GRUE"
+            }
+        },
+        {
+            "key": "crash",
+            "translations": {
+                "en": "CRASH",
+                "tr": "KAZA",
+                "fr": "CRASH"
+            }
+        },
+        {
+            "key": "cricket",
+            "translations": {
+                "en": "CRICKET",
+                "tr": "CRİCKET",
+                "fr": "CRICKET"
+            }
+        },
+        {
+            "key": "cross",
+            "translations": {
+                "en": "CROSS",
+                "tr": "HAÇ",
+                "fr": "CROIX"
+            }
+        },
+        {
+            "key": "crown",
+            "translations": {
+                "en": "CROWN",
+                "tr": "TAÇ",
+                "fr": "COURONNE"
+            }
+        },
+        {
+            "key": "cycle",
+            "translations": {
+                "en": "CYCLE",
+                "tr": "DÖNGÜ",
+                "fr": "CYCLE"
+            }
+        },
+        {
+            "key": "czech",
+            "translations": {
+                "en": "CZECH",
+                "tr": "ÇEK",
+                "fr": "TCHÈQUE"
+            }
+        },
+        {
+            "key": "dance",
+            "translations": {
+                "en": "DANCE",
+                "tr": "DANS",
+                "fr": "DANSE"
+            }
+        },
+        {
+            "key": "date",
+            "translations": {
+                "en": "DATE",
+                "tr": "TARİH",
+                "fr": "DATE"
+            }
+        },
+        {
+            "key": "day",
+            "translations": {
+                "en": "DAY",
+                "tr": "GÜN",
+                "fr": "JOUR"
+            }
+        },
+        {
+            "key": "death",
+            "translations": {
+                "en": "DEATH",
+                "tr": "ÖLÜM",
+                "fr": "MORT"
+            }
+        },
+        {
+            "key": "deck",
+            "translations": {
+                "en": "DECK",
+                "tr": "GÜVERTE",
+                "fr": "PONT"
+            }
+        },
+        {
+            "key": "degree",
+            "translations": {
+                "en": "DEGREE",
+                "tr": "DERECE",
+                "fr": "DEGRÉ"
+            }
+        },
+        {
+            "key": "diamond",
+            "translations": {
+                "en": "DIAMOND",
+                "tr": "ELMAS",
+                "fr": "DIAMANT"
+            }
+        },
+        {
+            "key": "dice",
+            "translations": {
+                "en": "DICE",
+                "tr": "ZAR",
+                "fr": "DÉ"
+            }
+        },
+        {
+            "key": "dinosaur",
+            "translations": {
+                "en": "DINOSAUR",
+                "tr": "DİNOZOR",
+                "fr": "DINOSAURE"
+            }
+        },
+        {
+            "key": "disease",
+            "translations": {
+                "en": "DISEASE",
+                "tr": "HASTALIK",
+                "fr": "MALADIE"
+            }
+        },
+        {
+            "key": "doctor",
+            "translations": {
+                "en": "DOCTOR",
+                "tr": "DOKTOR",
+                "fr": "DOCTEUR"
+            }
+        },
+        {
+            "key": "dog",
+            "translations": {
+                "en": "DOG",
+                "tr": "KÖPEK",
+                "fr": "CHIEN"
+            }
+        },
+        {
+            "key": "draft",
+            "translations": {
+                "en": "DRAFT",
+                "tr": "TASLAK",
+                "fr": "BROUILLON"
+            }
+        },
+        {
+            "key": "dragon",
+            "translations": {
+                "en": "DRAGON",
+                "tr": "EJDERHA",
+                "fr": "DRAGON"
+            }
+        },
+        {
+            "key": "dress",
+            "translations": {
+                "en": "DRESS",
+                "tr": "ELBİSE",
+                "fr": "ROBE"
+            }
+        },
+        {
+            "key": "drill",
+            "translations": {
+                "en": "DRILL",
+                "tr": "MATKAP",
+                "fr": "PERCEUSE"
+            }
+        },
+        {
+            "key": "drop",
+            "translations": {
+                "en": "DROP",
+                "tr": "DAMLA",
+                "fr": "GOUTTE"
+            }
+        },
+        {
+            "key": "duck",
+            "translations": {
+                "en": "DUCK",
+                "tr": "ÖRDEK",
+                "fr": "CANARD"
+            }
+        },
+        {
+            "key": "dwarf",
+            "translations": {
+                "en": "DWARF",
+                "tr": "CÜCE",
+                "fr": "NAIN"
+            }
+        },
+        {
+            "key": "eagle",
+            "translations": {
+                "en": "EAGLE",
+                "tr": "KARTAL",
+                "fr": "AIGLE"
+            }
+        },
+        {
+            "key": "egypt",
+            "translations": {
+                "en": "EGYPT",
+                "tr": "MISIR",
+                "fr": "ÉGYPTE"
+            }
+        },
+        {
+            "key": "embassy",
+            "translations": {
+                "en": "EMBASSY",
+                "tr": "BÜYÜKELÇİLİK",
+                "fr": "AMBASSADE"
+            }
+        },
+        {
+            "key": "engine",
+            "translations": {
+                "en": "ENGINE",
+                "tr": "MOTOR",
+                "fr": "MOTEUR"
+            }
+        },
+        {
+            "key": "england",
+            "translations": {
+                "en": "ENGLAND",
+                "tr": "İNGİLTERE",
+                "fr": "ANGLETERRE"
+            }
+        },
+        {
+            "key": "europe",
+            "translations": {
+                "en": "EUROPE",
+                "tr": "AVRUPA",
+                "fr": "EUROPE"
+            }
+        },
+        {
+            "key": "eye",
+            "translations": {
+                "en": "EYE",
+                "tr": "GÖZ",
+                "fr": "ŒIL"
+            }
+        },
+        {
+            "key": "face",
+            "translations": {
+                "en": "FACE",
+                "tr": "YÜZ",
+                "fr": "VISAGE"
+            }
+        },
+        {
+            "key": "fair",
+            "translations": {
+                "en": "FAIR",
+                "tr": "PANAYIR",
+                "fr": "FOIRE"
+            }
+        },
+        {
+            "key": "fall",
+            "translations": {
+                "en": "FALL",
+                "tr": "SONBAHAR",
+                "fr": "AUTOMNE"
+            }
+        },
+        {
+            "key": "fan",
+            "translations": {
+                "en": "FAN",
+                "tr": "YELPAZE",
+                "fr": "EVENTAIL"
+            }
+        },
+        {
+            "key": "fence",
+            "translations": {
+                "en": "FENCE",
+                "tr": "ÇİT",
+                "fr": "CLÔTURE"
+            }
+        },
+        {
+            "key": "field",
+            "translations": {
+                "en": "FIELD",
+                "tr": "TARLA",
+                "fr": "CHAMP"
+            }
+        },
+        {
+            "key": "fighter",
+            "translations": {
+                "en": "FIGHTER",
+                "tr": "SAVAŞÇI",
+                "fr": "COMBATTANT"
+            }
+        },
+        {
+            "key": "figure",
+            "translations": {
+                "en": "FIGURE",
+                "tr": "FİGÜR",
+                "fr": "FIGURE"
+            }
+        },
+        {
+            "key": "file",
+            "translations": {
+                "en": "FILE",
+                "tr": "DOSYA",
+                "fr": "FICHIER"
+            }
+        },
+        {
+            "key": "film",
+            "translations": {
+                "en": "FILM",
+                "tr": "FİLM",
+                "fr": "FILM"
+            }
+        },
+        {
+            "key": "fire",
+            "translations": {
+                "en": "FIRE",
+                "tr": "ATEŞ",
+                "fr": "FEU"
+            }
+        },
+        {
+            "key": "fish",
+            "translations": {
+                "en": "FISH",
+                "tr": "BALIK",
+                "fr": "POISSON"
+            }
+        },
+        {
+            "key": "flute",
+            "translations": {
+                "en": "FLUTE",
+                "tr": "FLÜT",
+                "fr": "FLÛTE"
+            }
+        },
+        {
+            "key": "fly",
+            "translations": {
+                "en": "FLY",
+                "tr": "SİNEK",
+                "fr": "MOUCHE"
+            }
+        },
+        {
+            "key": "foot",
+            "translations": {
+                "en": "FOOT",
+                "tr": "AYAK",
+                "fr": "PIED"
+            }
+        },
+        {
+            "key": "force",
+            "translations": {
+                "en": "FORCE",
+                "tr": "KUVVET",
+                "fr": "FORCE"
+            }
+        },
+        {
+            "key": "forest",
+            "translations": {
+                "en": "FOREST",
+                "tr": "ORMAN",
+                "fr": "FORÊT"
+            }
+        },
+        {
+            "key": "fork",
+            "translations": {
+                "en": "FORK",
+                "tr": "ÇATAL",
+                "fr": "FOURCHETTE"
+            }
+        },
+        {
+            "key": "france",
+            "translations": {
+                "en": "FRANCE",
+                "tr": "FRANSA",
+                "fr": "FRANCE"
+            }
+        },
+        {
+            "key": "game",
+            "translations": {
+                "en": "GAME",
+                "tr": "OYUN",
+                "fr": "JEU"
+            }
+        },
+        {
+            "key": "gas",
+            "translations": {
+                "en": "GAS",
+                "tr": "GAZ",
+                "fr": "GAZ"
+            }
+        },
+        {
+            "key": "genius",
+            "translations": {
+                "en": "GENIUS",
+                "tr": "DÂHİ",
+                "fr": "GÉNIE"
+            }
+        },
+        {
+            "key": "germany",
+            "translations": {
+                "en": "GERMANY",
+                "tr": "ALMANYA",
+                "fr": "ALLEMAGNE"
+            }
+        },
+        {
+            "key": "ghost",
+            "translations": {
+                "en": "GHOST",
+                "tr": "HAYALET",
+                "fr": "FANTÔME"
+            }
+        },
+        {
+            "key": "giant",
+            "translations": {
+                "en": "GIANT",
+                "tr": "DEV",
+                "fr": "GÉANT"
+            }
+        },
+        {
+            "key": "glass",
+            "translations": {
+                "en": "GLASS",
+                "tr": "CAM",
+                "fr": "VERRE"
+            }
+        },
+        {
+            "key": "glove",
+            "translations": {
+                "en": "GLOVE",
+                "tr": "ELDİVEN",
+                "fr": "GANT"
+            }
+        },
+        {
+            "key": "gold",
+            "translations": {
+                "en": "GOLD",
+                "tr": "ALTIN",
+                "fr": "OR"
+            }
+        },
+        {
+            "key": "grace",
+            "translations": {
+                "en": "GRACE",
+                "tr": "ZARAFET",
+                "fr": "GRÂCE"
+            }
+        },
+        {
+            "key": "grass",
+            "translations": {
+                "en": "GRASS",
+                "tr": "ÇİM",
+                "fr": "HERBE"
+            }
+        },
+        {
+            "key": "greece",
+            "translations": {
+                "en": "GREECE",
+                "tr": "YUNANİSTAN",
+                "fr": "GRÈCE"
+            }
+        },
+        {
+            "key": "green",
+            "translations": {
+                "en": "GREEN",
+                "tr": "YEŞİL",
+                "fr": "VERT"
+            }
+        },
+        {
+            "key": "ground",
+            "translations": {
+                "en": "GROUND",
+                "tr": "ZEMİN",
+                "fr": "SOL"
+            }
+        },
+        {
+            "key": "ham",
+            "translations": {
+                "en": "HAM",
+                "tr": "JAMBON",
+                "fr": "JAMBON"
+            }
+        },
+        {
+            "key": "hand",
+            "translations": {
+                "en": "HAND",
+                "tr": "EL",
+                "fr": "MAIN"
+            }
+        },
+        {
+            "key": "hawk",
+            "translations": {
+                "en": "HAWK",
+                "tr": "ŞAHİN",
+                "fr": "FAUCON"
+            }
+        },
+        {
+            "key": "head",
+            "translations": {
+                "en": "HEAD",
+                "tr": "BAŞ",
+                "fr": "TÊTE"
+            }
+        },
+        {
+            "key": "heart",
+            "translations": {
+                "en": "HEART",
+                "tr": "KALP",
+                "fr": "CŒUR"
+            }
+        },
+        {
+            "key": "helicopter",
+            "translations": {
+                "en": "HELICOPTER",
+                "tr": "HELİKOPTER",
+                "fr": "HÉLICOPTÈRE"
+            }
+        },
+        {
+            "key": "himalayas",
+            "translations": {
+                "en": "HIMALAYAS",
+                "tr": "HİMALAYALAR",
+                "fr": "HIMALAYA"
+            }
+        },
+        {
+            "key": "hole",
+            "translations": {
+                "en": "HOLE",
+                "tr": "DELİK",
+                "fr": "TROU"
+            }
+        },
+        {
+            "key": "hollywood",
+            "translations": {
+                "en": "HOLLYWOOD",
+                "tr": "HOLLYWOOD",
+                "fr": "HOLLYWOOD"
+            }
+        },
+        {
+            "key": "honey",
+            "translations": {
+                "en": "HONEY",
+                "tr": "BAL",
+                "fr": "MIEL"
+            }
+        },
+        {
+            "key": "hood",
+            "translations": {
+                "en": "HOOD",
+                "tr": "KAPÜŞON",
+                "fr": "CAPUCHE"
+            }
+        },
+        {
+            "key": "hook",
+            "translations": {
+                "en": "HOOK",
+                "tr": "KANCA",
+                "fr": "CROCHET"
+            }
+        },
+        {
+            "key": "horn",
+            "translations": {
+                "en": "HORN",
+                "tr": "BOYNUZ",
+                "fr": "CORNE"
+            }
+        },
+        {
+            "key": "horse",
+            "translations": {
+                "en": "HORSE",
+                "tr": "AT",
+                "fr": "CHEVAL"
+            }
+        },
+        {
+            "key": "horseshoe",
+            "translations": {
+                "en": "HORSESHOE",
+                "tr": "NAL",
+                "fr": "FER À CHEVAL"
+            }
+        },
+        {
+            "key": "hospital",
+            "translations": {
+                "en": "HOSPITAL",
+                "tr": "HASTANE",
+                "fr": "HÔPITAL"
+            }
+        },
+        {
+            "key": "hotel",
+            "translations": {
+                "en": "HOTEL",
+                "tr": "OTEL",
+                "fr": "HÔTEL"
+            }
+        },
+        {
+            "key": "ice",
+            "translations": {
+                "en": "ICE",
+                "tr": "BUZ",
+                "fr": "GLACE"
+            }
+        },
+        {
+            "key": "ice cream",
+            "translations": {
+                "en": "ICE CREAM",
+                "tr": "DONDURMA",
+                "fr": "GLACE"
+            }
+        },
+        {
+            "key": "india",
+            "translations": {
+                "en": "INDIA",
+                "tr": "HİNDİSTAN",
+                "fr": "INDE"
+            }
+        },
+        {
+            "key": "iron",
+            "translations": {
+                "en": "IRON",
+                "tr": "DEMİR",
+                "fr": "FER"
+            }
+        },
+        {
+            "key": "ivory",
+            "translations": {
+                "en": "IVORY",
+                "tr": "FİLDİŞİ",
+                "fr": "IVOIRE"
+            }
+        },
+        {
+            "key": "jack",
+            "translations": {
+                "en": "JACK",
+                "tr": "KRİKO",
+                "fr": "CRIC"
+            }
+        },
+        {
+            "key": "jam",
+            "translations": {
+                "en": "JAM",
+                "tr": "REÇEL",
+                "fr": "CONFITURE"
+            }
+        },
+        {
+            "key": "jet",
+            "translations": {
+                "en": "JET",
+                "tr": "JET",
+                "fr": "JET"
+            }
+        },
+        {
+            "key": "jupiter",
+            "translations": {
+                "en": "JUPITER",
+                "tr": "JÜPİTER",
+                "fr": "JUPITER"
+            }
+        },
+        {
+            "key": "kangaroo",
+            "translations": {
+                "en": "KANGAROO",
+                "tr": "KANGURU",
+                "fr": "KANGOUROU"
+            }
+        },
+        {
+            "key": "ketchup",
+            "translations": {
+                "en": "KETCHUP",
+                "tr": "KETÇAP",
+                "fr": "KETCHUP"
+            }
+        },
+        {
+            "key": "key",
+            "translations": {
+                "en": "KEY",
+                "tr": "ANAHTAR",
+                "fr": "CLÉ"
+            }
+        },
+        {
+            "key": "kid",
+            "translations": {
+                "en": "KID",
+                "tr": "ÇOCUK",
+                "fr": "ENFANT"
+            }
+        },
+        {
+            "key": "king",
+            "translations": {
+                "en": "KING",
+                "tr": "KRAL",
+                "fr": "ROI"
+            }
+        },
+        {
+            "key": "kiwi",
+            "translations": {
+                "en": "KIWI",
+                "tr": "KİVİ",
+                "fr": "KIWI"
+            }
+        },
+        {
+            "key": "knife",
+            "translations": {
+                "en": "KNIFE",
+                "tr": "BIÇAK",
+                "fr": "COUTEAU"
+            }
+        },
+        {
+            "key": "knight",
+            "translations": {
+                "en": "KNIGHT",
+                "tr": "ŞÖVALYE",
+                "fr": "CHEVALIER"
+            }
+        },
+        {
+            "key": "lab",
+            "translations": {
+                "en": "LAB",
+                "tr": "LABORATUVAR",
+                "fr": "LABO"
+            }
+        },
+        {
+            "key": "lap",
+            "translations": {
+                "en": "LAP",
+                "tr": "KUCAK",
+                "fr": "GENOUX"
+            }
+        },
+        {
+            "key": "laser",
+            "translations": {
+                "en": "LASER",
+                "tr": "LAZER",
+                "fr": "LASER"
+            }
+        },
+        {
+            "key": "lawyer",
+            "translations": {
+                "en": "LAWYER",
+                "tr": "AVUKAT",
+                "fr": "AVOCAT"
+            }
+        },
+        {
+            "key": "lead",
+            "translations": {
+                "en": "LEAD",
+                "tr": "KURŞUN",
+                "fr": "PLOMB"
+            }
+        },
+        {
+            "key": "lemon",
+            "translations": {
+                "en": "LEMON",
+                "tr": "LİMON",
+                "fr": "CITRON"
+            }
+        },
+        {
+            "key": "leprechaun",
+            "translations": {
+                "en": "LEPRECHAUN",
+                "tr": "CÜCE CİN",
+                "fr": "LEPRECHAUN"
+            }
+        },
+        {
+            "key": "life",
+            "translations": {
+                "en": "LIFE",
+                "tr": "YAŞAM",
+                "fr": "VIE"
+            }
+        },
+        {
+            "key": "light",
+            "translations": {
+                "en": "LIGHT",
+                "tr": "IŞIK",
+                "fr": "LUMIÈRE"
+            }
+        },
+        {
+            "key": "limousine",
+            "translations": {
+                "en": "LIMOUSINE",
+                "tr": "LİMUZİN",
+                "fr": "LIMOUSINE"
+            }
+        },
+        {
+            "key": "line",
+            "translations": {
+                "en": "LINE",
+                "tr": "ÇİZGİ",
+                "fr": "LIGNE"
+            }
+        },
+        {
+            "key": "link",
+            "translations": {
+                "en": "LINK",
+                "tr": "BAĞLANTI",
+                "fr": "LIEN"
+            }
+        },
+        {
+            "key": "lion",
+            "translations": {
+                "en": "LION",
+                "tr": "ASLAN",
+                "fr": "LION"
+            }
+        },
+        {
+            "key": "litter",
+            "translations": {
+                "en": "LITTER",
+                "tr": "ÇÖP",
+                "fr": "DÉCHETS"
+            }
+        },
+        {
+            "key": "loch ness",
+            "translations": {
+                "en": "LOCH NESS",
+                "tr": "LOCH NESS",
+                "fr": "LOCH NESS"
+            }
+        },
+        {
+            "key": "lock",
+            "translations": {
+                "en": "LOCK",
+                "tr": "KİLİT",
+                "fr": "SERRURE"
+            }
+        },
+        {
+            "key": "log",
+            "translations": {
+                "en": "LOG",
+                "tr": "KÜTÜK",
+                "fr": "BÛCHE"
+            }
+        },
+        {
+            "key": "london",
+            "translations": {
+                "en": "LONDON",
+                "tr": "LONDRA",
+                "fr": "LONDRES"
+            }
+        },
+        {
+            "key": "luck",
+            "translations": {
+                "en": "LUCK",
+                "tr": "ŞANS",
+                "fr": "CHANCE"
+            }
+        },
+        {
+            "key": "mail",
+            "translations": {
+                "en": "MAIL",
+                "tr": "POSTA",
+                "fr": "COURRIER"
+            }
+        },
+        {
+            "key": "mammoth",
+            "translations": {
+                "en": "MAMMOTH",
+                "tr": "MAMUT",
+                "fr": "MAMMOUTH"
+            }
+        },
+        {
+            "key": "maple",
+            "translations": {
+                "en": "MAPLE",
+                "tr": "AKÇAAĞAÇ",
+                "fr": "ÉRABLE"
+            }
+        },
+        {
+            "key": "marble",
+            "translations": {
+                "en": "MARBLE",
+                "tr": "MERMER",
+                "fr": "MARBRE"
+            }
+        },
+        {
+            "key": "march",
+            "translations": {
+                "en": "MARCH",
+                "tr": "MART",
+                "fr": "MARS"
+            }
+        },
+        {
+            "key": "mass",
+            "translations": {
+                "en": "MASS",
+                "tr": "KÜTLE",
+                "fr": "MASSE"
+            }
+        },
+        {
+            "key": "match",
+            "translations": {
+                "en": "MATCH",
+                "tr": "KİBRİT",
+                "fr": "ALLUMETTE"
+            }
+        },
+        {
+            "key": "mercury",
+            "translations": {
+                "en": "MERCURY",
+                "tr": "MERKÜR",
+                "fr": "MERCURE"
+            }
+        },
+        {
+            "key": "mexico",
+            "translations": {
+                "en": "MEXICO",
+                "tr": "MEKSİKA",
+                "fr": "MEXIQUE"
+            }
+        },
+        {
+            "key": "microscope",
+            "translations": {
+                "en": "MICROSCOPE",
+                "tr": "MİKROSKOP",
+                "fr": "MICROSCOPE"
+            }
+        },
+        {
+            "key": "millionaire",
+            "translations": {
+                "en": "MILLIONAIRE",
+                "tr": "MİLYONER",
+                "fr": "MILLIONNAIRE"
+            }
+        },
+        {
+            "key": "mine",
+            "translations": {
+                "en": "MINE",
+                "tr": "MADEN",
+                "fr": "MINE"
+            }
+        },
+        {
+            "key": "mint",
+            "translations": {
+                "en": "MINT",
+                "tr": "NANE",
+                "fr": "MENTHE"
+            }
+        },
+        {
+            "key": "missile",
+            "translations": {
+                "en": "MISSILE",
+                "tr": "FÜZE",
+                "fr": "MISSILE"
+            }
+        },
+        {
+            "key": "model",
+            "translations": {
+                "en": "MODEL",
+                "tr": "MODEL",
+                "fr": "MODÈLE"
+            }
+        },
+        {
+            "key": "mole",
+            "translations": {
+                "en": "MOLE",
+                "tr": "KÖSTEBEK",
+                "fr": "TAUPE"
+            }
+        },
+        {
+            "key": "moon",
+            "translations": {
+                "en": "MOON",
+                "tr": "AY",
+                "fr": "LUNE"
+            }
+        },
+        {
+            "key": "moscow",
+            "translations": {
+                "en": "MOSCOW",
+                "tr": "MOSKOVA",
+                "fr": "MOSCOU"
+            }
+        },
+        {
+            "key": "mount",
+            "translations": {
+                "en": "MOUNT",
+                "tr": "DAĞ",
+                "fr": "MONT"
+            }
+        },
+        {
+            "key": "mouse",
+            "translations": {
+                "en": "MOUSE",
+                "tr": "FARE",
+                "fr": "SOURIS"
+            }
+        },
+        {
+            "key": "mouth",
+            "translations": {
+                "en": "MOUTH",
+                "tr": "AĞIZ",
+                "fr": "BOUCHE"
+            }
+        },
+        {
+            "key": "mug",
+            "translations": {
+                "en": "MUG",
+                "tr": "KUPA",
+                "fr": "MUG"
+            }
+        },
+        {
+            "key": "nail",
+            "translations": {
+                "en": "NAIL",
+                "tr": "ÇİVİ",
+                "fr": "CLOU"
+            }
+        },
+        {
+            "key": "needle",
+            "translations": {
+                "en": "NEEDLE",
+                "tr": "İĞNE",
+                "fr": "AIGUILLE"
+            }
+        },
+        {
+            "key": "net",
+            "translations": {
+                "en": "NET",
+                "tr": "AĞ",
+                "fr": "FILET"
+            }
+        },
+        {
+            "key": "new york",
+            "translations": {
+                "en": "NEW YORK",
+                "tr": "NEW YORK",
+                "fr": "NEW YORK"
+            }
+        },
+        {
+            "key": "night",
+            "translations": {
+                "en": "NIGHT",
+                "tr": "GECE",
+                "fr": "NUIT"
+            }
+        },
+        {
+            "key": "ninja",
+            "translations": {
+                "en": "NINJA",
+                "tr": "NİNJA",
+                "fr": "NINJA"
+            }
+        },
+        {
+            "key": "note",
+            "translations": {
+                "en": "NOTE",
+                "tr": "NOT",
+                "fr": "NOTE"
+            }
+        },
+        {
+            "key": "novel",
+            "translations": {
+                "en": "NOVEL",
+                "tr": "ROMAN",
+                "fr": "ROMAN"
+            }
+        },
+        {
+            "key": "nurse",
+            "translations": {
+                "en": "NURSE",
+                "tr": "HEMŞİRE",
+                "fr": "INFIRMIÈRE"
+            }
+        },
+        {
+            "key": "nut",
+            "translations": {
+                "en": "NUT",
+                "tr": "FINDIK",
+                "fr": "NOIX"
+            }
+        },
+        {
+            "key": "octopus",
+            "translations": {
+                "en": "OCTOPUS",
+                "tr": "AHTAPOT",
+                "fr": "PIEUVRE"
+            }
+        },
+        {
+            "key": "oil",
+            "translations": {
+                "en": "OIL",
+                "tr": "YAĞ",
+                "fr": "HUILE"
+            }
+        },
+        {
+            "key": "olive",
+            "translations": {
+                "en": "OLIVE",
+                "tr": "ZEYTİN",
+                "fr": "OLIVE"
+            }
+        },
+        {
+            "key": "olympus",
+            "translations": {
+                "en": "OLYMPUS",
+                "tr": "OLİMPOS",
+                "fr": "OLYMPE"
+            }
+        },
+        {
+            "key": "opera",
+            "translations": {
+                "en": "OPERA",
+                "tr": "OPERA",
+                "fr": "OPÉRA"
+            }
+        },
+        {
+            "key": "orange",
+            "translations": {
+                "en": "ORANGE",
+                "tr": "PORTAKAL",
+                "fr": "ORANGE"
+            }
+        },
+        {
+            "key": "organ",
+            "translations": {
+                "en": "ORGAN",
+                "tr": "ORGAN",
+                "fr": "ORGANE"
+            }
+        },
+        {
+            "key": "palm",
+            "translations": {
+                "en": "PALM",
+                "tr": "PALMİYE",
+                "fr": "PALMIER"
+            }
+        },
+        {
+            "key": "pan",
+            "translations": {
+                "en": "PAN",
+                "tr": "TAVA",
+                "fr": "POÊLE"
+            }
+        },
+        {
+            "key": "pants",
+            "translations": {
+                "en": "PANTS",
+                "tr": "PANTOLON",
+                "fr": "PANTALON"
+            }
+        },
+        {
+            "key": "paper",
+            "translations": {
+                "en": "PAPER",
+                "tr": "KAĞIT",
+                "fr": "PAPIER"
+            }
+        },
+        {
+            "key": "parachute",
+            "translations": {
+                "en": "PARACHUTE",
+                "tr": "PARAŞÜT",
+                "fr": "PARACHUTE"
+            }
+        },
+        {
+            "key": "park",
+            "translations": {
+                "en": "PARK",
+                "tr": "PARK",
+                "fr": "PARC"
+            }
+        },
+        {
+            "key": "part",
+            "translations": {
+                "en": "PART",
+                "tr": "PARÇA",
+                "fr": "PARTIE"
+            }
+        },
+        {
+            "key": "pass",
+            "translations": {
+                "en": "PASS",
+                "tr": "GEÇİŞ",
+                "fr": "PASSAGE"
+            }
+        },
+        {
+            "key": "paste",
+            "translations": {
+                "en": "PASTE",
+                "tr": "MACUN",
+                "fr": "PÂTE"
+            }
+        },
+        {
+            "key": "penguin",
+            "translations": {
+                "en": "PENGUIN",
+                "tr": "PENGUEN",
+                "fr": "PINGOUIN"
+            }
+        },
+        {
+            "key": "phoenix",
+            "translations": {
+                "en": "PHOENIX",
+                "tr": "ANKA KUŞU",
+                "fr": "PHÉNIX"
+            }
+        },
+        {
+            "key": "piano",
+            "translations": {
+                "en": "PIANO",
+                "tr": "PİYANO",
+                "fr": "PIANO"
+            }
+        },
+        {
+            "key": "pie",
+            "translations": {
+                "en": "PIE",
+                "tr": "TURTA",
+                "fr": "TARTE"
+            }
+        },
+        {
+            "key": "pilot",
+            "translations": {
+                "en": "PILOT",
+                "tr": "PİLOT",
+                "fr": "PILOTE"
+            }
+        },
+        {
+            "key": "pin",
+            "translations": {
+                "en": "PIN",
+                "tr": "İĞNE",
+                "fr": "EPINGLE"
+            }
+        },
+        {
+            "key": "pipe",
+            "translations": {
+                "en": "PIPE",
+                "tr": "BORU",
+                "fr": "TUYAU"
+            }
+        },
+        {
+            "key": "pirate",
+            "translations": {
+                "en": "PIRATE",
+                "tr": "KORSAN",
+                "fr": "PIRATE"
+            }
+        },
+        {
+            "key": "pistol",
+            "translations": {
+                "en": "PISTOL",
+                "tr": "TABANCA",
+                "fr": "PISTOLET"
+            }
+        },
+        {
+            "key": "pit",
+            "translations": {
+                "en": "PIT",
+                "tr": "CHUKUR",
+                "fr": "FOSSE"
+            }
+        },
+        {
+            "key": "pitch",
+            "translations": {
+                "en": "PITCH",
+                "tr": "SAHA",
+                "fr": "TERRAIN"
+            }
+        },
+        {
+            "key": "plane",
+            "translations": {
+                "en": "PLANE",
+                "tr": "UÇAK",
+                "fr": "AVION"
+            }
+        },
+        {
+            "key": "plastic",
+            "translations": {
+                "en": "PLASTIC",
+                "tr": "PLASTİK",
+                "fr": "PLASTIQUE"
+            }
+        },
+        {
+            "key": "plate",
+            "translations": {
+                "en": "PLATE",
+                "tr": "TABAK",
+                "fr": "ASSIETTE"
+            }
+        },
+        {
+            "key": "platypus",
+            "translations": {
+                "en": "PLATYPUS",
+                "tr": "ORNİTORİNK",
+                "fr": "ORNITHORYNQUE"
+            }
+        },
+        {
+            "key": "play",
+            "translations": {
+                "en": "PLAY",
+                "tr": "TIYATRO OYUNU",
+                "fr": "PIÈCE"
+            }
+        },
+        {
+            "key": "plot",
+            "translations": {
+                "en": "PLOT",
+                "tr": "KOMPLO",
+                "fr": "COMPLOT"
+            }
+        },
+        {
+            "key": "point",
+            "translations": {
+                "en": "POINT",
+                "tr": "NOKTA",
+                "fr": "POINT"
+            }
+        },
+        {
+            "key": "poison",
+            "translations": {
+                "en": "POISON",
+                "tr": "ZEHİR",
+                "fr": "POISON"
+            }
+        },
+        {
+            "key": "pole",
+            "translations": {
+                "en": "POLE",
+                "tr": "KUTUP",
+                "fr": "PÔLE"
+            }
+        },
+        {
+            "key": "police",
+            "translations": {
+                "en": "POLICE",
+                "tr": "POLİS",
+                "fr": "POLICE"
+            }
+        },
+        {
+            "key": "pool",
+            "translations": {
+                "en": "POOL",
+                "tr": "HAVUZ",
+                "fr": "PISCINE"
+            }
+        },
+        {
+            "key": "port",
+            "translations": {
+                "en": "PORT",
+                "tr": "LİMAN",
+                "fr": "PORT"
+            }
+        },
+        {
+            "key": "post",
+            "translations": {
+                "en": "POST",
+                "tr": "POSTA",
+                "fr": "POSTE"
+            }
+        },
+        {
+            "key": "pound",
+            "translations": {
+                "en": "POUND",
+                "tr": "STERLİN",
+                "fr": "LIVRE"
+            }
+        },
+        {
+            "key": "press",
+            "translations": {
+                "en": "PRESS",
+                "tr": "BASIN",
+                "fr": "PRESSE"
+            }
+        },
+        {
+            "key": "princess",
+            "translations": {
+                "en": "PRINCESS",
+                "tr": "PRENSES",
+                "fr": "PRINCESSE"
+            }
+        },
+        {
+            "key": "pumpkin",
+            "translations": {
+                "en": "PUMPKIN",
+                "tr": "BALKABAĞI",
+                "fr": "CITROUILLE"
+            }
+        },
+        {
+            "key": "pupil",
+            "translations": {
+                "en": "PUPIL",
+                "tr": "ÖĞRENCİ",
+                "fr": "ÉLÈVE"
+            }
+        },
+        {
+            "key": "pyramid",
+            "translations": {
+                "en": "PYRAMID",
+                "tr": "PİRAMİT",
+                "fr": "PYRAMIDE"
+            }
+        },
+        {
+            "key": "queen",
+            "translations": {
+                "en": "QUEEN",
+                "tr": "KRALİÇE",
+                "fr": "REINE"
+            }
+        },
+        {
+            "key": "rabbit",
+            "translations": {
+                "en": "RABBIT",
+                "tr": "TAVŞAN",
+                "fr": "LAPIN"
+            }
+        },
+        {
+            "key": "racket",
+            "translations": {
+                "en": "RACKET",
+                "tr": "RAKET",
+                "fr": "RAQUETTE"
+            }
+        },
+        {
+            "key": "ray",
+            "translations": {
+                "en": "RAY",
+                "tr": "IŞIN",
+                "fr": "RAYON"
+            }
+        },
+        {
+            "key": "revolution",
+            "translations": {
+                "en": "REVOLUTION",
+                "tr": "DEVRİM",
+                "fr": "RÉVOLUTION"
+            }
+        },
+        {
+            "key": "ring",
+            "translations": {
+                "en": "RING",
+                "tr": "YÜZÜK",
+                "fr": "BAGUE"
+            }
+        },
+        {
+            "key": "robin",
+            "translations": {
+                "en": "ROBIN",
+                "tr": "KIZILGERDAN",
+                "fr": "ROUGE-GORGE"
+            }
+        },
+        {
+            "key": "robot",
+            "translations": {
+                "en": "ROBOT",
+                "tr": "ROBOT",
+                "fr": "ROBOT"
+            }
+        },
+        {
+            "key": "rock",
+            "translations": {
+                "en": "ROCK",
+                "tr": "KAYA",
+                "fr": "ROCHER"
+            }
+        },
+        {
+            "key": "rome",
+            "translations": {
+                "en": "ROME",
+                "tr": "ROMA",
+                "fr": "ROME"
+            }
+        },
+        {
+            "key": "root",
+            "translations": {
+                "en": "ROOT",
+                "tr": "KÖK",
+                "fr": "RACINE"
+            }
+        },
+        {
+            "key": "rose",
+            "translations": {
+                "en": "ROSE",
+                "tr": "GÜL",
+                "fr": "ROSE"
+            }
+        },
+        {
+            "key": "roulette",
+            "translations": {
+                "en": "ROULETTE",
+                "tr": "RULET",
+                "fr": "ROULETTE"
+            }
+        },
+        {
+            "key": "round",
+            "translations": {
+                "en": "ROUND",
+                "tr": "YUVARLAK",
+                "fr": "ROND"
+            }
+        },
+        {
+            "key": "row",
+            "translations": {
+                "en": "ROW",
+                "tr": "SIRA",
+                "fr": "RANGÉI"
+            }
+        },
+        {
+            "key": "ruler",
+            "translations": {
+                "en": "RULER",
+                "tr": "CETVEL",
+                "fr": "RÈGLE"
+            }
+        },
+        {
+            "key": "satellite",
+            "translations": {
+                "en": "SATELLITE",
+                "tr": "UYDU",
+                "fr": "SATELLITE"
+            }
+        },
+        {
+            "key": "saturn",
+            "translations": {
+                "en": "SATURN",
+                "tr": "SATÜRN",
+                "fr": "SATURNE"
+            }
+        },
+        {
+            "key": "scale",
+            "translations": {
+                "en": "SCALE",
+                "tr": "TERAZİ",
+                "fr": "BALANCE"
+            }
+        },
+        {
+            "key": "school",
+            "translations": {
+                "en": "SCHOOL",
+                "tr": "OKUL",
+                "fr": "ÉCOLE"
+            }
+        },
+        {
+            "key": "scientist",
+            "translations": {
+                "en": "SCIENTIST",
+                "tr": "BİLİM İNSANI",
+                "fr": "SCIENTIFIQUE"
+            }
+        },
+        {
+            "key": "scorpion",
+            "translations": {
+                "en": "SCORPION",
+                "tr": "AKREP",
+                "fr": "SCORPION"
+            }
+        },
+        {
+            "key": "screen",
+            "translations": {
+                "en": "SCREEN",
+                "tr": "EKRAN",
+                "fr": "ÉCRAN"
+            }
+        },
+        {
+            "key": "scuba diver",
+            "translations": {
+                "en": "SCUBA DIVER",
+                "tr": "DALGIÇ",
+                "fr": "PLONGEUR"
+            }
+        },
+        {
+            "key": "seal",
+            "translations": {
+                "en": "SEAL",
+                "tr": "FOK",
+                "fr": "PHOQUE"
+            }
+        },
+        {
+            "key": "server",
+            "translations": {
+                "en": "SERVER",
+                "tr": "SUNUCU",
+                "fr": "SERVEUR"
+            }
+        },
+        {
+            "key": "shadow",
+            "translations": {
+                "en": "SHADOW",
+                "tr": "GÖLGE",
+                "fr": "OMBRE"
+            }
+        },
+        {
+            "key": "shakespeare",
+            "translations": {
+                "en": "SHAKESPEARE",
+                "tr": "SHAKESPEARE",
+                "fr": "SHAKESPEARE"
+            }
+        },
+        {
+            "key": "shark",
+            "translations": {
+                "en": "SHARK",
+                "tr": "KÖPEKBALIĞI",
+                "fr": "REQUIN"
+            }
+        },
+        {
+            "key": "ship",
+            "translations": {
+                "en": "SHIP",
+                "tr": "GEMİ",
+                "fr": "NAVIRE"
+            }
+        },
+        {
+            "key": "shoe",
+            "translations": {
+                "en": "SHOE",
+                "tr": "AYAKKABI",
+                "fr": "CHAUSSURE"
+            }
+        },
+        {
+            "key": "shop",
+            "translations": {
+                "en": "SHOP",
+                "tr": "DÜKKAN",
+                "fr": "MAGASIN"
+            }
+        },
+        {
+            "key": "shot",
+            "translations": {
+                "en": "SHOT",
+                "tr": "ATIŞ",
+                "fr": "TIR"
+            }
+        },
+        {
+            "key": "sink",
+            "translations": {
+                "en": "SINK",
+                "tr": "LAVABO",
+                "fr": "EVIER"
+            }
+        },
+        {
+            "key": "skyscraper",
+            "translations": {
+                "en": "SKYSCRAPER",
+                "tr": "GÖKDELEN",
+                "fr": "GRATTE-CIEL"
+            }
+        },
+        {
+            "key": "slip",
+            "translations": {
+                "en": "SLIP",
+                "tr": "KAYMA",
+                "fr": "GLISSADE"
+            }
+        },
+        {
+            "key": "slug",
+            "translations": {
+                "en": "SLUG",
+                "tr": "SÜMÜKLÜBÖCEK",
+                "fr": "LIMACE"
+            }
+        },
+        {
+            "key": "smuggler",
+            "translations": {
+                "en": "SMUGGLER",
+                "tr": "KAÇAKÇI",
+                "fr": "Trafiquant"
+            }
+        },
+        {
+            "key": "snow",
+            "translations": {
+                "en": "SNOW",
+                "tr": "KAR",
+                "fr": "NEIGE"
+            }
+        },
+        {
+            "key": "snowman",
+            "translations": {
+                "en": "SNOWMAN",
+                "tr": "KARDAN ADAM",
+                "fr": "BONHOMME DE NEIGE"
+            }
+        },
+        {
+            "key": "sock",
+            "translations": {
+                "en": "SOCK",
+                "tr": "ÇORAP",
+                "fr": "CHAUSSETTE"
+            }
+        },
+        {
+            "key": "soldier",
+            "translations": {
+                "en": "SOLDIER",
+                "tr": "ASKER",
+                "fr": "SOLDAT"
+            }
+        },
+        {
+            "key": "soul",
+            "translations": {
+                "en": "SOUL",
+                "tr": "RUH",
+                "fr": "ÂME"
+            }
+        },
+        {
+            "key": "sound",
+            "translations": {
+                "en": "SOUND",
+                "tr": "SES",
+                "fr": "SON"
+            }
+        },
+        {
+            "key": "space",
+            "translations": {
+                "en": "SPACE",
+                "tr": "UZAY",
+                "fr": "ESPACE"
+            }
+        },
+        {
+            "key": "spell",
+            "translations": {
+                "en": "SPELL",
+                "tr": "BÜYÜ",
+                "fr": "SORT"
+            }
+        },
+        {
+            "key": "spider",
+            "translations": {
+                "en": "SPIDER",
+                "tr": "ÖRÜMCEK",
+                "fr": "ARAIGNÉE"
+            }
+        },
+        {
+            "key": "spike",
+            "translations": {
+                "en": "SPIKE",
+                "tr": "SİVRİ UÇ",
+                "fr": "POINTE"
+            }
+        },
+        {
+            "key": "spine",
+            "translations": {
+                "en": "SPINE",
+                "tr": "OMURGA",
+                "fr": "COLONNE VERTEBRALE"
+            }
+        },
+        {
+            "key": "spot",
+            "translations": {
+                "en": "SPOT",
+                "tr": "LEKE",
+                "fr": "TACHE"
+            }
+        },
+        {
+            "key": "spring",
+            "translations": {
+                "en": "SPRING",
+                "tr": "BAHAR",
+                "fr": "PRINTEMPS"
+            }
+        },
+        {
+            "key": "spy",
+            "translations": {
+                "en": "SPY",
+                "tr": "CASUS",
+                "fr": "ESPION"
+            }
+        },
+        {
+            "key": "square",
+            "translations": {
+                "en": "SQUARE",
+                "tr": "KARE",
+                "fr": "CARRÉ"
+            }
+        },
+        {
+            "key": "stadium",
+            "translations": {
+                "en": "STADIUM",
+                "tr": "STADYUM",
+                "fr": "STADE"
+            }
+        },
+        {
+            "key": "staff",
+            "translations": {
+                "en": "STAFF",
+                "tr": "PERSONEL",
+                "fr": "PERSONNEL"
+            }
+        },
+        {
+            "key": "star",
+            "translations": {
+                "en": "STAR",
+                "tr": "YILDIZ",
+                "fr": "ÉTOILE"
+            }
+        },
+        {
+            "key": "state",
+            "translations": {
+                "en": "STATE",
+                "tr": "EYALET",
+                "fr": "ÉTAT"
+            }
+        },
+        {
+            "key": "stick",
+            "translations": {
+                "en": "STICK",
+                "tr": "SOPA",
+                "fr": "BÂTON"
+            }
+        },
+        {
+            "key": "stock",
+            "translations": {
+                "en": "STOCK",
+                "tr": "STOK",
+                "fr": "STOCK"
+            }
+        },
+        {
+            "key": "straw",
+            "translations": {
+                "en": "STRAW",
+                "tr": "PIPET",
+                "fr": "PAILLE"
+            }
+        },
+        {
+            "key": "stream",
+            "translations": {
+                "en": "STREAM",
+                "tr": "AKARSU",
+                "fr": "RUISSEAU"
+            }
+        },
+        {
+            "key": "strike",
+            "translations": {
+                "en": "STRIKE",
+                "tr": "GREV",
+                "fr": "GRÈVE"
+            }
+        },
+        {
+            "key": "string",
+            "translations": {
+                "en": "STRING",
+                "tr": "İP",
+                "fr": "FICELLE"
+            }
+        },
+        {
+            "key": "sub",
+            "translations": {
+                "en": "SUB",
+                "tr": "DENİZALTI",
+                "fr": "SOUS-MARIN"
+            }
+        },
+        {
+            "key": "suit",
+            "translations": {
+                "en": "SUIT",
+                "tr": "TAKIM ELBİSE",
+                "fr": "COSTUME"
+            }
+        },
+        {
+            "key": "superhero",
+            "translations": {
+                "en": "SUPERHERO",
+                "tr": "SÜPER KAHRAMAN",
+                "fr": "SUPER-HÉROS"
+            }
+        },
+        {
+            "key": "swing",
+            "translations": {
+                "en": "SWING",
+                "tr": "SALINCAK",
+                "fr": "BALANÇOIRE"
+            }
+        },
+        {
+            "key": "switch",
+            "translations": {
+                "en": "SWITCH",
+                "tr": "ANAHTAR",
+                "fr": "INTERRUPTEUR"
+            }
+        },
+        {
+            "key": "table",
+            "translations": {
+                "en": "TABLE",
+                "tr": "MASA",
+                "fr": "TABLE"
+            }
+        },
+        {
+            "key": "tablet",
+            "translations": {
+                "en": "TABLET",
+                "tr": "TABLET",
+                "fr": "TABLETTE"
+            }
+        },
+        {
+            "key": "tag",
+            "translations": {
+                "en": "TAG",
+                "tr": "ETİKET",
+                "fr": "ÉTIQUETTE"
+            }
+        },
+        {
+            "key": "tail",
+            "translations": {
+                "en": "TAIL",
+                "tr": "KUYRUK",
+                "fr": "QUEUE"
+            }
+        },
+        {
+            "key": "tap",
+            "translations": {
+                "en": "TAP",
+                "tr": "MUSLUK",
+                "fr": "ROBINET"
+            }
+        },
+        {
+            "key": "teacher",
+            "translations": {
+                "en": "TEACHER",
+                "tr": "ÖĞRETMEN",
+                "fr": "ENSEIGNANT"
+            }
+        },
+        {
+            "key": "telescope",
+            "translations": {
+                "en": "TELESCOPE",
+                "tr": "TELESKOP",
+                "fr": "TÉLESCOPE"
+            }
+        },
+        {
+            "key": "temple",
+            "translations": {
+                "en": "TEMPLE",
+                "tr": "TAPINAK",
+                "fr": "TEMPLE"
+            }
+        },
+        {
+            "key": "theater",
+            "translations": {
+                "en": "THEATER",
+                "tr": "TİYATRO",
+                "fr": "THÉÂTRE"
+            }
+        },
+        {
+            "key": "thief",
+            "translations": {
+                "en": "THIEF",
+                "tr": "HIRSIZ",
+                "fr": "VOLEUR"
+            }
+        },
+        {
+            "key": "thumb",
+            "translations": {
+                "en": "THUMB",
+                "tr": "BAŞPARMAK",
+                "fr": "POUCE"
+            }
+        },
+        {
+            "key": "tick",
+            "translations": {
+                "en": "TICK",
+                "tr": "KENE",
+                "fr": "TIQUE"
+            }
+        },
+        {
+            "key": "tie",
+            "translations": {
+                "en": "TIE",
+                "tr": "KRAVAT",
+                "fr": "CRAVATE"
+            }
+        },
+        {
+            "key": "time",
+            "translations": {
+                "en": "TIME",
+                "tr": "ZAMAN",
+                "fr": "TEMPS"
+            }
+        },
+        {
+            "key": "tokyo",
+            "translations": {
+                "en": "TOKYO",
+                "tr": "TOKYO",
+                "fr": "TOKYO"
+            }
+        },
+        {
+            "key": "tooth",
+            "translations": {
+                "en": "TOOTH",
+                "tr": "DİŞ",
+                "fr": "DENT"
+            }
+        },
+        {
+            "key": "torch",
+            "translations": {
+                "en": "TORCH",
+                "tr": "MEŞALE",
+                "fr": "TORCHE"
+            }
+        },
+        {
+            "key": "tower",
+            "translations": {
+                "en": "TOWER",
+                "tr": "KULE",
+                "fr": "TOUR"
+            }
+        },
+        {
+            "key": "track",
+            "translations": {
+                "en": "TRACK",
+                "tr": "PİST",
+                "fr": "PISTE"
+            }
+        },
+        {
+            "key": "train",
+            "translations": {
+                "en": "TRAIN",
+                "tr": "TREN",
+                "fr": "TRAIN"
+            }
+        },
+        {
+            "key": "triangle",
+            "translations": {
+                "en": "TRIANGLE",
+                "tr": "ÜÇGEN",
+                "fr": "TRIANGLE"
+            }
+        },
+        {
+            "key": "trip",
+            "translations": {
+                "en": "TRIP",
+                "tr": "GEZİ",
+                "fr": "VOYAGE"
+            }
+        },
+        {
+            "key": "trunk",
+            "translations": {
+                "en": "TRUNK",
+                "tr": "GÖVDE",
+                "fr": "TRONC"
+            }
+        },
+        {
+            "key": "tube",
+            "translations": {
+                "en": "TUBE",
+                "tr": "TÜP",
+                "fr": "TUBE"
+            }
+        },
+        {
+            "key": "turkey",
+            "translations": {
+                "en": "TURKEY",
+                "tr": "TÜRKİYE",
+                "fr": "TURQUIE"
+            }
+        },
+        {
+            "key": "undertaker",
+            "translations": {
+                "en": "UNDERTAKER",
+                "tr": "CENAZE LEVAZIMCISI",
+                "fr": "POMPES FUNÈBRES"
+            }
+        },
+        {
+            "key": "unicorn",
+            "translations": {
+                "en": "UNICORN",
+                "tr": "TEK BOYNUZLU AT",
+                "fr": "LICORNE"
+            }
+        },
+        {
+            "key": "vacuum",
+            "translations": {
+                "en": "VACUUM",
+                "tr": "VAKUM",
+                "fr": "ASPIRATEUR"
+            }
+        },
+        {
+            "key": "van",
+            "translations": {
+                "en": "VAN",
+                "tr": "VAN",
+                "fr": "VAN"
+            }
+        },
+        {
+            "key": "vet",
+            "translations": {
+                "en": "VET",
+                "tr": "VETERİNER",
+                "fr": "VÉTÉRINAIRE"
+            }
+        },
+        {
+            "key": "wake",
+            "translations": {
+                "en": "WAKE",
+                "tr": "UYANMA",
+                "fr": "RÉVEIL"
+            }
+        },
+        {
+            "key": "wall",
+            "translations": {
+                "en": "WALL",
+                "tr": "DUVAR",
+                "fr": "MUR"
+            }
+        },
+        {
+            "key": "war",
+            "translations": {
+                "en": "WAR",
+                "tr": "SAVAŞ",
+                "fr": "GUERRE"
+            }
+        },
+        {
+            "key": "washer",
+            "translations": {
+                "en": "WASHER",
+                "tr": "ÇAMAŞIR MAKİNESİ",
+                "fr": "LAVE-LINGE"
+            }
+        },
+        {
+            "key": "washington",
+            "translations": {
+                "en": "WASHINGTON",
+                "tr": "WASHINGTON",
+                "fr": "WASHINGTON"
+            }
+        },
+        {
+            "key": "watch",
+            "translations": {
+                "en": "WATCH",
+                "tr": "SAAT",
+                "fr": "MONTRE"
+            }
+        },
+        {
+            "key": "water",
+            "translations": {
+                "en": "WATER",
+                "tr": "SU",
+                "fr": "EAU"
+            }
+        },
+        {
+            "key": "wave",
+            "translations": {
+                "en": "WAVE",
+                "tr": "DALGA",
+                "fr": "VAGUE"
+            }
+        },
+        {
+            "key": "web",
+            "translations": {
+                "en": "WEB",
+                "tr": "AĞ",
+                "fr": "TOILE"
+            }
+        },
+        {
+            "key": "well",
+            "translations": {
+                "en": "WELL",
+                "tr": "KUYU",
+                "fr": "PUITS"
+            }
+        },
+        {
+            "key": "whale",
+            "translations": {
+                "en": "WHALE",
+                "tr": "BALİNA",
+                "fr": "BALEINE"
+            }
+        },
+        {
+            "key": "whip",
+            "translations": {
+                "en": "WHIP",
+                "tr": "KIRBAÇ",
+                "fr": "FOUET"
+            }
+        },
+        {
+            "key": "wind",
+            "translations": {
+                "en": "WIND",
+                "tr": "RÜZGAR",
+                "fr": "VENT"
+            }
+        },
+        {
+            "key": "witch",
+            "translations": {
+                "en": "WITCH",
+                "tr": "CADI",
+                "fr": "SORCIÈRE"
+            }
+        },
+        {
+            "key": "worm",
+            "translations": {
+                "en": "WORM",
+                "tr": "SOLUCAN",
+                "fr": "VER"
+            }
+        },
+        {
+            "key": "yard",
+            "translations": {
+                "en": "YARD",
+                "tr": "BAHÇE",
+                "fr": "JARDIN"
+            }
+        }
+    ]
+}

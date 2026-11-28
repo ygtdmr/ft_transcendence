@@ -1,0 +1,68 @@
+{
+    "words": [
+        {
+            "key": "africa",
+            "translations": {
+                "en": "AFRICA",
+                "tr": "AFRİKA",
+                "fr": "AFRIQUE"
+            }
+        },
+        {
+            "key": "agent",
+            "translations": {
+                "en": "AGENT",
+                "tr": "AJAN",
+                "fr": "AGENT"
+            }
+        },
+        {
+            "key": "air",
+            "translations": {
+                "en": "AIR",
+                "tr": "HAVA",
+                "fr": "AIR"
+            }
+        },
+        {
+            "key": "alien",
+            "translations": {
+                "en": "ALIEN",
+                "tr": "UZAYLI",
+                "fr": "ALIEN"
+            }
+        },
+        {
+            "key": "alps",
+            "translations": {
+                "en": "ALPS",
+                "tr": "ALPLER",
+                "fr": "ALPES"
+            }
+        },
+        {
+            "key": "amazon",
+            "translations": {
+                "en": "AMAZON",
+                "tr": "AMAZON",
+                "fr": "AMAZONE"
+            }
+        },
+        {
+            "key": "ambulance",
+            "translations": {
+                "en": "AMBULANCE",
+                "tr": "AMBULANS",
+                "fr": "AMBULANCE"
+            }
+        },
+        {
+            "key": "america",
+            "translations": {
+                "en": "AMERICA",
+                "tr": "AMERİKA",
+                "fr": "AMÉRIQUE"
+            }
+        }
+    ]
+}

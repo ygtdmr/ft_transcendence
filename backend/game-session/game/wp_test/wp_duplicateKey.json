@@ -1,0 +1,204 @@
+{
+    "words": [
+        {
+            "key": "africa",
+            "translations": {
+                "en": "AFRICA",
+                "tr": "AFRİKA",
+                "fr": "AFRIQUE"
+            }
+        },
+        {
+            "key": "agent",
+            "translations": {
+                "en": "AGENT",
+                "tr": "AJAN",
+                "fr": "AGENT"
+            }
+        },
+        {
+            "key": "air",
+            "translations": {
+                "en": "AIR",
+                "tr": "HAVA",
+                "fr": "AIR"
+            }
+        },
+        {
+            "key": "alien",
+            "translations": {
+                "en": "ALIEN",
+                "tr": "UZAYLI",
+                "fr": "ALIEN"
+            }
+        },
+        {
+            "key": "alps",
+            "translations": {
+                "en": "ALPS",
+                "tr": "ALPLER",
+                "fr": "ALPES"
+            }
+        },
+        {
+            "key": "amazon",
+            "translations": {
+                "en": "AMAZON",
+                "tr": "AMAZON",
+                "fr": "AMAZONE"
+            }
+        },
+        {
+            "key": "ambulance",
+            "translations": {
+                "en": "AMBULANCE",
+                "tr": "AMBULANS",
+                "fr": "AMBULANCE"
+            }
+        },
+        {
+            "key": "america",
+            "translations": {
+                "en": "AMERICA",
+                "tr": "AMERİKA",
+                "fr": "AMÉRIQUE"
+            }
+        },
+        {
+            "key": "angel",
+            "translations": {
+                "en": "ANGEL",
+                "tr": "MELEK",
+                "fr": "ANGE"
+            }
+        },
+        {
+            "key": "antarctica",
+            "translations": {
+                "en": "ANTARCTICA",
+                "tr": "ANTARKTİKA",
+                "fr": "ANTARCTIQUE"
+            }
+        },
+        {
+            "key": "apple",
+            "translations": {
+                "en": "APPLE",
+                "tr": "ELMA",
+                "fr": "POMME"
+            }
+        },
+        {
+            "key": "arm",
+            "translations": {
+                "en": "ARM",
+                "tr": "KOL",
+                "fr": "BRAS"
+            }
+        },
+        {
+            "key": "whip",
+            "translations": {
+                "en": "WHIP",
+                "tr": "KIRBAÇ",
+                "fr": "FOUET"
+            }
+        },
+        {
+            "key": "wind",
+            "translations": {
+                "en": "WIND",
+                "tr": "RÜZGAR",
+                "fr": "VENT"
+            }
+        },
+        {
+            "key": "witch",
+            "translations": {
+                "en": "WITCH",
+                "tr": "CADI",
+                "fr": "SORCIÈRE"
+            }
+        },
+        {
+            "key": "worm",
+            "translations": {
+                "en": "WORM",
+                "tr": "SOLUCAN",
+                "fr": "VER"
+            }
+        },
+        {
+            "key": "yard",
+            "translations": {
+                "en": "YARD",
+                "tr": "BAHÇE",
+                "fr": "JARDIN"
+            }
+        },
+        {
+            "key": "antarctica",
+            "translations": {
+                "en": "ANTARCTICA",
+                "tr": "ANTARKTİKA",
+                "fr": "ANTARCTIQUE"
+            }
+        },
+        {
+            "key": "apple",
+            "translations": {
+                "en": "APPLE",
+                "tr": "ELMA",
+                "fr": "POMME"
+            }
+        },
+        {
+            "key": "arm",
+            "translations": {
+                "en": "ARM",
+                "tr": "KOL",
+                "fr": "BRAS"
+            }
+        },
+        {
+            "key": "whip",
+            "translations": {
+                "en": "WHIP",
+                "tr": "KIRBAÇ",
+                "fr": "FOUET"
+            }
+        },
+        {
+            "key": "wind",
+            "translations": {
+                "en": "WIND",
+                "tr": "RÜZGAR",
+                "fr": "VENT"
+            }
+        },
+        {
+            "key": "witch",
+            "translations": {
+                "en": "WITCH",
+                "tr": "CADI",
+                "fr": "SORCIÈRE"
+            }
+        },
+        {
+            "key": "worm",
+            "translations": {
+                "en": "WORM",
+                "tr": "SOLUCAN",
+                "fr": "VER"
+            }
+        },
+        {
+            "key": "yard",
+            "translations": {
+                "en": "YARD",
+                "tr": "BAHÇE",
+                "fr": "JARDIN"
+            }
+        }
+    ]
+}

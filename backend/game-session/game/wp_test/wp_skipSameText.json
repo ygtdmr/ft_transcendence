@@ -1,0 +1,244 @@
+{
+  "words": [
+    {
+      "key": "tea",
+      "translations": {
+        "en": "TEA",
+        "tr": "ÇAY",
+        "fr": "THÉ"
+      }
+    },
+    {
+      "key": "stream",
+      "translations": {
+        "en": "STREAM",
+        "tr": "ÇAY",
+        "fr": "RUISSEAU"
+      }
+    },
+    {
+      "key": "brook",
+      "translations": {
+        "en": "BROOK",
+        "tr": "ÇAY",
+        "fr": "RUISSEAU"
+      }
+    },
+    {
+      "key": "rose_flower",
+      "translations": {
+        "en": "ROSE",
+        "tr": "GÜL",
+        "fr": "ROSE"
+      }
+    },
+    {
+      "key": "pink_color",
+      "translations": {
+        "en": "PINK",
+        "tr": "PEMBE",
+        "fr": "ROSE"
+      }
+    },
+    {
+      "key": "ocean",
+      "translations": {
+        "en": "OCEAN",
+        "tr": "OKYANUS",
+        "fr": "OCÉAN"
+      }
+    },
+    {
+      "key": "mountain",
+      "translations": {
+        "en": "MOUNTAIN",
+        "tr": "DAĞ",
+        "fr": "MONTAGNE"
+      }
+    },
+    {
+      "key": "sun",
+      "translations": {
+        "en": "SUN",
+        "tr": "GÜNEŞ",
+        "fr": "SOLEIL"
+      }
+    },
+    {
+      "key": "moon",
+      "translations": {
+        "en": "MOON",
+        "tr": "AY",
+        "fr": "LUNE"
+      }
+    },
+    {
+      "key": "star",
+      "translations": {
+        "en": "STAR",
+        "tr": "YILDIZ",
+        "fr": "ÉTOILE"
+      }
+    },
+    {
+      "key": "cloud",
+      "translations": {
+        "en": "CLOUD",
+        "tr": "BULUT",
+        "fr": "NUAGE"
+      }
+    },
+    {
+      "key": "rain",
+      "translations": {
+        "en": "RAIN",
+        "tr": "YAĞMUR",
+        "fr": "PLUIE"
+      }
+    },
+    {
+      "key": "snow",
+      "translations": {
+        "en": "SNOW",
+        "tr": "KAR",
+        "fr": "NEIGE"
+      }
+    },
+    {
+      "key": "wind",
+      "translations": {
+        "en": "WIND",
+        "tr": "RÜZGAR",
+        "fr": "VENT"
+      }
+    },
+    {
+      "key": "fire",
+      "translations": {
+        "en": "FIRE",
+        "tr": "ATEŞ",
+        "fr": "FEU"
+      }
+    },
+    {
+      "key": "earth",
+      "translations": {
+        "en": "EARTH",
+        "tr": "DÜNYA",
+        "fr": "TERRE"
+      }
+    },
+    {
+      "key": "tree",
+      "translations": {
+        "en": "TREE",
+        "tr": "AĞAÇ",
+        "fr": "ARBRE"
+      }
+    },
+    {
+      "key": "forest",
+      "translations": {
+        "en": "FOREST",
+        "tr": "ORMAN",
+        "fr": "FORÊT"
+      }
+    },
+    {
+      "key": "desert",
+      "translations": {
+        "en": "DESERT",
+        "tr": "ÇÖL",
+        "fr": "DÉSERT"
+      }
+    },
+    {
+      "key": "island",
+      "translations": {
+        "en": "ISLAND",
+        "tr": "ADA",
+        "fr": "ÎLE"
+      }
+    },
+    {
+      "key": "stone",
+      "translations": {
+        "en": "STONE",
+        "tr": "TAŞ",
+        "fr": "PIERRE"
+      }
+    },
+    {
+      "key": "sand",
+      "translations": {
+        "en": "SAND",
+        "tr": "KUM",
+        "fr": "SABLE"
+      }
+    },
+    {
+      "key": "sky",
+      "translations": {
+        "en": "SKY",
+        "tr": "GÖKYÜZÜ",
+        "fr": "CIEL"
+      }
+    },
+    {
+      "key": "lightning",
+      "translations": {
+        "en": "LIGHTNING",
+        "tr": "ŞİMŞEK",
+        "fr": "ÉCLAIR"
+      }
+    },
+    {
+      "key": "thunder",
+      "translations": {
+        "en": "THUNDER",
+        "tr": "GÖK GÜRÜLTÜSÜ",
+        "fr": "TONNERRE"
+      }
+    },
+    {
+      "key": "shadow",
+      "translations": {
+        "en": "SHADOW",
+        "tr": "GÖLGE",
+        "fr": "OMBRE"
+      }
+    },
+    {
+      "key": "light",
+      "translations": {
+        "en": "LIGHT",
+        "tr": "IŞIK",
+        "fr": "LUMIÈRE"
+      }
+    },
+    {
+      "key": "darkness",
+      "translations": {
+        "en": "DARKNESS",
+        "tr": "KARANLIK",
+        "fr": "OBSCURITÉ"
+      }
+    },
+    {
+      "key": "space",
+      "translations": {
+        "en": "SPACE",
+        "tr": "UZAY",
+        "fr": "ESPACE"
+      }
+    },
+    {
+      "key": "time",
+      "translations": {
+        "en": "TIME",
+        "tr": "ZAMAN",
+        "fr": "TEMPS"
+      }
+    }
+  ]
+}

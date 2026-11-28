@@ -1,0 +1,204 @@
+{
+  "words": [
+    {
+      "key": "tea",
+      "translations": {
+        "en": "TEA",
+        "tr": "ÇAY",
+        "fr": "THÉ"
+      }
+    },
+    {
+      "key": "stream",
+      "translations": {
+        "en": "STREAM",
+        "tr": "ÇAY",
+        "fr": "RUISSEAU"
+      }
+    },
+    {
+      "key": "brook",
+      "translations": {
+        "en": "BROOK",
+        "tr": "ÇAY",
+        "fr": "RUISSEAU"
+      }
+    },
+    {
+      "key": "river",
+      "translations": {
+        "en": "RIVER",
+        "tr": "NEHİR",
+        "fr": "RIVIÈRE"
+      }
+    },
+    {
+      "key": "face",
+      "translations": {
+        "en": "FACE",
+        "tr": "YÜZ",
+        "fr": "VISAGE"
+      }
+    },
+    {
+      "key": "hundred",
+      "translations": {
+        "en": "HUNDRED",
+        "tr": "YÜZ",
+        "fr": "CENT"
+      }
+    },
+    {
+      "key": "swim",
+      "translations": {
+        "en": "SWIM",
+        "tr": "YÜZ",
+        "fr": "NAGER"
+      }
+    },
+    {
+      "key": "skin_animal",
+      "translations": {
+        "en": "SKIN",
+        "tr": "YÜZ",
+        "fr": "ÉCORCHER"
+      }
+    },
+    {
+      "key": "rose_flower",
+      "translations": {
+        "en": "ROSE",
+        "tr": "GÜL",
+        "fr": "ROSE"
+      }
+    },
+    {
+      "key": "laugh",
+      "translations": {
+        "en": "LAUGH",
+        "tr": "GÜL",
+        "fr": "RIRE"
+      }
+    },
+    {
+      "key": "pink_color",
+      "translations": {
+        "en": "PINK",
+        "tr": "PEMBE",
+        "fr": "ROSE"
+      }
+    },
+    {
+      "key": "agent_spy",
+      "translations": {
+        "en": "AGENT",
+        "tr": "AJAN",
+        "fr": "AGENT"
+      }
+    },
+    {
+      "key": "broker_representative",
+      "translations": {
+        "en": "AGENT",
+        "tr": "TEMSİLCİ",
+        "fr": "AGENT"
+      }
+    },
+    {
+      "key": "bar_pub",
+      "translations": {
+        "en": "BAR",
+        "tr": "BAR",
+        "fr": "BAR"
+      }
+    },
+    {
+      "key": "bar_metal",
+      "translations": {
+        "en": "BAR",
+        "tr": "ÇUBUK",
+        "fr": "BARRE"
+      }
+    },
+    {
+      "key": "rod",
+      "translations": {
+        "en": "ROD",
+        "tr": "ÇUBUK",
+        "fr": "BARRE"
+      }
+    },
+    {
+      "key": "stick",
+      "translations": {
+        "en": "STICK",
+        "tr": "ÇUBUK",
+        "fr": "BÂTON"
+      }
+    },
+    {
+      "key": "date_fruit",
+      "translations": {
+        "en": "DATE",
+        "tr": "HURMA",
+        "fr": "DATTE"
+      }
+    },
+    {
+      "key": "date_calendar",
+      "translations": {
+        "en": "DATE",
+        "tr": "TARİH",
+        "fr": "DATE"
+      }
+    },
+    {
+      "key": "history",
+      "translations": {
+        "en": "HISTORY",
+        "tr": "TARİH",
+        "fr": "HISTOIRE"
+      }
+    },
+    {
+      "key": "story",
+      "translations": {
+        "en": "STORY",
+        "tr": "HİKAYE",
+        "fr": "HISTOIRE"
+      }
+    },
+    {
+      "key": "coin",
+      "translations": {
+        "en": "COIN",
+        "tr": "MADENİ PARA",
+        "fr": "PIÈCE"
+      }
+    },
+    {
+      "key": "room",
+      "translations": {
+        "en": "ROOM",
+        "tr": "ODA",
+        "fr": "PIÈCE"
+      }
+    },
+    {
+      "key": "play_drama",
+      "translations": {
+        "en": "PLAY",
+        "tr": "OYUN",
+        "fr": "PIÈCE"
+      }
+    },
+    {
+      "key": "game",
+      "translations": {
+        "en": "GAME",
+        "tr": "OYUN",
+        "fr": "JEU"
+      }
+    }
+  ]
+}
