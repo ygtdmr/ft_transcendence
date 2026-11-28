@@ -33,7 +33,7 @@ func run() error {
 	}
 	logger, err := logging.New(
 		logging.Config{Format: cfg.LogFormat, Level: cfg.LogLevel,
-			Service: serviceName},
+			Service: serviceName, Environment: cfg.Environment},
 		os.Stdout)
 
 	if err != nil {

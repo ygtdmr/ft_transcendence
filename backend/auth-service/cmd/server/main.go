@@ -31,7 +31,7 @@ func run() error {
 	}
 	logger, err := logging.New(
 		logging.Config{Format: cfg.LogFormat, Level: cfg.LogLevel,
-			Service: "auth-service"},
+			Service: "auth-service", Environment: cfg.Environment},
 		os.Stdout)
 
 	if err != nil {
