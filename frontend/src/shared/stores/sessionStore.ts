@@ -2,7 +2,7 @@
  * Session/auth state — the only store that knows who the user is.
  *
  * It holds no credential: both session cookies are HttpOnly and unreadable from JS.
- * `activeRoomId` mirrors `GET /api/auth/session`, which derives it live from room
+ * `activeRoomId` mirrors `GET /api/v1/auth/session`, which derives it live from room
  * membership, and is what route recovery on refresh reads instead of trusting the URL.
  * This client speaks only the Game v2 room contract, so a membership the session pairs
  * with the v1 contract is not one it can open (`isOpenableRoom`).

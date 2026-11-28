@@ -2,7 +2,7 @@
  * LOG IN / CREATE ACCOUNT flow.
  *
  * Both calls set the `ft_session` and `ft_refresh` cookies and return no token, so the
- * session is then read back from `GET /api/auth/session`: that response is what the
+ * session is then read back from `GET /api/v1/auth/session`: that response is what the
  * session store holds, including the active room the account may already be in.
  *
  * `enter()` is the only place the store turns `AUTHENTICATED`, and it is called only

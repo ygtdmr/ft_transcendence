@@ -13,8 +13,8 @@ import { LoadingState } from '@shared/ui';
  *
  * Two jobs, both application-level rather than feature-level:
  *   1. install the silent-refresh handler on the shared REST client, so any `401`
- *      retries once after `POST /api/auth/refresh` instead of logging the user out;
- *   2. read `GET /api/auth/session` once before the router renders, so guards never
+ *      retries once after `POST /api/v1/auth/refresh` instead of logging the user out;
+ *   2. read `GET /api/v1/auth/session` once before the router renders, so guards never
  *      redirect on a session that is only still `UNKNOWN`.
  *
  * A refresh that fails (`401 SESSION_EXPIRED`) while the user is signed in ends the

@@ -40,7 +40,7 @@ export interface MatchHistoryResponse {
 }
 
 /**
- * `GET /api/users/me/matches` query parameters.
+ * `GET /api/v1/users/me/matches` query parameters.
  *
  * Declared as a type alias rather than an interface so it carries an implicit index
  * signature and can be passed straight to the REST client's `query` option.

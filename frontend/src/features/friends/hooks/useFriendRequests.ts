@@ -1,5 +1,5 @@
 /**
- * The signed-in user's pending friend requests, both ways: `GET /api/friends/requests`.
+ * The signed-in user's pending friend requests, both ways: `GET /api/v1/friends/requests`.
  *
  * Read when the hook mounts — quietly when an earlier screen already loaded them — and
  * again after a reconnect, since the socket replays no social event missed while it was

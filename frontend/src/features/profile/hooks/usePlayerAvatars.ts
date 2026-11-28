@@ -1,5 +1,5 @@
 /**
- * Avatars of the players in a room, from their public profiles (`GET /api/users/{id}`).
+ * Avatars of the players in a room, from their public profiles (`GET /api/v1/users/{id}`).
  *
  * Room members carry no avatar of their own, so each member's avatar comes from the public
  * profile, fetched once per user and shared by every screen that asks for it. A profile that

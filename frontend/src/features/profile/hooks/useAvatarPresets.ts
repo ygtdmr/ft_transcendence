@@ -3,7 +3,7 @@
  *
  * Loads the preset catalog when the pop-up opens. The current avatar starts selected
  * when its URL matches a preset; tapping a tile moves the selection, SAVE AVATAR applies
- * it with `PUT /api/users/me/avatar`, and Cancel discards it.
+ * it with `PUT /api/v1/users/me/avatar`, and Cancel discards it.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';

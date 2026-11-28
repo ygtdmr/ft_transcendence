@@ -1,5 +1,5 @@
 /**
- * Username search for friend discovery: `GET /api/users/search`.
+ * Username search for friend discovery: `GET /api/v1/users/search`.
  *
  * The term is trimmed and searched once typing pauses, so a burst of keystrokes sends one
  * request. A term outside the contract's 1..20 characters is never sent: an empty one

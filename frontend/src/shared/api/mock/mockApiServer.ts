@@ -692,7 +692,7 @@ export class MockApiServer {
     const selfId = () => this.self().user_id;
 
     return [
-      route('health', 'GET', /^\/health$/, false, () =>
+      route('health', 'GET', /^\/v1\/health$/, false, () =>
         ok({
           status: 'OK',
           contract_version: '1.2.0-dev',
@@ -705,7 +705,7 @@ export class MockApiServer {
       route(
         'register',
         'POST',
-        /^\/auth\/register$/,
+        /^\/v1\/auth\/register$/,
         false,
         ({ options }) => {
           const body = bodyOf<{ email: string; username: string; password: string }>(options);
@@ -792,7 +792,7 @@ export class MockApiServer {
       route(
         'login',
         'POST',
-        /^\/auth\/login$/,
+        /^\/v1\/auth\/login$/,
         false,
         ({ options }) => {
           const body = bodyOf<{ email: string; password: string }>(options);
@@ -817,7 +817,7 @@ export class MockApiServer {
       route(
         'refresh',
         'POST',
-        /^\/auth\/refresh$/,
+        /^\/v1\/auth\/refresh$/,
         false,
         () => {
           if (this.sessionUserId === null || !this.refreshValid) {
@@ -840,7 +840,7 @@ export class MockApiServer {
         },
       ),
 
-      route('session', 'GET', /^\/auth\/session$/, true, () => {
+      route('session', 'GET', /^\/v1\/auth\/session$/, true, () => {
         const account = this.self();
         return ok({
           user: { user_id: account.user_id, username: account.username },
@@ -850,7 +850,7 @@ export class MockApiServer {
         } satisfies SessionResponse);
       }),
 
-      route('endSession', 'DELETE', /^\/auth\/session$/, true, () => {
+      route('endSession', 'DELETE', /^\/v1\/auth\/session$/, true, () => {
         const userId = selfId();
         const roomId = this.activeRoomId(userId);
         // Logout leaves the room; during a match it counts as leaving it.
@@ -862,7 +862,7 @@ export class MockApiServer {
 
       /* --------------------------- users and profile ------------------------- */
 
-      route('getOwnProfile', 'GET', /^\/users\/me$/, true, () => {
+      route('getOwnProfile', 'GET', /^\/v1\/users\/me$/, true, () => {
         const account = this.self();
         return ok(toOwnProfile(account, this.activeRoomId(account.user_id)) satisfies OwnProfile);
       }),
@@ -870,7 +870,7 @@ export class MockApiServer {
       route(
         'updateOwnProfile',
         'PATCH',
-        /^\/users\/me$/,
+        /^\/v1\/users\/me$/,
         true,
         ({ options }) => {
           const account = this.self();
@@ -923,7 +923,7 @@ export class MockApiServer {
       route(
         'deleteOwnAccount',
         'DELETE',
-        /^\/users\/me$/,
+        /^\/v1\/users\/me$/,
         true,
         ({ options }) => {
           const account = this.self();
@@ -966,7 +966,7 @@ export class MockApiServer {
       route(
         'reportUser',
         'POST',
-        /^\/users\/(\d+)\/reports$/,
+        /^\/v1\/users\/(\d+)\/reports$/,
         true,
         ({ params, options }) => {
           const reporterId = selfId();
@@ -1035,7 +1035,7 @@ export class MockApiServer {
         },
       ),
 
-      route('searchUsers', 'GET', /^\/users\/search$/, true, ({ options }) => {
+      route('searchUsers', 'GET', /^\/v1\/users\/search$/, true, ({ options }) => {
         const q = String(options.query?.q ?? '').trim();
         if (q.length < 1 || q.length > 20) throw validation('q must be 1..20 characters.', 'q');
         const limit = Number(options.query?.limit ?? 20);
@@ -1074,7 +1074,7 @@ export class MockApiServer {
         } satisfies UserSearchResponse);
       }),
 
-      route('matchHistory', 'GET', /^\/users\/me\/matches$/, true, ({ options }) => {
+      route('matchHistory', 'GET', /^\/v1\/users\/me\/matches$/, true, ({ options }) => {
         const limit = Number(options.query?.limit ?? 20);
         if (!Number.isInteger(limit) || limit < 1 || limit > 50) {
           throw validation('limit must be an integer from 1 through 50.', 'limit');
@@ -1089,7 +1089,7 @@ export class MockApiServer {
       route(
         'getPublicProfile',
         'GET',
-        /^\/users\/([^/]+)$/,
+        /^\/v1\/users\/([^/]+)$/,
         true,
         ({ params }) => {
           const userId = Number(params[0]);
@@ -1116,7 +1116,7 @@ export class MockApiServer {
       route(
         'uploadAvatar',
         'POST',
-        /^\/users\/me\/avatar$/,
+        /^\/v1\/users\/me\/avatar$/,
         true,
         ({ options }) => {
           const file = options.formData?.get('avatar');
@@ -1146,14 +1146,14 @@ export class MockApiServer {
         },
       ),
 
-      route('listAvatarPresets', 'GET', /^\/avatars\/presets$/, true, () =>
+      route('listAvatarPresets', 'GET', /^\/v1\/avatars\/presets$/, true, () =>
         ok({ presets: AVATAR_PRESETS } satisfies AvatarPresetListResponse),
       ),
 
       route(
         'selectAvatarPreset',
         'PUT',
-        /^\/users\/me\/avatar$/,
+        /^\/v1\/users\/me\/avatar$/,
         true,
         ({ options }) => {
           const { preset_id: presetId } = bodyOf<{ preset_id: string }>(options);
@@ -1181,7 +1181,7 @@ export class MockApiServer {
 
       /* --------------------------------- friends ----------------------------- */
 
-      route('listFriends', 'GET', /^\/friends$/, true, ({ options }) => {
+      route('listFriends', 'GET', /^\/v1\/friends$/, true, ({ options }) => {
         const limit = Number(options.query?.limit ?? 50);
         const offset = Number(options.query?.offset ?? 0);
         if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
@@ -1212,7 +1212,7 @@ export class MockApiServer {
         } satisfies FriendListResponse);
       }),
 
-      route('listFriendRequests', 'GET', /^\/friends\/requests$/, true, () => {
+      route('listFriendRequests', 'GET', /^\/v1\/friends\/requests$/, true, () => {
         const me = selfId();
         const newest = (a: MockFriendRequest, b: MockFriendRequest) =>
           b.created_at.localeCompare(a.created_at) || b.request_id - a.request_id;
@@ -1226,7 +1226,7 @@ export class MockApiServer {
       route(
         'sendFriendRequest',
         'POST',
-        /^\/friends\/requests$/,
+        /^\/v1\/friends\/requests$/,
         true,
         ({ options }) => {
           const me = selfId();
@@ -1285,7 +1285,7 @@ export class MockApiServer {
       route(
         'acceptFriendRequest',
         'POST',
-        /^\/friends\/requests\/([^/]+)\/accept$/,
+        /^\/v1\/friends\/requests\/([^/]+)\/accept$/,
         true,
         ({ params }) => {
           const requestId = Number(params[0]);
@@ -1303,7 +1303,7 @@ export class MockApiServer {
       route(
         'declineFriendRequest',
         'POST',
-        /^\/friends\/requests\/([^/]+)\/decline$/,
+        /^\/v1\/friends\/requests\/([^/]+)\/decline$/,
         true,
         ({ params }) => {
           const requestId = Number(params[0]);
@@ -1320,7 +1320,7 @@ export class MockApiServer {
       route(
         'cancelFriendRequest',
         'DELETE',
-        /^\/friends\/requests\/([^/]+)$/,
+        /^\/v1\/friends\/requests\/([^/]+)$/,
         true,
         ({ params }) => {
           const requestId = Number(params[0]);
@@ -1344,7 +1344,7 @@ export class MockApiServer {
       route(
         'removeFriend',
         'DELETE',
-        /^\/friends\/([^/]+)$/,
+        /^\/v1\/friends\/([^/]+)$/,
         true,
         ({ params }) => {
           const userId = Number(params[0]);
@@ -1369,7 +1369,7 @@ export class MockApiServer {
       route(
         'blockUser',
         'PUT',
-        /^\/users\/([^/]+)\/block$/,
+        /^\/v1\/users\/([^/]+)\/block$/,
         true,
         ({ params }) => {
           const userId = Number(params[0]);
@@ -1393,7 +1393,7 @@ export class MockApiServer {
       route(
         'unblockUser',
         'DELETE',
-        /^\/users\/([^/]+)\/block$/,
+        /^\/v1\/users\/([^/]+)\/block$/,
         true,
         ({ params }) => {
           const userId = Number(params[0]);

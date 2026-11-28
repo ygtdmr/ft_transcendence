@@ -1,6 +1,6 @@
 /**
- * The profile the Profile pop-up shows: the signed-in user's own (`GET /api/users/me`) or
- * another player's public one (`GET /api/users/{user_id}`).
+ * The profile the Profile pop-up shows: the signed-in user's own (`GET /api/v1/users/me`) or
+ * another player's public one (`GET /api/v1/users/{user_id}`).
  *
  * The two payloads differ: only the public one carries `is_online`, and only the own one
  * carries `active_room_id`. The pop-up reads one shape, `ProfileView`, where the own

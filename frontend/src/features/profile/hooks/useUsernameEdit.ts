@@ -1,7 +1,7 @@
 /**
  * USERNAME in Settings: a draft that becomes the username only when the server says so.
  *
- *   draft -> (Save) -> check the rule -> PATCH /api/users/me -> the server's profile
+ *   draft -> (Save) -> check the rule -> PATCH /api/v1/users/me -> the server's profile
  *
  * The rule is checked here first so input that could never succeed is not sent, and the
  * server checks it again along with uniqueness, which only it can know. While the request

@@ -1,7 +1,7 @@
 /**
  * The signed-in user's whole friend list, from the shared friends store.
  *
- * It reads `GET /api/friends` (every page) when it mounts — quietly when an earlier screen
+ * It reads `GET /api/v1/friends` (every page) when it mounts — quietly when an earlier screen
  * already loaded the list, so what is shown stays on screen — again after a reconnect, and
  * whenever `refresh` is called. The server does not push presence, so `is_online` is as
  * fresh as the last read.

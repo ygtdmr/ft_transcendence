@@ -2,7 +2,7 @@
  * The signed-in user's relationship to one other user, for a profile: the relationship
  * itself, the pending request when there is one, and the actions it offers.
  *
- * The server's answer (`GET /api/users/{user_id}`), the friend list and the pending
+ * The server's answer (`GET /api/v1/users/{user_id}`), the friend list and the pending
  * requests are read fresh when the hook mounts and again after a reconnect. Until they
  * land the status is `LOADING`, so a profile never offers an action from a stale state.
  * After that the friends store, kept current by the server's answers and social events,

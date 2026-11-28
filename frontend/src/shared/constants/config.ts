@@ -17,6 +17,13 @@ export const API_BASE_PATH = import.meta.env.VITE_API_BASE_PATH ?? '/api';
 export const WS_BASE_PATH = import.meta.env.VITE_WS_BASE_PATH ?? '/ws';
 
 /**
+ * Version segment of the shared v1 contract: Auth (`/api/v1/auth/*`), profiles, avatars,
+ * search, reports, blocks, friends and match history. The refresh cookie is scoped to
+ * `/api/v1/auth/refresh`, so these calls must keep the version in their path.
+ */
+export const CORE_API_PATH = '/v1';
+
+/**
  * Game v2 version segment. Rooms and games use one contract as a pair: REST at
  * `/api/v2/rooms` with the room socket at `/ws/v2/rooms/{room_id}`. A session never mixes
  * it with the v1 room contract.

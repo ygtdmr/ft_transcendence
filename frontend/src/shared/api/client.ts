@@ -51,7 +51,7 @@ function buildUrl(path: string, query?: ApiRequestOptions['query']): string {
  * Hook for the silent-refresh step.
  *
  * `features/auth` installs the real implementation at bootstrap (it owns
- * `POST /api/auth/refresh` and the session store). Keeping the slot here — rather
+ * `POST /api/v1/auth/refresh` and the session store). Keeping the slot here — rather
  * than importing the auth feature — is what stops `shared/` depending on `features/`.
  *
  * The contract: return `true` when a refresh succeeded and the original request should

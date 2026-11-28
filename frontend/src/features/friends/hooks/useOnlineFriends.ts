@@ -1,7 +1,7 @@
 /**
  * The Players Online list in Room Discovery: the user's friends who are online now.
  *
- * `GET /api/friends` carries live presence, read fresh on every call, every page of it; the
+ * `GET /api/v1/friends` carries live presence, read fresh on every call, every page of it; the
  * server does not push presence changes, so the list is as current as its last load. It
  * loads when Room Discovery opens, again on Try again after a failure, and again, without
  * the loading placeholders, when the realtime connection comes back after a drop: whatever

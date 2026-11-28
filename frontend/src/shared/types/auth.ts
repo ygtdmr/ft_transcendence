@@ -5,14 +5,14 @@
  * value ever appears in a response body, so no token type exists here on purpose.
  */
 
-/** `POST /api/auth/register` request body. */
+/** `POST /api/v1/auth/register` request body. */
 export interface RegisterRequest {
   email: string;
   username: string;
   password: string;
 }
 
-/** `POST /api/auth/login` request body. */
+/** `POST /api/v1/auth/login` request body. */
 export interface LoginRequest {
   email: string;
   password: string;
@@ -44,7 +44,7 @@ export interface LoginResponse {
   access_token_expires_at: string;
 }
 
-/** `POST /api/auth/refresh` — reads the `ft_refresh` cookie, reissues both cookies. */
+/** `POST /api/v1/auth/refresh` — reads the `ft_refresh` cookie, reissues both cookies. */
 export interface RefreshResponse {
   access_token_expires_at: string;
 }
@@ -52,7 +52,7 @@ export interface RefreshResponse {
 /** The room contract versions a membership can belong to. */
 export type RoomApiVersion = 'v1' | 'v2';
 
-/** `GET /api/auth/session` — the route-recovery bootstrap call. */
+/** `GET /api/v1/auth/session` — the route-recovery bootstrap call. */
 export interface SessionResponse {
   user: {
     user_id: number;

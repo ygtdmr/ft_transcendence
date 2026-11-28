@@ -1,5 +1,5 @@
 /**
- * GAME HISTORY data for the own profile, from `GET /api/users/me/matches`.
+ * GAME HISTORY data for the own profile, from `GET /api/v1/users/me/matches`.
  *
  * Exposes the four UI states — loading, error, empty, populated — and cursor paging
  * with `before` = the oldest loaded `finished_at`. Nothing is cached across mounts.

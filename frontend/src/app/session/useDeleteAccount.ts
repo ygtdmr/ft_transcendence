@@ -13,7 +13,7 @@ export type DeleteAccountFailure = 'MISMATCH' | 'RATE_LIMITED' | 'FAILED';
 /**
  * Delete Account, from Settings.
  *
- *   DELETE /api/users/me { confirm_username } -> clear private state -> Landing
+ *   DELETE /api/v1/users/me { confirm_username } -> clear private state -> Landing
  *
  * The server checks the typed username, removes the user from any room, deletes the
  * account, revokes every session and closes every socket. Only once it has answered
