@@ -25,6 +25,8 @@ docs:
 
     Room endpoints use `{{baseUrl}}/api/{{gameApiVersion}}`, with `gameApiVersion=v2`. They reuse the existing HttpOnly `ft_session` cookie and the v1 identity/session endpoints. Token refresh therefore remains `POST /api/v1/auth/refresh`.
 
+    **Service hop.** The browser never reaches Game Session directly. Web BFF validates `ft_session` through Auth, removes any client-supplied `X-User-Id`, `X-Session-Id`, `Authorization` and cookies, and forwards the request with `X-User-Id` set to the validated session's user. Game Session takes the acting user from that header only. The trust rests on network isolation: Game Session's public listener publishes no host port and is reachable only from Web BFF, not from the reverse proxy, the gateways or other services. A request that reaches it without `X-User-Id` is `401 UNAUTHORIZED`.
+
     ## Endpoint matrix
 
     | Method | Path | Purpose |
