@@ -15,7 +15,7 @@ interface LegalSection {
 }
 
 /** Date of the current version of both documents, shown as `legal.lastUpdated`. */
-const LAST_UPDATED = '2026-09-29';
+const LAST_UPDATED = '2026-11-28';
 
 const REPOSITORY_URL = 'https://github.com/ygtdmr/ft_transcendence';
 

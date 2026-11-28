@@ -143,7 +143,7 @@
 		"privacyPolicy": "Politique de confidentialité",
 		"termsOfService": "Conditions d'utilisation",
 		"logIn": "Se connecter",
-		"lastUpdated": "Dernière mise à jour le 29 septembre 2026",
+		"lastUpdated": "Dernière mise à jour le 28 novembre 2026",
 		"footer": "Codenames Online · Un projet de l'école 42",
 		"repository": "Dépôt du projet sur GitHub (s'ouvre dans un nouvel onglet)"
 	},
@@ -291,7 +291,8 @@
 				"id": "intellectual-property",
 				"title": "Propriété intellectuelle",
 				"paragraphs": [
-					"Le code, le design de l'interface et les illustrations propres au projet appartiennent à l'équipe du projet. Les bibliothèques et polices tierces restent soumises à leurs propres licences. Le nom Codenames et le jeu original appartiennent à leurs propriétaires respectifs."
+					"Le code et le design de l'interface propres au projet appartiennent à l'équipe du projet. Les illustrations, avatars et mascottes ont été créés pour ce projet par l'équipe dans l'outil de design pen.dev, avec sa génération assistée par IA.",
+					"Les icônes de l'interface proviennent de Font Awesome Free (CC BY 4.0), la police de texte est Baloo 2 (SIL Open Font License 1.1) et le badge de déconnexion utilise un glyphe Material Symbols (Apache License 2.0). Le logo Google du bouton de connexion est une marque de Google LLC. Les autres bibliothèques tierces restent soumises à leurs propres licences ; la liste complète se trouve dans le dépôt du projet. Le nom Codenames et le jeu original appartiennent à leurs propriétaires respectifs."
 				]
 			},
 			{
