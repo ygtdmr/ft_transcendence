@@ -4,3 +4,4 @@
 /.env
 # The 42 subject PDF must never reach this public repository.
 en.subject.pdf
+/release-evidence/

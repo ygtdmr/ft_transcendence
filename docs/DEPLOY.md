@@ -120,6 +120,24 @@ CSRF/CORS/WebSocket origin, private listeners unreachable from the ingress, cred
 oversized input, rate limits, profile IDOR, container and database least privilege, and no secret in any log or
 tracked file. It restarts Auth first because rate-limit counters live in memory.
 
+## Release check
+
+`make release-check` (issue #199) is the one command that produces the evidence a release proof needs. It starts
+throwaway PostgreSQL 17.11, RabbitMQ 4.4.0 and two Redis 7 containers on random loopback ports (the stack's data is
+never touched), and for each of the eight backend modules runs `gofmt -l`, `GOWORK=off go build`, `go vet`,
+`go mod tidy -diff` and `go test -race -count=1 -v` with every real-dependency test enabled. It then brings the stack
+up and runs `make security-test`, `make integration-test` and `make rotation-drill`.
+
+It writes `release-evidence/<UTC time>-<commit>.md` (git-ignored) with the commit, the number of tracked files that
+are modified, the host, Go, Docker and Compose versions, the exact commands, and per-module counts of passed, failed
+and skipped tests, with the logs next to it. A failed step does not stop the run, but the exit status is non-zero if
+any step failed **or any test was skipped**, because a skipped real-dependency test proves nothing
+(`RELEASE_ALLOW_SKIPS=1` reports skips without failing). `scripts/release-check.sh` without `--stack` runs the modules
+only.
+
+It does not prove behaviour under representative load, a real Google sign-in, the frontend, a second gateway
+instance or an upgrade with a new migration; the report says so.
+
 ## Real certificates
 
 `make up` creates a self-signed certificate (`certs/`), which browsers warn about. For a real deployment put a CA
