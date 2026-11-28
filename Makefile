@@ -3,7 +3,7 @@
 
 COMPOSE ?= docker compose
 
-.PHONY: up down restart build logs ps config secrets cert security-test rotation-drill clean help
+.PHONY: up down restart build logs ps config secrets cert security-test integration-test rotation-drill clean help
 
 up: secrets cert ## Build and start the whole stack, then wait until it is ready
 	$(COMPOSE) up -d --build
@@ -40,6 +40,12 @@ security-test: ## Run the negative and least-privilege checks against the runnin
 	$(COMPOSE) restart auth-service
 	@COMPOSE="$(COMPOSE)" sh scripts/wait-ready.sh
 	@COMPOSE="$(COMPOSE)" bash tests/security/stack-security.sh
+
+integration-test: ## Prove gateway and Auth admission and revocation on the running stack
+	@# Rate-limit counters live in memory; start from empty ones so the proof can be repeated.
+	$(COMPOSE) restart auth-service
+	@COMPOSE="$(COMPOSE)" sh scripts/wait-ready.sh
+	cd tests/integration/gateway-auth && GOWORK=off go test -count=1 -v ./...
 
 rotation-drill: ## Prove a service credential rotates with no downtime (temporary files only)
 	@COMPOSE="$(COMPOSE)" sh scripts/rotation-drill.sh
