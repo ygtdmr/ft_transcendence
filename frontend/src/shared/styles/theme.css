@@ -292,9 +292,6 @@
   --stroke-strong: 2.5px;
   --stroke-heavy: 3px;
 
-  /* A dialog that waits on other players, such as Game Paused, sits under the chat. */
-  --z-modal-under-chat: 90;
-  --z-chat: 100;
   --z-modal: 200;
   --z-overlay: 300;
   --z-toast: 400;

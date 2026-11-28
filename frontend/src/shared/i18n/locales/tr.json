@@ -149,21 +149,21 @@
 	},
 	"privacy": {
 		"title": "Gizlilik Politikası",
-		"intro": "Bu sayfa, Codenames Online'ın hakkınızda neleri sakladığını, bunları neden sakladığını ve ne kadar süre tuttuğunu açıklar. Codenames Online, 42 müfredatı için geliştirilmiş bir öğrenci projesidir ve yalnızca hesapları, maçları ve sohbeti çalıştırmak için gereken bilgileri toplar.",
+		"intro": "Bu sayfa, Codenames Online'ın hakkınızda neleri sakladığını, bunları neden sakladığını ve ne kadar süre tuttuğunu açıklar. Codenames Online, 42 müfredatı için geliştirilmiş bir öğrenci projesidir ve yalnızca hesapları, maçları ve arkadaşlıkları çalıştırmak için gereken bilgileri toplar.",
 		"sections": [
 			{
 				"id": "what-we-store",
 				"title": "Neleri saklıyoruz",
 				"paragraphs": [
 					"Hesabınız bir e-posta adresi, bir kullanıcı adı ve bir parola içerir. Parola hiçbir zaman düz metin olarak değil, yalnızca özet (hash) olarak saklanır.",
-					"Profiliniz, hazır setten seçtiğiniz ya da yüklediğiniz avatarı içerir. Oynadığınız maçlar, maç geçmişinizi ve bundan türetilen galibiyet ve mağlubiyet gibi istatistikleri ekler. Sosyal özellikleri kullanmak, arkadaş bağlantılarınızı ve gönderdiğiniz sohbet mesajlarını ekler."
+					"Profiliniz, hazır setten seçtiğiniz ya da yüklediğiniz avatarı içerir. Oynadığınız maçlar, maç geçmişinizi ve bundan türetilen galibiyet ve mağlubiyet gibi istatistikleri ekler. Sosyal özellikleri kullanmak, arkadaş bağlantılarınızı, engellediğiniz oyuncuları ve gönderdiğiniz şikâyetleri ekler."
 				]
 			},
 			{
 				"id": "why-we-store-it",
 				"title": "Neden saklıyoruz",
 				"paragraphs": [
-					"Hesap verileri oturum açmanızı sağlar ve sizi diğer oyunculara tanıtır. Maç sonuçları profilinizi, maç geçmişinizi ve istatistiklerinizi oluşturur. Arkadaş bağlantıları ve mesajlar, arkadaş listesini ve sohbeti çalıştırır.",
+					"Hesap verileri oturum açmanızı sağlar ve sizi diğer oyunculara tanıtır. Maç sonuçları profilinizi, maç geçmişinizi ve istatistiklerinizi oluşturur. Arkadaş bağlantıları arkadaş listesini çalıştırır; engellemeler ve şikâyetler oyunu güvenli tutar.",
 					"Verileriniz yalnızca oyunu çalıştırmak için kullanılır. Hiçbir veri satılmaz, kiralanmaz veya reklamcılarla paylaşılmaz."
 				]
 			},
@@ -184,11 +184,11 @@
 				]
 			},
 			{
-				"id": "chat-messages",
-				"title": "Sohbet mesajları",
+				"id": "google-services",
+				"title": "Google hizmetleri",
 				"paragraphs": [
-					"Oda sohbeti ve arkadaşlar arasındaki özel mesajlar, sunucunun belirlediği sınırlı bir süre boyunca saklanır. Her mesaj bu süre dolduğunda silinir.",
-					"Oda mesajlarını yalnızca o odadaki oyuncular, özel mesajları ise yalnızca konuşmadaki iki arkadaş görebilir."
+					"Google ile giriş yaparsanız Google, e-posta adresinizi ve bir hesap kimliğini oyunla paylaşır. Oyun Google parolanızı hiçbir zaman almaz.",
+					"Arayüz yazı tipi Google Fonts'tan yüklenir; bu nedenle sayfa yüklenirken tarayıcınız IP adresinizi Google'a gönderir."
 				]
 			},
 			{
@@ -203,7 +203,7 @@
 				"id": "how-long-we-keep-it",
 				"title": "Ne kadar süre saklıyoruz",
 				"paragraphs": [
-					"Hesap, profil, arkadaş ve maç verileri, hesabınız var olduğu ve projenin sunucusu çalıştığı sürece saklanır. Sohbet mesajları saklama süreleri dolduğunda, canlı oda verileri ise oda kapandığında silinir."
+					"Hesap, profil, arkadaş ve maç verileri, hesabınız var olduğu ve projenin sunucusu çalıştığı sürece saklanır. Canlı oda verileri oda kapandığında silinir."
 				]
 			},
 			{
@@ -211,14 +211,14 @@
 				"title": "Seçimleriniz",
 				"paragraphs": [
 					"Kullanıcı adınızı ve avatarınızı istediğiniz zaman değiştirebilir, arkadaş ekleyip çıkarabilir ve arayüz dilini değiştirebilirsiniz.",
-					"E-posta adresini veya parolayı değiştirmek ve hesabı silmek oyun içinde mümkün değildir. Hesabınızın ve verilerinizin silinmesi için proje ekibiyle iletişime geçin."
+					"Hesabınızı ve verilerinizi Ayarlar'dan silebilirsiniz; bu işlem geri alınamaz. E-posta adresini veya parolayı değiştirmek oyun içinde mümkün değildir."
 				]
 			},
 			{
 				"id": "security",
 				"title": "Güvenlik",
 				"paragraphs": [
-					"Parolalar yalnızca özet olarak saklanır, oturum çerezleri sayfa betikleri tarafından okunamaz ve yayındaki oyun HTTPS üzerinden sunulur. Hiçbir sistem tamamen güvenli değildir; bu nedenle kullanıcı adınızda, avatarınızda veya mesajlarınızda hassas kişisel bilgiler paylaşmaktan kaçının."
+					"Parolalar yalnızca özet olarak saklanır, oturum çerezleri sayfa betikleri tarafından okunamaz ve yayındaki oyun HTTPS üzerinden sunulur. Hiçbir sistem tamamen güvenli değildir; bu nedenle kullanıcı adınızda veya avatarınızda hassas kişisel bilgiler paylaşmaktan kaçının."
 				]
 			},
 			{
@@ -245,7 +245,7 @@
 				"id": "about-the-game",
 				"title": "Oyun hakkında",
 				"paragraphs": [
-					"Codenames Online gerçek zamanlı, çok oyunculu bir kelime oyunudur. Hesaplar, profiller, oyun odaları, arkadaşlar, sohbet, maç geçmişi ve istatistikler sunar.",
+					"Codenames Online gerçek zamanlı, çok oyunculu bir kelime oyunudur. Hesaplar, profiller, oyun odaları, arkadaşlar, maç geçmişi ve istatistikler sunar.",
 					"Codenames masa oyunundan esinlenen bağımsız bir eğitim projesidir. Czech Games Edition veya Codenames markasıyla bir bağlantısı yoktur ve onlar tarafından onaylanmamıştır."
 				]
 			},
@@ -265,10 +265,10 @@
 				]
 			},
 			{
-				"id": "chat-and-conduct",
-				"title": "Sohbet ve davranış",
+				"id": "conduct",
+				"title": "Davranış",
 				"paragraphs": [
-					"Sohbet, odanızdaki oyuncular ve arkadaşlarınız içindir. Diğer oyunculara saygı gösterin: taciz, nefret söylemi, tehdit ve spam yasaktır. Gönderdiğiniz mesajlardan siz sorumlusunuz.",
+					"Diğer oyunculara saygı gösterin: taciz, nefret söylemi, tehdit ve saldırgan kullanıcı adları veya avatarlar yasaktır.",
 					"Maçları başkaları için bozmak amacıyla kasıtlı olarak terk etmeyin veya oyalamayın. Oda sahibi, devam eden bir maç dışında oyuncuları odadan çıkarabilir."
 				]
 			},
@@ -284,7 +284,7 @@
 				"id": "your-content",
 				"title": "İçeriğiniz",
 				"paragraphs": [
-					"Kullanıcı adınız, avatarınız ve mesajlarınız size aittir. Oyun, Gizlilik Politikası'nda açıklandığı gibi yalnızca bir maçı yürütmek, bir profili göstermek ve sohbeti iletmek için gerekenleri saklar."
+					"Kullanıcı adınız ve avatarınız size aittir. Oyun, Gizlilik Politikası'nda açıklandığı gibi yalnızca bir maçı yürütmek ve bir profili göstermek için gerekenleri saklar."
 				]
 			},
 			{
@@ -299,7 +299,7 @@
 				"id": "changes-and-ending-use",
 				"title": "Değişiklikler ve kullanımın sona ermesi",
 				"paragraphs": [
-					"Bu koşullar oyun geliştikçe değişebilir; sayfanın üstündeki tarih geçerli sürümü gösterir. Oyunu istediğiniz zaman kullanmayı bırakabilirsiniz. Hesabınızın silinmesi için proje ekibiyle iletişime geçin."
+					"Bu koşullar oyun geliştikçe değişebilir; sayfanın üstündeki tarih geçerli sürümü gösterir. Oyunu istediğiniz zaman kullanmayı bırakabilir ve hesabınızı Ayarlar'dan silebilirsiniz."
 				]
 			},
 			{
@@ -586,14 +586,6 @@
 			"insufficientPlayers": "Oda kapandı: bir takım gereken oyuncusu olmadan kaldı. Maç sayılmadı.",
 			"seatUnavailable": "Sen yer almadan maç devam etti, bu yüzden odadan çıktın."
 		},
-		"invites": {
-			"title": "{{username}} seni oyuna davet etti",
-			"body": "Oda kodu",
-			"join": "Katıl",
-			"joining": "Katılınıyor…",
-			"dismiss": "Kapat",
-			"closed": "Bu oda kapandı."
-		},
 		"settings": {
 			"timer": "Tur süresi",
 			"language": "Dil",
@@ -808,27 +800,6 @@
 			"cancel": "İsteği İptal Et",
 			"cancelling": "İptal ediliyor…"
 		},
-		"message": "Mesaj",
-		"invite": {
-			"button": {
-				"READY": "Davet Et",
-				"FAILED": "Davet Et",
-				"SENDING": "Davet ediliyor…",
-				"SENT": "Davet Gönderildi",
-				"UNAVAILABLE": "Davet Et"
-			},
-			"sent": "Davet gönderildi. {{username}} davetten odana katılabilir.",
-			"failed": "Davet gönderilemedi. Tekrar dene.",
-			"reason": {
-				"NO_ACTIVE_ROOM": "{{username}} adlı oyuncuyu davet etmek için bir odaya katıl ya da oda oluştur.",
-				"ROOM_NOT_JOINABLE": "Oyunun başladı. Davetler, oda oyuncu beklerken gönderilebilir.",
-				"ROOM_FULL": "Odan dolu.",
-				"IN_YOUR_ROOM": "{{username}} zaten odanda.",
-				"OFFLINE": "{{username}} çevrimdışı. Çevrimiçi olduğunda davet edebilirsin.",
-				"IN_ROOM": "{{username}} zaten başka bir odada.",
-				"NOT_FRIENDS": "{{username}} adlı oyuncuyu davet etmek için arkadaş olarak ekle."
-			}
-		},
 		"notFound": {
 			"title": "Oyuncu bulunamadı",
 			"body": "Bu hesap artık kullanılamıyor."
@@ -897,124 +868,7 @@
 			"blocking": "Engelleniyor…",
 			"unblock": "Engeli Kaldır",
 			"unblocking": "Engel kaldırılıyor…",
-			"hint": "{{username}} adlı oyuncuyu engelledin. Engeli kaldırana kadar mesajlaşamaz, davet edemez ve arkadaş olamazsınız."
-		}
-	},
-	"chat": {
-		"launcher": {
-			"title": "Sohbet",
-			"label": "Sohbeti aç",
-			"labelUnread_one": "Sohbeti aç, {{count}} yeni mesaj",
-			"labelUnread_other": "Sohbeti aç, {{count}} yeni mesaj",
-			"caption_one": "{{count}} yeni mesaj",
-			"caption_other": "{{count}} yeni mesaj",
-			"captionNone": "Yeni mesaj yok"
-		},
-		"panel": {
-			"title": "Sohbetler",
-			"close": "Sohbeti kapat",
-			"back": "Sohbetlere dön"
-		},
-		"search": {
-			"label": "Arkadaş ara",
-			"placeholder": "Arkadaş ara"
-		},
-		"tabs": {
-			"label": "Sohbetler",
-			"ROOM": "Oda",
-			"FRIENDS": "Arkadaşlar"
-		},
-		"sections": {
-			"room": "Bu odada",
-			"friends": "Arkadaşlar"
-		},
-		"room": {
-			"name": "Oda sohbeti",
-			"code": "Oda {{code}}",
-			"preparing": "Oda sohbeti hazırlanıyor…",
-			"closed": "Oda sohbeti kapandı"
-		},
-		"list": {
-			"loading": "Sohbetler yükleniyor…",
-			"channelsError": "Sohbetlerin yüklenemedi.",
-			"friendsError": "Arkadaşların yüklenemedi.",
-			"noRoom": "Oyuncularıyla sohbet etmek için bir odaya katıl.",
-			"noFriends": "Burada sohbet etmek için arkadaş ekle.",
-			"noResults": "“{{query}}” ile eşleşen kimse yok.",
-			"noMessages": "Henüz mesaj yok",
-			"fromYou": "Sen: {{text}}",
-			"fromPlayer": "{{name}}: {{text}}",
-			"addFriend": "Sohbet etmek için arkadaş olarak ekle",
-			"opening": "Sohbet açılıyor…",
-			"openFailed": "Bu sohbet açılamadı. Tekrar dene.",
-			"unread_one": "{{count}} yeni mesaj",
-			"unread_other": "{{count}} yeni mesaj"
-		},
-		"presence": {
-			"online": "Çevrimiçi",
-			"offline": "Çevrimdışı"
-		},
-		"age": {
-			"now": "şimdi",
-			"MINUTES": "{{count}} dk",
-			"HOURS": "{{count}} sa",
-			"DAYS": "{{count}} g"
-		},
-		"day": {
-			"today": "Bugün",
-			"yesterday": "Dün"
-		},
-		"thread": {
-			"label": "Mesajlar",
-			"loading": "Mesajlar yükleniyor…",
-			"error": "Bu mesajlar yüklenemedi.",
-			"empty": "Henüz mesaj yok. Merhaba de!",
-			"emptyRoom": "Henüz mesaj yok. Odaya merhaba de!",
-			"olderLoading": "Önceki mesajlar yükleniyor…",
-			"olderFailed": "Önceki mesajlar yüklenemedi.",
-			"newMessages": "Yeni mesajlar",
-			"newFrom": "{{name}} adlı oyuncudan yeni mesaj",
-			"newMessage": "Yeni mesaj",
-			"you": "Sen:"
-		},
-		"composer": {
-			"label": "Mesaj",
-			"placeholder": "Bir mesaj yaz…",
-			"send": "Mesajı gönder",
-			"offline": "Yeniden bağlanılıyor… birazdan tekrar gönderebilirsin.",
-			"tooLong": "Mesajlar en fazla {{max}} karakter olabilir.",
-			"count": "{{count}}/{{max}}"
-		},
-		"pending": {
-			"sending": "Gönderiliyor…",
-			"retry": "Tekrar dene",
-			"discard": "Kaldır",
-			"failed": {
-				"OFFLINE": "Gönderilmedi: çevrimdışısın.",
-				"TIMEOUT": "Henüz gönderilmedi: sunucu yanıt vermedi.",
-				"UNAVAILABLE": "Gönderilmedi: sohbet şu anda kullanılamıyor.",
-				"REVOKED": "Gönderilmedi: bu sohbete artık yazamazsın.",
-				"INVALID": "Gönderilmedi: mesaj reddedildi.",
-				"READ_ONLY": "Gönderilmedi: oyun sürerken sohbet kullanılamaz."
-			}
-		},
-		"access": {
-			"direct": "Artık arkadaş değilsiniz. Tekrar sohbet etmek için arkadaş olarak ekle.",
-			"viewProfile": "Profili gör",
-			"room": {
-				"default": "Bu oda sohbetini artık kullanamazsın.",
-				"GAME_FINISHED": "Oyun bitince oda sohbeti kapandı.",
-				"ROOM_LEFT": "Bu odadan ayrıldın, sohbeti kapandı.",
-				"KICKED_BY_HOST": "Bu odadan çıkarıldın, sohbeti kapandı.",
-				"POST_GAME_TIMEOUT": "Oyundan sonra oda sohbeti kapandı.",
-				"ROOM_CLOSED": "Bu oda kapandı."
-			},
-			"gameRunning": "Oyun sürerken sohbet kullanılamaz. Oyun duraklatıldığında ya da bittiğinde yeniden açılır."
-		},
-		"unknownPlayer": "Oyuncu",
-		"retry": "Tekrar dene",
-		"invite": {
-			"label": "{{username}} adlı oyuncuyu odana davet et"
+			"hint": "{{username}} adlı oyuncuyu engelledin. Engeli kaldırana kadar arkadaş olamazsınız."
 		}
 	},
 	"settings": {
@@ -1095,7 +949,7 @@
 		"deleteAccount": {
 			"button": "Hesabı sil",
 			"title": "Hesap Silinsin mi?",
-			"body": "Bu işlem hesabını, profilini, arkadaşlarını, istatistiklerini ve mesajlarını kalıcı olarak siler. Geri alınamaz.",
+			"body": "Bu işlem hesabını, profilini, arkadaşlarını ve istatistiklerini kalıcı olarak siler. Geri alınamaz.",
 			"inMatch": "Bir maçta oynuyorsun. Hesabını silmek seni maçtan çıkarır. Takımın eksik kalırsa ve yerini zamanında kimse almazsa oda kapanır.",
 			"confirmLabel": "Onaylamak için <name>{{username}}</name> yaz",
 			"confirmHint": "Kullanıcı adın, profilinde göründüğü gibi.",

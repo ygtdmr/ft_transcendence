@@ -1,7 +1,7 @@
 /**
- * Transport seam shared by the room socket and the chat socket.
+ * Transport seam shared by the room socket and the notification socket.
  *
- * `RoomConnection` and `ChatConnection` talk to a `SocketTransport`, never to a
+ * `RoomConnection` and `NotificationConnection` talk to a `SocketTransport`, never to a
  * concrete socket. The default factory builds a `ManagedSocket` over the browser
  * `WebSocket`. A development build can swap the factory for the mock transport
  * (`shared/websocket/mock`), which speaks the same envelopes and event types, so every

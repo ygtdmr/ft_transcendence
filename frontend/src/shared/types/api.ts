@@ -52,12 +52,7 @@ export type RestErrorCode =
   | 'ALREADY_REPORTED'
   | 'VALIDATION_ERROR'
   | 'RATE_LIMITED'
-  | 'SERVICE_UNAVAILABLE'
-  /* Chat REST v2 */
-  | 'NOT_PERMITTED'
-  | 'NOT_CHANNEL_MEMBER'
-  | 'CHANNEL_ACCESS_REVOKED'
-  | 'CHANNEL_NOT_FOUND';
+  | 'SERVICE_UNAVAILABLE';
 
 /** `GET /api/health` */
 export interface HealthResponse {

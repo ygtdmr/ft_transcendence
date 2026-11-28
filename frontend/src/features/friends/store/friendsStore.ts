@@ -1,6 +1,6 @@
 /**
  * Friends store — the signed-in user's persistent social state, read over REST and kept
- * current by the social events of the chat socket.
+ * current by the social events of the notification socket.
  *
  * It holds the friend list, the pending friend requests both ways, and what this session
  * knows about the user's own blocks. Every list is the server's answer or an event the

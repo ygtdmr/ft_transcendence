@@ -57,11 +57,7 @@ export type MockEndpoint =
   | 'lookupRoom'
   | 'joinRoom'
   | 'getRoom'
-  | 'leaveRoom'
-  | 'inviteFriend'
-  | 'listChannels'
-  | 'openDirectChannel'
-  | 'messageHistory';
+  | 'leaveRoom';
 
 /**
  * - `logged-in`: `player_one` has a live session.

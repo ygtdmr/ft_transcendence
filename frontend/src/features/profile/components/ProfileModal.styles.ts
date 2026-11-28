@@ -1,5 +1,3 @@
-import { buttonInteraction } from '@shared/ui';
-
 /**
  * Class recipes for the Profile pop-up.
  *
@@ -66,28 +64,9 @@ export const action: string =
 /** Add Friend is primary and Remove Friend neutral, the safe secondary choice. */
 export const friend: string = 'min-w-0 flex-1 aria-disabled:pointer-events-none';
 
-const actionBase: string =
-  `${buttonInteraction} inline-flex min-w-0 flex-1 items-center justify-center ${action} ` +
-  'aria-disabled:pointer-events-none';
-
 export const friendSkeleton: string =
   'h-[58px] flex-1 rounded-[22px] bg-surface-sunken motion-safe:animate-pulse md:h-[46px] ' +
   'md:rounded-[18px]';
-
-/** Invite: the outline coral button, recolored for Invite Sent and Unavailable. */
-const inviteBase: string = `${actionBase} border-(length:--stroke-default)`;
-
-export const invite = {
-  ready:
-    `${inviteBase} border-secondary-dark bg-surface text-secondary-dark ` +
-    'not-aria-disabled:hover:bg-secondary-dark/10',
-  sending: `${inviteBase} border-secondary-dark bg-surface text-secondary-dark opacity-70`,
-  sent: `${inviteBase} border-success-deep bg-success-soft text-surface`,
-  unavailable: `${inviteBase} border-disabled bg-disabled text-text-muted`,
-};
-
-/** Message: the outline blue button. */
-export const message: string = 'min-w-0 flex-1 bg-surface';
 
 /** Takes no room while there is nothing to say, so no blank line sits under the buttons. */
 export const hintBase: string =

@@ -5,7 +5,7 @@ import { iconBaseStyles, iconSizeStyles, variantStyles } from './Button.styles';
 import type { ButtonIconProps } from './Button.types';
 
 /**
- * Circular icon-only button: close, invite, send, navigate.
+ * Circular icon-only button: close, send, navigate.
  *
  * It has no visible label, so `aria-label` is required and says what the button does.
  * `sizeClassName` replaces the preset diameter and glyph size, as it does on `Button`.

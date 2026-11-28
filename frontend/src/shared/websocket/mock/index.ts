@@ -2,7 +2,7 @@
  * Mock socket layer for development and tests.
  *
  * `installMockSockets()` swaps the transport factory so every `RoomConnection` and
- * `ChatConnection` created afterwards talks to an in-memory server instead of the
+ * `NotificationConnection` created afterwards talks to an in-memory server instead of the
  * Gateway. Nothing above the transport changes: the same envelopes, event types, stores
  * and components run either way.
  *
@@ -30,18 +30,21 @@
  *   mockSockets.offline(20000)                   // network down for 20s (sockets and REST)
  *   mockSockets.online()                         // network back; sockets reconnect
  *   mockSockets.room().graceMs.game = 10000      // shorter seat hold for the next drop
- *   mockSockets.chat.inviteReceived({ user_id: 43, username: 'red_agent' }, 1002, 'QWER12')
- *   mockSockets.chat.directMessage(43, 'hi!')    // a friend writes (more in mockChatServer.ts)
- *   mockSockets.chat.roomMessage(48, 'ready?')    // a room player writes in the room chat
+ *   mockSockets.notifications.dropConnection(3000)  // RECONNECTING, then notifications.ready
  */
 
-import { GAME_API_VERSION, RECONNECT, WS_BASE_PATH, WS_CHAT_PATH } from '@shared/constants';
+import {
+  GAME_API_VERSION,
+  RECONNECT,
+  WS_BASE_PATH,
+  WS_NOTIFICATIONS_PATH,
+} from '@shared/constants';
 import type { CardColor } from '@shared/types';
 
 import { setTransportFactory } from '../transport';
 import type { TransportFactory } from '../transport';
-import { mockChat } from './mockChatServer';
-import type { MockChatServer } from './mockChatServer';
+import { mockNotifications } from './mockNotificationServer';
+import type { MockNotificationServer } from './mockNotificationServer';
 import { MockRoomServer } from './mockRoomServer';
 import { MockTransport } from './mockTransport';
 import { mockNetwork, mockRooms, mockSelfPlayer } from './registry';
@@ -50,7 +53,7 @@ import type { RoomScenario } from './scenarios';
 
 export { MOCK_BOTS, MockActionError, MockRoomServer } from './mockRoomServer';
 export type { MockPlayer } from './mockRoomServer';
-export { MockChannelError, MockChatServer, mockChat } from './mockChatServer';
+export { MockNotificationServer, mockNotifications } from './mockNotificationServer';
 export { mockDirectory, mockNetwork, mockRooms, mockSelfPlayer, mockSession } from './registry';
 export { ROOM_SCENARIOS, applyRoomScenario, guessByColor } from './scenarios';
 export type { RoomScenario } from './scenarios';
@@ -64,7 +67,7 @@ export interface MockSockets {
   /** The room server for `roomId`, or the most recently connected room. */
   room(roomId?: number): MockRoomServer;
   readonly rooms: Map<number, MockRoomServer>;
-  readonly chat: MockChatServer;
+  readonly notifications: MockNotificationServer;
   /**
    * Replace the current room's server with a fresh one in `scenario` and make every
    * open room socket reconnect to it, so the client receives the new `room.state`.
@@ -94,13 +97,13 @@ function freshRoom(roomId: number, scenario: RoomScenario): MockRoomServer {
 
 export function installMockSockets(): MockSockets {
   const rooms = mockRooms;
-  const chat = mockChat;
+  const notifications = mockNotifications;
   let lastRoomId: number | null = null;
   let onlineTimer: ReturnType<typeof setTimeout> | undefined;
   const roomPattern = new RegExp(`^${WS_BASE_PATH}/${GAME_API_VERSION}/rooms/(\\d+)$`);
 
   const factory: TransportFactory = (options) => {
-    if (options.path === WS_CHAT_PATH) return new MockTransport(options, chat);
+    if (options.path === WS_NOTIFICATIONS_PATH) return new MockTransport(options, notifications);
     const match = roomPattern.exec(options.path);
     if (!match) throw new Error(`Mock sockets: no mock server for path ${options.path}.`);
     const roomId = Number(match[1]);
@@ -126,7 +129,7 @@ export function installMockSockets(): MockSockets {
       return server;
     },
     rooms,
-    chat,
+    notifications,
     scenario(scenario, roomId) {
       const id = roomId ?? lastRoomId;
       if (id === null) throw new Error('Mock sockets: no room socket has connected yet.');
@@ -139,7 +142,7 @@ export function installMockSockets(): MockSockets {
       mockNetwork.online = false;
       clearTimeout(onlineTimer);
       rooms.forEach((server) => server.dropConnection(RECONNECT.initialDelayMs));
-      chat.dropConnection(RECONNECT.initialDelayMs);
+      notifications.dropConnection(RECONNECT.initialDelayMs);
       if (forMs !== undefined) onlineTimer = setTimeout(() => api.online(), forMs);
     },
     online() {

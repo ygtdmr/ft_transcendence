@@ -13,7 +13,7 @@ In `frontend/.env`:
 
 ```dotenv
 VITE_MOCK_API=true          # mock REST
-VITE_MOCK_SOCKETS=true      # mock room and chat sockets
+VITE_MOCK_SOCKETS=true      # mock room and notification sockets
 # VITE_MOCK_AUTH=logged-in  # logged-in | logged-out | in-room | session-expired
 # VITE_MOCK_ROOM_SCENARIO=room-waiting
 ```
@@ -34,13 +34,13 @@ over mock REST is the room its mock socket connects to.
 | --------------------- | ------------------------------------------------------------------------------------------------- | --------------------------------------------- |
 | Installation          | Dynamic imports guarded by `import.meta.env.DEV` and the `VITE_MOCK_*` flags                      | `src/main.tsx`                                |
 | REST transport seam   | `setRequestTransport()` replaces `fetch` under `apiRequest`                                       | `src/shared/api/client.ts`                    |
-| Mock REST server      | Route table for every REST binding: auth, profile, avatars, friends, rooms, invites, chat history | `src/shared/api/mock/mockApiServer.ts`        |
+| Mock REST server      | Route table for every REST binding: auth, profile, avatars, friends, rooms                         | `src/shared/api/mock/mockApiServer.ts`        |
 | REST config           | Latency, initial session, forced outcomes                                                         | `src/shared/api/mock/config.ts`               |
 | Seed data             | Accounts, friends, seeded rooms, match history, avatar presets                                    | `src/shared/api/mock/fixtures.ts`             |
 | Socket transport seam | `setTransportFactory()` replaces the browser `WebSocket`                                          | `src/shared/websocket/transport.ts`           |
 | Mock socket           | Delivers frames, simulates drops and reconnects                                                   | `src/shared/websocket/mock/mockTransport.ts`  |
 | Room and game server  | One `MockRoomServer` per room: lobby, countdown, game, staffing pause, post-game, grace periods   | `src/shared/websocket/mock/mockRoomServer.ts` |
-| Chat server           | Direct and room channels, history, invites, delivery faults                                       | `src/shared/websocket/mock/mockChatServer.ts` |
+| Notification server   | Social and profile events pushed to the notification socket                                       | `src/shared/websocket/mock/mockNotificationServer.ts` |
 | Scenarios             | Ready-made room states reached through real moves                                                 | `src/shared/websocket/mock/scenarios.ts`      |
 | Shared registry       | Rooms, network state, session check, user directory                                               | `src/shared/websocket/mock/registry.ts`       |
 
@@ -51,7 +51,7 @@ Behavior:
 | Where is state stored?    | JavaScript memory of the page                                                                                                                                      |
 | Does it survive a reload? | No. A reload restores the seed data and the `.env` settings                                                                                                        |
 | Delays                    | Every REST response waits `mockApi.config.latencyMs` (default `250`). Socket frames are asynchronous with no fixed delay                                           |
-| Errors                    | Forced REST outcomes (`mockApi.config.outcomes`); real validation errors from the route handlers; `MockActionError` for illegal socket moves; chat delivery faults |
+| Errors                    | Forced REST outcomes (`mockApi.config.outcomes`); real validation errors from the route handlers; `MockActionError` for illegal socket moves |
 | Multiple players          | Other players are simulated from the console (`playerJoin`, `selectRole`, `submitClue`, `guess`, …)                                                                |
 | Disconnect and reconnect  | `dropConnection()`, `offline()` / `online()`; recovery always uses a fresh `room.state` snapshot                                                                   |
 | Timers                    | Countdown, grace periods (`graceMs`), post-game window (`postGameMs`), staffing deadline (`staffingMs`) run in real time                                           |
@@ -67,8 +67,8 @@ the backend.
 | Id  | Username        | Email                       | Online | Notes                                             |
 | --- | --------------- | --------------------------- | ------ | ------------------------------------------------- |
 | 42  | `player_one`    | `player.one@example.com`    | yes    | Default signed-in user                            |
-| 43  | `red_agent`     | `red.agent@example.com`     | yes    | Friend; seeded direct chat; mock bot              |
-| 44  | `blue_master`   | `blue.master@example.com`   | yes    | Friend; long chat history (64 messages); mock bot |
+| 43  | `red_agent`     | `red.agent@example.com`     | yes    | Friend; mock bot                                  |
+| 44  | `blue_master`   | `blue.master@example.com`   | yes    | Friend; mock bot                                  |
 | 45  | `blue_agent`    | `blue.agent@example.com`    | no     | Friend (offline); mock bot                        |
 | 46  | `extra_red`     | `extra.red@example.com`     | yes    | In `FULL44`; mock bot                             |
 | 47  | `night_owl`     | `night.owl@example.com`     | no     | In `FULL44`; mock bot (`lateJoiner`)              |
@@ -82,7 +82,7 @@ the backend.
 | 55  | `echo_ops`      | `echo.ops@example.com`      | yes    | In `BUSY77` (BLUE Operative)                      |
 
 Log in as any account to see the app from that user's side. Only `player_one` has
-friends, chat history and match history.
+friends and match history.
 
 ### Rooms
 
@@ -111,11 +111,9 @@ The room scenarios and `configureStartable()` use these players (`MOCK_BOTS` in
 ### Social and Statistics
 
 - **Friends of `player_one`:** `red_agent` and `blue_master` (online), `blue_agent`
-  (offline). None of them is in a room, so invites to them work.
+  (offline). None of them is in a room.
 - **Friend requests:** `clue_crafter` (50) has sent `player_one` a request, waiting for
   Accept or Decline. Nobody is blocked.
-- **Direct chat:** a short recent conversation with `red_agent`, and 64 older messages
-  with `blue_master` for history paging.
 - **Match history:** five finished matches of `player_one` (`fixtures.ts`,
   `SEED_MATCHES`), with wins, losses and an assassin loss.
 - **Avatars:** the 11 presets bundled in `src/assets/avatars`. Uploads accept images up
@@ -178,7 +176,6 @@ the contract documents them; otherwise the console warns and the call succeeds.
 | `joinRoom`             | `not-found`, `conflict`, `validation-error`              |
 | `getRoom`              | `not-found`, `forbidden`, `validation-error`             |
 | `leaveRoom`            | `not-found`, `forbidden`                                 |
-| `inviteFriend`         | `forbidden`, `not-found`, `conflict`, `validation-error` |
 | `openDirectChannel`    | `forbidden`, `not-found`, `validation-error`             |
 | `messageHistory`       | `forbidden`, `not-found`                                 |
 
@@ -267,16 +264,7 @@ mockSockets.room().graceMs.room = 10000; // seat hold after a drop in the lobby 
 | `mockSockets.room().dropConnection(3000)` | Room socket drops, reconnects after 3 s, receives a fresh `room.state`                     |
 | `mockSockets.offline(20000)`              | Network down for 20 s: sockets drop and REST calls fail. Without an argument it stays down |
 | `mockSockets.online()`                    | Network back; sockets reconnect                                                            |
-| `mockSockets.chat.dropConnection(3000)`   | Chat socket drops and reconnects                                                           |
-
-### Chat Methods
-
-| Command                                     | Effect                                                       |
-| ------------------------------------------- | ------------------------------------------------------------ |
-| `mockSockets.chat.directMessage(43, 'hi!')` | A friend sends you a direct message. Non-friends are refused |
-
-While you play a running match every channel is read only: sends are refused with
-`CHANNEL_READ_ONLY` until the match pauses for players or ends.
+| `mockSockets.notifications.dropConnection(3000)` | Notification socket drops and reconnects; friends and requests are read again |
 
 ### Social Methods (`mockApi.server`)
 
@@ -288,12 +276,6 @@ While you play a running match every channel is read only: sends are refused wit
 | `mockApi.server.cancelFriendRequestBy(46)`                                                | `extra_red` withdraws the request they sent you                 |
 | `mockApi.server.blockedBy(44)`                                                            | `blue_master` blocks you; `blockedBy(44, false)` lifts it       |
 | `mockApi.server.profileUpdateBy(43, { username: 'agent_red' })`                           | `red_agent` renames; `avatar_url` changes the avatar            |
-| `mockSockets.chat.roomMessage(48, 'ready?')`                                              | A member of your room writes in the room chat                   |
-| `mockSockets.chat.inviteReceived({ user_id: 43, username: 'red_agent' }, 1001, 'QWER12')` | You receive a room invite                                       |
-| `mockSockets.chat.failNext()`                                                             | Your next send fails with `SERVICE_UNAVAILABLE` (safe to retry) |
-| `mockSockets.chat.dropNextAck()`                                                          | Your next send is stored and broadcast, but its ack is lost     |
-| `mockSockets.chat.loseNextSend()`                                                         | Your next send is stored, but neither ack nor event arrives     |
-| `mockSockets.chat.duplicateNext()`                                                        | The next event is delivered twice                               |
 
 ### Events the Mocks Emit
 
@@ -305,10 +287,8 @@ Room socket: `room.state`, `room.player.joined`, `room.player.left`,
 `game.turn.changed`, `game.staffing.required`, `game.staffing.restored`,
 `game.ended`, `game.cancelled`, `game.history.appended`.
 
-Chat socket: `chat.ready`, `chat.message.created`, `chat.channel.available`,
-`chat.channel.access_changed` (including `READ_ONLY` while your match runs),
-`room.invite.received`, `friend.request.received`, `friend.request.resolved`,
-`friend.removed`, `friend.restored`.
+Notification socket: `notifications.ready`, `friend.request.received`,
+`friend.request.resolved`, `friend.removed`, `friend.restored`, `user.profile.updated`.
 
 ## Resetting Mock State
 

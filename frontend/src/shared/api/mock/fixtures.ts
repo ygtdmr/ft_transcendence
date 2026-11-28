@@ -186,7 +186,7 @@ export function seedAccounts(): MockAccount[] {
 
 /**
  * Who already sits in each seeded room. Every account belongs to at most one room, and
- * none of `player_one`'s friends is in one, so inviting them works.
+ * none of `player_one`'s friends is in one.
  */
 export const SEED_ROOM_MEMBERS = {
   waiting: [48, 49],

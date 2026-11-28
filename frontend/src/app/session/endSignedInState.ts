@@ -1,9 +1,6 @@
-import { useChatStore } from '@features/chat/store/chatStore';
 import { useFriendsStore } from '@features/friends/store/friendsStore';
 import { useGameStore } from '@features/game/store/gameStore';
-import { useInviteStore } from '@features/lobby/store/inviteStore';
 import { useOwnProfileStore } from '@features/profile/store/ownProfileStore';
-import { useSentInvitesStore } from '@features/profile/store/sentInvitesStore';
 import { useRoomStore } from '@features/room/store/roomStore';
 import { useConnectionStore, useModalStore, useSessionStore } from '@shared/stores';
 
@@ -13,7 +10,7 @@ export type SessionEnd = 'LOGGED_OUT' | 'ACCOUNT_DELETED' | 'EXPIRED';
 /**
  * Lets go of the signed-in user once the session is over: every store holding the user's
  * private data is cleared, any open modal closes, and the session becomes anonymous.
- * Leaving the private routes unmounts the room and chat sockets, and the room route lets
+ * Leaving the private routes closes the room and notification sockets, and the room route lets
  * the user go without its leave prompt, since the membership is no longer this client's
  * to give up.
  *
@@ -28,10 +25,7 @@ export function endSignedInState(end: SessionEnd = 'LOGGED_OUT') {
   useModalStore.getState().close();
   useRoomStore.getState().clear();
   useGameStore.getState().clear();
-  useChatStore.getState().clear();
   useFriendsStore.getState().clear();
-  useInviteStore.getState().clear();
-  useSentInvitesStore.getState().clear();
   useOwnProfileStore.getState().clear();
   useConnectionStore.getState().setRoomLost(false);
   if (end === 'EXPIRED') session.setAnonymous({ sessionExpired: true });

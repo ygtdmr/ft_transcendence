@@ -26,9 +26,6 @@ export const header: string =
 
 export const profile: string = 'min-w-0 max-w-full';
 
-/** Below desktop the chat button ends the header row; desktop has the Chat pill instead. */
-export const chat: string = 'ml-auto shrink-0 pl-[10px] desktop:hidden';
-
 // ---- Hero ----
 
 export const mascot: string =

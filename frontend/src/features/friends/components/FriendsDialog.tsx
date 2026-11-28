@@ -27,7 +27,7 @@ export interface FriendsDialogProps {
  * Friendship takes a request and its acceptance. Add Friend sends a request and the row
  * then reads Request Sent; the other player becomes a friend only once they accept. A
  * request sent to the user is answered here with Accept or Decline. Every row follows the
- * server's answers and the social events of the chat socket, so a request accepted on the
+ * server's answers and the social events of the notification socket, so a request accepted on the
  * other side appears here without a reload. A name in any list opens that player's profile
  * over this dialog, where the friendship can also be ended and the player blocked; this
  * dialog waits underneath until it closes.
