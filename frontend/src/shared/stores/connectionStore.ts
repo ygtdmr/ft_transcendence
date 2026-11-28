@@ -28,7 +28,7 @@ export interface RoomRecovery {
 
 interface ConnectionState {
   room: SocketState & { recovery: RoomRecovery | null };
-  chat: SocketState;
+  notifications: SocketState;
   /**
    * The room connection could not be restored, so the player was taken back to Room
    * Discovery. Shown there once, until the player acknowledges it.
@@ -37,7 +37,7 @@ interface ConnectionState {
 
   setRoomStatus: (status: ConnectionStatus, reason?: ConnectionCloseReason) => void;
   setRoomRecovery: (recovery: RoomRecovery | null) => void;
-  setChatStatus: (status: ConnectionStatus, reason?: ConnectionCloseReason) => void;
+  setNotificationStatus: (status: ConnectionStatus, reason?: ConnectionCloseReason) => void;
   setRoomLost: (lost: boolean) => void;
 }
 
@@ -45,12 +45,13 @@ const initial: SocketState = { status: 'IDLE', closeReason: null };
 
 export const useConnectionStore = create<ConnectionState>((set) => ({
   room: { ...initial, recovery: null },
-  chat: initial,
+  notifications: initial,
   roomLost: false,
 
   setRoomStatus: (status, reason) =>
     set((state) => ({ room: { ...state.room, status, closeReason: reason ?? null } })),
   setRoomRecovery: (recovery) => set((state) => ({ room: { ...state.room, recovery } })),
-  setChatStatus: (status, reason) => set({ chat: { status, closeReason: reason ?? null } }),
+  setNotificationStatus: (status, reason) =>
+    set({ notifications: { status, closeReason: reason ?? null } }),
   setRoomLost: (roomLost) => set({ roomLost }),
 }));

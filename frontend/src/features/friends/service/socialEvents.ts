@@ -1,5 +1,5 @@
 /**
- * Social events from the chat socket: friend requests sent and resolved, friendships
+ * Social events from the notification socket: friend requests sent and resolved, friendships
  * removed (or suspended by a block) and restored, and a user's new username or avatar. They are applied to the friends store,
  * so every list and button that reads it follows the change without a reload. Nothing is
  * replayed after a drop, so the lists are read again over REST after every reconnect.

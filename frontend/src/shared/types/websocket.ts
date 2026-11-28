@@ -1,25 +1,19 @@
 /**
  * WebSocket envelopes, commands and events, from Bruno `v2/game-websocket` (the room
- * socket) and `v2/chat-websocket` (the chat socket).
+ * socket) and `v2/notification-websocket` (the notification socket).
  *
  * Both sockets authenticate by the HttpOnly `ft_session` cookie attached automatically
  * on a same-origin upgrade. Nothing here carries a credential, by design.
  */
 
 import type {
-  ChannelAccessChangedPayload,
-  ChannelAvailablePayload,
-  ChatMessageCreatedPayload,
-  ChatReadyPayload,
-  ChatSendAck,
-  ChatSendPayload,
   FriendRemovedPayload,
   FriendRequestReceivedPayload,
   FriendRequestResolvedPayload,
   FriendRestoredPayload,
+  NotificationsReadyPayload,
   UserProfileUpdatedPayload,
-  RoomInvitePayload,
-} from './chat';
+} from './notification';
 import type { Score, Team } from './common';
 import type { CardColor, Clue, CurrentTurn, GameEndReason, HistoryEntry, Staffing } from './game';
 import type { MemberState, PlayingRole, Room, RoomMember, RoomStatus } from './room';
@@ -38,8 +32,6 @@ export type RoomCommandType =
   | 'game.clue.submit'
   | 'game.card.guess'
   | 'game.turn.pass';
-
-export type ChatCommandType = 'chat.message.send';
 
 /**
  * Client envelope. `request_id` is a client-generated unique string of 1..64 visible
@@ -90,8 +82,6 @@ export type RoomCommand =
   | SubmitClueCommand
   | GuessCardCommand
   | PassTurnCommand;
-
-export type ChatCommand = ClientEnvelope<'chat.message.send', ChatSendPayload>;
 
 /* -------------------------------------------------------------------------- */
 /* Server to client                                                            */
@@ -147,11 +137,6 @@ export type WsErrorCode =
   | 'GAME_ALREADY_FINISHED'
   | 'NOT_PERMITTED'
   | 'USER_NOT_FOUND'
-  /* Chat v2 */
-  | 'NOT_CHANNEL_MEMBER'
-  | 'CHANNEL_ACCESS_REVOKED'
-  | 'CHANNEL_READ_ONLY'
-  | 'CHANNEL_NOT_FOUND'
   | 'SERVICE_UNAVAILABLE';
 
 /** Action errors keep the connection open and never mutate room/game state. */
@@ -416,52 +401,41 @@ export type RoomServerEvent =
 /** Anything the room socket can deliver. */
 export type RoomServerMessage = RoomServerEvent | AckMessage | WsErrorMessage;
 
-/* ----------------------------- chat messages ------------------------------ */
+/* ------------------------- notification messages -------------------------- */
 
-/** The chat envelope has no `room_id` — the chat socket is not room-scoped. */
-export interface ChatEventEnvelope<TType extends string, TPayload> {
+/** The notification envelope has no `room_id`: the socket is per user, not per room. */
+export interface NotificationEventEnvelope<TType extends string, TPayload> {
   type: TType;
   event_id: string;
   sent_at: string;
   payload: TPayload;
 }
 
-export type ChatReadyEvent = ChatEventEnvelope<'chat.ready', ChatReadyPayload>;
+export type NotificationsReadyEvent = {
+  type: 'notifications.ready';
+  sent_at: string;
+  payload: NotificationsReadyPayload;
+};
 
-export type ChatMessageCreatedEvent = ChatEventEnvelope<
-  'chat.message.created',
-  ChatMessageCreatedPayload
->;
-
-export type ChannelAvailableEvent = ChatEventEnvelope<
-  'chat.channel.available',
-  ChannelAvailablePayload
->;
-
-export type ChannelAccessChangedEvent = ChatEventEnvelope<
-  'chat.channel.access_changed',
-  ChannelAccessChangedPayload
->;
-
-/** Live invitation from a friend, delivered on the chat socket and never stored. */
-export type RoomInviteReceivedEvent = ChatEventEnvelope<'room.invite.received', RoomInvitePayload>;
-
-export type FriendRequestReceivedEvent = ChatEventEnvelope<
+export type FriendRequestReceivedEvent = NotificationEventEnvelope<
   'friend.request.received',
   FriendRequestReceivedPayload
 >;
-export type FriendRequestResolvedEvent = ChatEventEnvelope<
+export type FriendRequestResolvedEvent = NotificationEventEnvelope<
   'friend.request.resolved',
   FriendRequestResolvedPayload
 >;
-export type FriendRemovedEvent = ChatEventEnvelope<'friend.removed', FriendRemovedPayload>;
-export type FriendRestoredEvent = ChatEventEnvelope<'friend.restored', FriendRestoredPayload>;
-export type UserProfileUpdatedEvent = ChatEventEnvelope<
+export type FriendRemovedEvent = NotificationEventEnvelope<'friend.removed', FriendRemovedPayload>;
+export type FriendRestoredEvent = NotificationEventEnvelope<
+  'friend.restored',
+  FriendRestoredPayload
+>;
+export type UserProfileUpdatedEvent = NotificationEventEnvelope<
   'user.profile.updated',
   UserProfileUpdatedPayload
 >;
 
-/** Friend request, friendship and profile changes, delivered live on the chat socket. */
+/** Friend request, friendship and profile changes, delivered live on the notification socket. */
 export type SocialEvent =
   | FriendRequestReceivedEvent
   | FriendRequestResolvedEvent
@@ -469,15 +443,14 @@ export type SocialEvent =
   | FriendRestoredEvent
   | UserProfileUpdatedEvent;
 
-export type ChatServerEvent =
-  | ChatReadyEvent
-  | ChatMessageCreatedEvent
-  | ChannelAvailableEvent
-  | ChannelAccessChangedEvent
-  | RoomInviteReceivedEvent
-  | SocialEvent;
+/** The notification socket's reply to any client frame; the socket stays open. */
+export interface NotificationErrorMessage {
+  type: 'error';
+  payload: { code: string };
+}
 
-export type ChatServerMessage = ChatServerEvent | AckMessage<ChatSendAck> | WsErrorMessage;
+export type NotificationServerMessage =
+  NotificationsReadyEvent | SocialEvent | NotificationErrorMessage;
 
 /**
  * Close codes the Gateway uses. `4401` means the session became explicitly invalid

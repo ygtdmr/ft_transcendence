@@ -1,4 +1,4 @@
-/** Lifecycle of one managed socket, shared by the room socket and the chat socket. */
+/** Lifecycle of one managed socket, shared by the room socket and the notification socket. */
 export type ConnectionStatus =
   | 'IDLE'
   | 'CONNECTING'

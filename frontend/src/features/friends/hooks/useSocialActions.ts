@@ -4,7 +4,7 @@
  * remove a friend, block and unblock — with their in-flight state and failures per user.
  *
  * Each answer updates the shared friends store, so every list and profile that reads it
- * agrees at once; the social events the other user's side causes arrive on the chat
+ * agrees at once; the social events the other user's side causes arrive on the notification
  * socket. An answer that only says this client was out of date (the request was already
  * sent, already resolved, the friendship already gone) reads the lists again instead of
  * reporting an error. Each user has at most one action in flight; a second press is

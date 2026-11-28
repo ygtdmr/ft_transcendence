@@ -26,11 +26,6 @@ export interface DialogProps {
   showCloseButton?: boolean;
   /** `alertdialog` for a dialog that interrupts to ask for a decision or to announce one. */
   role?: 'dialog' | 'alertdialog';
-  /**
-   * `true` for a dialog that waits on other players, such as Game Paused: it sits under the
-   * chat, which stays usable beside it, and Tab moves on from the dialog into the chat.
-   */
-  underChat?: boolean;
   /** The dialog surface: its width, background, padding and shadow. */
   className?: string;
   children: ReactNode;
@@ -39,9 +34,6 @@ export interface DialogProps {
 const backdrop: string =
   'fixed inset-0 flex overflow-y-auto overscroll-contain bg-overlay p-3 ' +
   'backdrop-blur-[2px] motion-safe:animate-fade-in';
-
-/** What a dialog drawn with `underChat` lets Tab reach: the chat's launcher and panel. */
-const CHAT_LAYER = '[data-chat-layer]';
 
 const surface: string = 'relative m-auto flex w-full shrink-0 flex-col motion-safe:animate-pop-in';
 
@@ -73,13 +65,12 @@ export function Dialog({
   closable = true,
   showCloseButton = true,
   role = 'dialog',
-  underChat = false,
   className,
   children,
 }: DialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
 
-  useFocusTrap(dialogRef, true, 'first', underChat ? CHAT_LAYER : undefined);
+  useFocusTrap(dialogRef, true, 'first');
   useScrollLock();
 
   useEffect(() => {
@@ -93,7 +84,7 @@ export function Dialog({
 
   return createPortal(
     <div
-      className={cn(backdrop, underChat ? 'z-(--z-modal-under-chat)' : 'z-(--z-modal)')}
+      className={cn(backdrop, 'z-(--z-modal)')}
       // A press on the backdrop would move focus to the page body, outside the trap.
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) event.preventDefault();
@@ -102,8 +93,7 @@ export function Dialog({
       <div
         ref={dialogRef}
         role={role}
-        // The chat beside an `underChat` dialog stays reachable to assistive technology.
-        aria-modal={!underChat}
+        aria-modal
         aria-labelledby={labelledBy}
         aria-describedby={describedBy}
         tabIndex={-1}

@@ -65,8 +65,7 @@ function TeamDeadline({
  * needs, and how long remains, counted from the server's absolute deadline. A player who
  * joined the paused match takes a free seat here, which restores the team. The dialog closes when the server says
  * play resumes; if a deadline passes, the server closes the room and everyone is taken back
- * to the Lobby. Nothing here ends the game on its own. The chat stays open above the dialog,
- * so players can talk while they wait.
+ * to the Lobby. Nothing here ends the game on its own.
  */
 export function StaffingDialog({
   staffing,
@@ -98,7 +97,6 @@ export function StaffingDialog({
       onClose={() => {}}
       closable={false}
       showCloseButton={false}
-      underChat
       className={styles.card}
     >
       <span aria-hidden="true" className={styles.badge}>

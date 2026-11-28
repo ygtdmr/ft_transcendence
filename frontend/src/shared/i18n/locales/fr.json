@@ -149,21 +149,21 @@
 	},
 	"privacy": {
 		"title": "Politique de confidentialité",
-		"intro": "Cette page explique ce que Codenames Online conserve à votre sujet, pourquoi ces données sont conservées et pendant combien de temps. Codenames Online est un projet étudiant réalisé dans le cadre du cursus 42, et ne collecte que ce dont il a besoin pour faire fonctionner les comptes, les parties et le chat.",
+		"intro": "Cette page explique ce que Codenames Online conserve à votre sujet, pourquoi ces données sont conservées et pendant combien de temps. Codenames Online est un projet étudiant réalisé dans le cadre du cursus 42, et ne collecte que ce dont il a besoin pour faire fonctionner les comptes, les parties et les amis.",
 		"sections": [
 			{
 				"id": "what-we-store",
 				"title": "Ce que nous conservons",
 				"paragraphs": [
 					"Votre compte contient une adresse e-mail, un nom d'utilisateur et un mot de passe. Le mot de passe n'est jamais conservé en clair, uniquement sous forme de hachage.",
-					"Votre profil contient l'avatar que vous choisissez parmi les avatars proposés ou que vous téléversez. Vos parties ajoutent votre historique de parties et les statistiques qui en découlent, comme les victoires et les défaites. L'utilisation des fonctions sociales ajoute vos liens d'amitié et les messages que vous envoyez."
+					"Votre profil contient l'avatar que vous choisissez parmi les avatars proposés ou que vous téléversez. Vos parties ajoutent votre historique de parties et les statistiques qui en découlent, comme les victoires et les défaites. L'utilisation des fonctions sociales ajoute vos liens d'amitié, les joueurs que vous bloquez et les signalements que vous envoyez."
 				]
 			},
 			{
 				"id": "why-we-store-it",
 				"title": "Pourquoi nous les conservons",
 				"paragraphs": [
-					"Les données du compte vous permettent de vous connecter et vous identifient auprès des autres joueurs. Les résultats des parties alimentent votre profil, votre historique et vos statistiques. Les liens d'amitié et les messages font fonctionner la liste d'amis et le chat.",
+					"Les données du compte vous permettent de vous connecter et vous identifient auprès des autres joueurs. Les résultats des parties alimentent votre profil, votre historique et vos statistiques. Les liens d'amitié font fonctionner la liste d'amis, et les blocages et signalements assurent un jeu sûr.",
 					"Vos données servent uniquement au fonctionnement du jeu. Rien n'est vendu, loué ni partagé avec des annonceurs."
 				]
 			},
@@ -184,11 +184,11 @@
 				]
 			},
 			{
-				"id": "chat-messages",
-				"title": "Messages du chat",
+				"id": "google-services",
+				"title": "Services Google",
 				"paragraphs": [
-					"Le chat des salons et les messages privés entre amis sont conservés pendant une durée limitée fixée par le serveur. Chaque message est supprimé à la fin de cette durée.",
-					"Les messages d'un salon ne sont visibles que par les joueurs de ce salon, et les messages privés que par les deux amis de la conversation."
+					"Si vous vous connectez avec Google, Google transmet au jeu votre adresse e-mail et un identifiant de compte. Le jeu ne reçoit jamais votre mot de passe Google.",
+					"La police de l'interface est chargée depuis Google Fonts : votre navigateur envoie donc votre adresse IP à Google au chargement de la page."
 				]
 			},
 			{
@@ -203,7 +203,7 @@
 				"id": "how-long-we-keep-it",
 				"title": "Durée de conservation",
 				"paragraphs": [
-					"Les données du compte, du profil, des amis et des parties sont conservées tant que votre compte existe et que le serveur du projet fonctionne. Les messages sont supprimés à la fin de leur durée de conservation, et les données de salon à la fermeture du salon."
+					"Les données du compte, du profil, des amis et des parties sont conservées tant que votre compte existe et que le serveur du projet fonctionne. Les données de salon sont supprimées à la fermeture du salon."
 				]
 			},
 			{
@@ -211,14 +211,14 @@
 				"title": "Vos choix",
 				"paragraphs": [
 					"Vous pouvez changer votre nom d'utilisateur et votre avatar à tout moment, ajouter ou retirer des amis et changer la langue de l'interface.",
-					"La modification de l'adresse e-mail ou du mot de passe et la suppression du compte ne sont pas disponibles dans le jeu. Pour faire supprimer votre compte et ses données, contactez l'équipe du projet."
+					"Vous pouvez supprimer votre compte et ses données depuis les Paramètres ; cette action est définitive. La modification de l'adresse e-mail ou du mot de passe n'est pas disponible dans le jeu."
 				]
 			},
 			{
 				"id": "security",
 				"title": "Sécurité",
 				"paragraphs": [
-					"Les mots de passe sont conservés uniquement sous forme de hachage, les cookies de session ne sont pas lisibles par les scripts de la page, et le jeu déployé est servi en HTTPS. Aucun système n'est parfaitement sûr : évitez de partager des informations personnelles sensibles dans votre nom d'utilisateur, votre avatar ou vos messages."
+					"Les mots de passe sont conservés uniquement sous forme de hachage, les cookies de session ne sont pas lisibles par les scripts de la page, et le jeu déployé est servi en HTTPS. Aucun système n'est parfaitement sûr : évitez de partager des informations personnelles sensibles dans votre nom d'utilisateur ou votre avatar."
 				]
 			},
 			{
@@ -245,7 +245,7 @@
 				"id": "about-the-game",
 				"title": "À propos du jeu",
 				"paragraphs": [
-					"Codenames Online est un jeu de mots multijoueur en temps réel. Il propose des comptes, des profils, des salons de jeu, des amis, un chat, un historique des parties et des statistiques.",
+					"Codenames Online est un jeu de mots multijoueur en temps réel. Il propose des comptes, des profils, des salons de jeu, des amis, un historique des parties et des statistiques.",
 					"C'est un projet éducatif indépendant inspiré du jeu de société Codenames. Il n'est ni affilié, ni approuvé, ni lié à Czech Games Edition ou à la marque Codenames."
 				]
 			},
@@ -265,10 +265,10 @@
 				]
 			},
 			{
-				"id": "chat-and-conduct",
-				"title": "Chat et comportement",
+				"id": "conduct",
+				"title": "Comportement",
 				"paragraphs": [
-					"Le chat est destiné aux joueurs de votre salon et à vos amis. Respectez les autres joueurs : le harcèlement, les discours haineux, les menaces et le spam sont interdits. Vous êtes responsable des messages que vous envoyez.",
+					"Respectez les autres joueurs : le harcèlement, les discours haineux, les menaces et les noms d'utilisateur ou avatars offensants sont interdits.",
 					"Ne quittez pas et ne bloquez pas volontairement une partie pour la gâcher aux autres. L'hôte d'un salon peut en retirer des joueurs en dehors d'une partie en cours."
 				]
 			},
@@ -284,7 +284,7 @@
 				"id": "your-content",
 				"title": "Votre contenu",
 				"paragraphs": [
-					"Votre nom d'utilisateur, votre avatar et vos messages vous appartiennent. Le jeu conserve uniquement ce dont il a besoin pour faire tourner une partie, afficher un profil et distribuer le chat, comme décrit dans la Politique de confidentialité."
+					"Votre nom d'utilisateur et votre avatar vous appartiennent. Le jeu conserve uniquement ce dont il a besoin pour faire tourner une partie et afficher un profil, comme décrit dans la Politique de confidentialité."
 				]
 			},
 			{
@@ -299,7 +299,7 @@
 				"id": "changes-and-ending-use",
 				"title": "Modifications et fin d'utilisation",
 				"paragraphs": [
-					"Ces conditions peuvent évoluer avec le jeu ; la date en haut de cette page indique la version en vigueur. Vous pouvez cesser d'utiliser le jeu à tout moment. Pour faire supprimer votre compte, contactez l'équipe du projet."
+					"Ces conditions peuvent évoluer avec le jeu ; la date en haut de cette page indique la version en vigueur. Vous pouvez cesser d'utiliser le jeu à tout moment et supprimer votre compte depuis les Paramètres."
 				]
 			},
 			{
@@ -586,14 +586,6 @@
 			"insufficientPlayers": "Le salon a fermé : une équipe est restée sans un joueur nécessaire. La partie ne compte pas.",
 			"seatUnavailable": "La partie a repris avant que vous preniez une place, vous avez donc quitté le salon."
 		},
-		"invites": {
-			"title": "{{username}} t'invite à jouer",
-			"body": "Code du salon",
-			"join": "Rejoindre",
-			"joining": "Connexion…",
-			"dismiss": "Ignorer",
-			"closed": "Ce salon est fermé."
-		},
 		"settings": {
 			"timer": "Minuteur",
 			"language": "Langue",
@@ -808,27 +800,6 @@
 			"cancel": "Annuler la demande",
 			"cancelling": "Annulation…"
 		},
-		"message": "Message",
-		"invite": {
-			"button": {
-				"READY": "Inviter",
-				"FAILED": "Inviter",
-				"SENDING": "Invitation…",
-				"SENT": "Invitation envoyée",
-				"UNAVAILABLE": "Inviter"
-			},
-			"sent": "Invitation envoyée. {{username}} peut rejoindre votre salon depuis l'invitation.",
-			"failed": "L'invitation n'a pas pu être envoyée. Réessayez.",
-			"reason": {
-				"NO_ACTIVE_ROOM": "Rejoignez ou créez un salon pour inviter {{username}}.",
-				"ROOM_NOT_JOINABLE": "Votre partie a commencé. Les invitations sont possibles tant que le salon attend des joueurs.",
-				"ROOM_FULL": "Votre salon est complet.",
-				"IN_YOUR_ROOM": "{{username}} est déjà dans votre salon.",
-				"OFFLINE": "{{username}} est hors ligne. L'invitation sera possible quand il ou elle sera en ligne.",
-				"IN_ROOM": "{{username}} est déjà dans un autre salon.",
-				"NOT_FRIENDS": "Ajoutez {{username}} en ami pour l'inviter."
-			}
-		},
 		"notFound": {
 			"title": "Joueur introuvable",
 			"body": "Ce compte n'est plus disponible."
@@ -897,124 +868,7 @@
 			"blocking": "Blocage…",
 			"unblock": "Débloquer l'utilisateur",
 			"unblocking": "Déblocage…",
-			"hint": "Vous avez bloqué {{username}}. Vous ne pouvez ni vous écrire, ni vous inviter, ni devenir amis tant que vous ne le débloquez pas."
-		}
-	},
-	"chat": {
-		"launcher": {
-			"title": "Chat",
-			"label": "Ouvrir le chat",
-			"labelUnread_one": "Ouvrir le chat, {{count}} nouveau message",
-			"labelUnread_other": "Ouvrir le chat, {{count}} nouveaux messages",
-			"caption_one": "{{count}} nouveau message",
-			"caption_other": "{{count}} nouveaux messages",
-			"captionNone": "Aucun nouveau message"
-		},
-		"panel": {
-			"title": "Discussions",
-			"close": "Fermer le chat",
-			"back": "Retour aux discussions"
-		},
-		"search": {
-			"label": "Rechercher des amis",
-			"placeholder": "Rechercher des amis"
-		},
-		"tabs": {
-			"label": "Discussions",
-			"ROOM": "Salon",
-			"FRIENDS": "Amis"
-		},
-		"sections": {
-			"room": "Dans ce salon",
-			"friends": "Amis"
-		},
-		"room": {
-			"name": "Chat du salon",
-			"code": "Salon {{code}}",
-			"preparing": "Le chat du salon se prépare…",
-			"closed": "Le chat du salon est fermé"
-		},
-		"list": {
-			"loading": "Chargement des discussions…",
-			"channelsError": "Impossible de charger vos discussions.",
-			"friendsError": "Impossible de charger vos amis.",
-			"noRoom": "Rejoignez un salon pour discuter avec ses joueurs.",
-			"noFriends": "Ajoutez des amis pour discuter avec eux ici.",
-			"noResults": "Personne ne correspond à « {{query}} ».",
-			"noMessages": "Aucun message pour l’instant",
-			"fromYou": "Vous : {{text}}",
-			"fromPlayer": "{{name}} : {{text}}",
-			"addFriend": "Ajoutez en ami pour discuter",
-			"opening": "Ouverture du chat…",
-			"openFailed": "Impossible d’ouvrir ce chat. Réessayez.",
-			"unread_one": "{{count}} nouveau message",
-			"unread_other": "{{count}} nouveaux messages"
-		},
-		"presence": {
-			"online": "En ligne",
-			"offline": "Hors ligne"
-		},
-		"age": {
-			"now": "maintenant",
-			"MINUTES": "{{count}} min",
-			"HOURS": "{{count}} h",
-			"DAYS": "{{count}} j"
-		},
-		"day": {
-			"today": "Aujourd’hui",
-			"yesterday": "Hier"
-		},
-		"thread": {
-			"label": "Messages",
-			"loading": "Chargement des messages…",
-			"error": "Impossible de charger ces messages.",
-			"empty": "Aucun message pour l’instant. Dites bonjour !",
-			"emptyRoom": "Aucun message pour l’instant. Dites bonjour au salon !",
-			"olderLoading": "Chargement des messages précédents…",
-			"olderFailed": "Impossible de charger les messages précédents.",
-			"newMessages": "Nouveaux messages",
-			"newFrom": "Nouveau message de {{name}}",
-			"newMessage": "Nouveau message",
-			"you": "Vous :"
-		},
-		"composer": {
-			"label": "Message",
-			"placeholder": "Écrire un message…",
-			"send": "Envoyer le message",
-			"offline": "Reconnexion… vous pourrez envoyer dans un instant.",
-			"tooLong": "Un message peut contenir jusqu’à {{max}} caractères.",
-			"count": "{{count}}/{{max}}"
-		},
-		"pending": {
-			"sending": "Envoi…",
-			"retry": "Réessayer",
-			"discard": "Retirer",
-			"failed": {
-				"OFFLINE": "Non envoyé : vous êtes hors ligne.",
-				"TIMEOUT": "Pas encore envoyé : le serveur n’a pas répondu.",
-				"UNAVAILABLE": "Non envoyé : le chat est indisponible pour le moment.",
-				"REVOKED": "Non envoyé : vous ne pouvez plus écrire dans ce chat.",
-				"INVALID": "Non envoyé : le message a été refusé.",
-				"READ_ONLY": "Non envoyé : le chat est indisponible pendant la partie."
-			}
-		},
-		"access": {
-			"direct": "Vous n’êtes plus amis. Ajoutez ce joueur en ami pour discuter à nouveau.",
-			"viewProfile": "Voir le profil",
-			"room": {
-				"default": "Vous ne pouvez plus utiliser ce chat de salon.",
-				"GAME_FINISHED": "Le chat du salon s’est fermé à la fin de la partie.",
-				"ROOM_LEFT": "Vous avez quitté ce salon, son chat est donc fermé.",
-				"KICKED_BY_HOST": "Vous avez été retiré de ce salon, son chat est donc fermé.",
-				"POST_GAME_TIMEOUT": "Le chat du salon s’est fermé après la partie.",
-				"ROOM_CLOSED": "Ce salon est fermé."
-			},
-			"gameRunning": "Le chat est indisponible pendant la partie. Il rouvre quand la partie est en pause ou terminée."
-		},
-		"unknownPlayer": "Joueur",
-		"retry": "Réessayer",
-		"invite": {
-			"label": "Inviter {{username}} dans votre salon"
+			"hint": "Vous avez bloqué {{username}}. Vous ne pouvez pas devenir amis tant que vous ne le débloquez pas."
 		}
 	},
 	"settings": {
@@ -1095,7 +949,7 @@
 		"deleteAccount": {
 			"button": "Supprimer le compte",
 			"title": "Supprimer le compte ?",
-			"body": "Cette action supprime définitivement votre compte, votre profil, vos amis, vos statistiques et vos messages. Elle est irréversible.",
+			"body": "Cette action supprime définitivement votre compte, votre profil, vos amis et vos statistiques. Elle est irréversible.",
 			"inMatch": "Tu joues une partie. Supprimer ton compte t'en retire. Si ton équipe se retrouve incomplète et que personne ne prend ta place à temps, le salon ferme.",
 			"confirmLabel": "Tapez <name>{{username}}</name> pour confirmer",
 			"confirmHint": "Votre nom d'utilisateur, tel qu'il apparaît sur votre profil.",

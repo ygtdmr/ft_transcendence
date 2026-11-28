@@ -38,16 +38,10 @@ export const wsRoomPath = (roomId: number): string =>
   `${WS_BASE_PATH}/${GAME_API_VERSION}/rooms/${roomId}`;
 
 /**
- * Chat v2 version segment. Chat is its own versioned contract (`chatApiVersion`): its
- * REST calls go to `/api/v2/channels` and its socket to Chat Gateway at `/ws/v2/channels`.
+ * Per-user Notification Gateway socket (`notificationApiVersion` v2), independent of any
+ * room. It carries social and profile events and keeps the user online.
  */
-export const CHAT_API_VERSION = 'v2';
-
-/** Chat REST prefix, relative to `API_BASE_PATH`. */
-export const CHAT_API_PATH = `/${CHAT_API_VERSION}/channels`;
-
-/** Per-user Chat Gateway socket, independent of any room. */
-export const WS_CHAT_PATH = `${WS_BASE_PATH}/${CHAT_API_VERSION}/channels`;
+export const WS_NOTIFICATIONS_PATH = `${WS_BASE_PATH}/v2/notifications`;
 
 /** Absolute `ws(s)://` URL for a same-origin socket path. */
 export function toWebSocketUrl(path: string): string {

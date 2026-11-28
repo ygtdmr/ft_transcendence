@@ -50,7 +50,10 @@ export function useOnlineFriends() {
   useEffect(
     () =>
       useConnectionStore.subscribe((state, previous) => {
-        if (state.chat.status === 'OPEN' && previous.chat.status === 'RECONNECTING') {
+        if (
+          state.notifications.status === 'OPEN' &&
+          previous.notifications.status === 'RECONNECTING'
+        ) {
           void load(true);
         }
       }),
