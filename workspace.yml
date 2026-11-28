@@ -26,11 +26,11 @@ docs: |-
 
   ## Contract versions
 
-  The original room/game behavior remains available in `REST API v1` and `WebSocket v1` through `{{apiVersion}} = v1`. The shared v1 session and own-profile responses have one backward-compatible addition, `active_room_api_version`, so reload recovery can select the right room protocol. The new post-game lifecycle lives only in `REST API v2 - Game` and `WebSocket v2 - Game` through `{{gameApiVersion}} = v2`. Live social notifications and user-level presence connections live in `WebSocket v2 - Notifications` through `{{notificationApiVersion}} = v2`. The project has no chat.
+  Room and game are v2-only: they live in `REST API v2 - Game` and `WebSocket v2 - Game` through `{{gameApiVersion}} = v2`. The room and game requests of `REST API v1` (`03 - Rooms`) and the whole `WebSocket v1` collection are historical: no service serves them, and they are kept for reference only. The shared v1 session and own-profile responses keep one field, `active_room_api_version`, which is `"v2"` or `null` (null exactly when `active_room_id` is null). Live social notifications and user-level presence connections live in `WebSocket v2 - Notifications` through `{{notificationApiVersion}} = v2`. The project has no chat.
 
-  A frontend selects one room/game contract as a pair: v1 REST must be used with v1 room WebSocket, or v2 REST with v2 room WebSocket. Mixing versions inside one room session is unsupported. Authentication/profile/friends remain on v1 unless a dedicated v2 contract exists.
+  A frontend uses the v2 REST routes with the v2 room WebSocket. Authentication, profile and friends remain on v1 unless a dedicated v2 contract exists.
 
-  Unless a section explicitly says v1 or shared, the room/member/post-game lifecycle described below is the Game v2 contract. The v1 collections remain the authority for the legacy `FINISHED` lifecycle.
+  Unless a section explicitly says v1 or shared, the room/member/post-game lifecycle described below is the Game v2 contract. The v1 room collections are historical and describe no served behavior.
 
   ## Project Overview
 
