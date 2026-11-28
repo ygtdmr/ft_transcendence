@@ -25,14 +25,16 @@ const (
 //   - port: Port used by the caller when starting the listener.
 //   - auth: Controller registering the auth routes.
 //   - logger: Service logger receiving access and panic records.
+//   - extra: Controllers whose routes are added at the root, such as the liveness
+//     and readiness endpoints.
 //
 // It returns an unstarted server with auth routes, request IDs, access logging
 // and panic recovery. The caller owns startup and shutdown.
-func New(port string, auth *controller.AuthController, logger *slog.Logger) *http.Server {
+func New(port string, auth *controller.AuthController, logger *slog.Logger, extra ...RouteRegistrar) *http.Server {
 
 	return &http.Server{
 		Addr:              ":" + port,
-		Handler:           newRouter(auth, logger),
+		Handler:           newRouter(auth, logger, extra...),
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      15 * time.Second,
 		ReadHeaderTimeout: readHeaderTimeout,
@@ -72,9 +74,12 @@ func NewInternal(address string, logger *slog.Logger, routes ...RouteRegistrar) 
 }
 
 // newRouter wires auth routes and the common HTTP middleware.
-func newRouter(auth *controller.AuthController, logger *slog.Logger) *gin.Engine {
+func newRouter(auth *controller.AuthController, logger *slog.Logger, extra ...RouteRegistrar) *gin.Engine {
 	router := baseRouter(logger)
 	auth.RegisterRoutes(router.Group("/api/v1/auth"))
+	for _, registrar := range extra {
+		registrar.RegisterRoutes(router)
+	}
 
 	return router
 }
