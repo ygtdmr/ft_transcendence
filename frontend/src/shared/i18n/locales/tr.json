@@ -143,7 +143,7 @@
 		"privacyPolicy": "Gizlilik Politikası",
 		"termsOfService": "Hizmet Koşulları",
 		"logIn": "Giriş Yap",
-		"lastUpdated": "Son güncelleme 29 Eylül 2026",
+		"lastUpdated": "Son güncelleme 28 Kasım 2026",
 		"footer": "Codenames Online · Bir 42 okul projesi",
 		"repository": "GitHub'daki proje deposu (yeni sekmede açılır)"
 	},
@@ -291,7 +291,8 @@
 				"id": "intellectual-property",
 				"title": "Fikri mülkiyet",
 				"paragraphs": [
-					"Projenin kendi kodu, arayüz tasarımı ve görselleri proje ekibine aittir. Üçüncü taraf kütüphaneler ve yazı tipleri kendi lisanslarına tabidir. Codenames adı ve orijinal oyun, ilgili sahiplerine aittir."
+					"Projenin kendi kodu ve arayüz tasarımı proje ekibine aittir. Çizimler, avatarlar ve maskotlar bu proje için ekip tarafından pen.dev tasarım aracında, aracın yapay zekâ destekli üretim özelliğiyle oluşturuldu.",
+					"Arayüz ikonları Font Awesome Free'den (CC BY 4.0) gelir, metin yazı tipi Baloo 2'dir (SIL Open Font License 1.1) ve bağlantı kopma rozeti bir Material Symbols glifi (Apache License 2.0) kullanır. Giriş düğmesindeki Google logosu Google LLC'nin ticari markasıdır. Diğer üçüncü taraf kütüphaneler kendi lisanslarına tabidir; tam liste proje deposundadır. Codenames adı ve orijinal oyun, ilgili sahiplerine aittir."
 				]
 			},
 			{

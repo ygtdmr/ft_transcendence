@@ -3,6 +3,10 @@
 Icons, fonts and images. Avatar artwork lives on the `ui-design` branch
 (`ui-design/avatars/`); copy in only what the app actually ships.
 
+The illustrations, avatars and mascots were made by the team in `ui-design/ui.pen` with
+pen.dev's AI-assisted generation. Third-party glyphs inside them are listed below and in
+`THIRD_PARTY_NOTICES.md`.
+
 `landing/` holds the landing page artwork as SVG, exported from the vector layers of the
 Landing page in `ui-design/ui.pen`.
 
